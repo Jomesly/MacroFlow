@@ -4,6 +4,10 @@ export type Direction = 'bullish' | 'bearish' | 'neutral';
 
 export type Strength = 'strong' | 'moderate' | 'weak';
 
+export type Conviction = 'high' | 'medium' | 'low';
+
+export type TradeSignal = 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_sell';
+
 export type EventCategory =
   | 'central_bank'
   | 'inflation'
@@ -20,6 +24,8 @@ export type EventCategory =
   | 'other';
 
 export type EventImpact = 'high' | 'medium' | 'low';
+
+export type DataSource = 'live' | 'hybrid' | 'baseline';
 
 export interface MacroEvent {
   id: string;
@@ -53,19 +59,25 @@ export interface BiasResult {
   biasPercent: number;
   direction: Direction;
   strength: Strength;
+  conviction: Conviction;
+  signal: TradeSignal;
   dailyLabel: string;
   drivers: string[];
   events: ScoredEvent[];
+  confirmationRatio: number;
+  eventCount: number;
   lastUpdated: string;
 }
 
 export interface BiasApiResponse {
   data: BiasResult[];
   timestamp: string;
+  source: DataSource;
   disclaimer: string;
 }
 
 export interface EventsApiResponse {
   events: MacroEvent[];
   timestamp: string;
+  source: DataSource;
 }

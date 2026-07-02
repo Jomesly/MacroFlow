@@ -20,6 +20,14 @@ const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: strin
   },
 };
 
+const SIGNAL_COLORS: Record<string, string> = {
+  strong_buy: 'bg-emerald-500',
+  buy: 'bg-emerald-600',
+  neutral: 'bg-zinc-600',
+  sell: 'bg-red-600',
+  strong_sell: 'bg-red-500',
+};
+
 function MiniBar({ score }: { score: number }) {
   const barWidth = Math.min(Math.abs(score), 100);
   const isPositive = score >= 0;
@@ -64,10 +72,16 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
           </h3>
           <p className="text-xs text-zinc-500 mt-1 leading-none">{data.name}</p>
         </div>
-        <span className={`text-2xl font-bold leading-none ${colors.text} tabular-nums`}>
-          {data.biasPercent > 0 ? '+' : ''}
-          {data.biasPercent}%
-        </span>
+        <div className="text-right">
+          <span className={`text-2xl font-bold leading-none ${colors.text} tabular-nums`}>
+            {data.biasPercent > 0 ? '+' : ''}
+            {data.biasPercent}%
+          </span>
+          <div className="flex items-center gap-1 justify-end mt-1">
+            <div className={`w-1.5 h-1.5 rounded-full ${SIGNAL_COLORS[data.signal]}`} />
+            <span className="text-[9px] text-zinc-500 uppercase tracking-wider">{data.signal.replace('_', ' ')}</span>
+          </div>
+        </div>
       </div>
 
       <div className="mb-2">
@@ -79,6 +93,18 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
         </div>
         <MiniBar score={data.biasScore} />
       </div>
+
+      {data.conviction !== 'low' && data.eventCount > 0 && (
+        <div className="mb-2 flex items-center gap-2">
+          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+            data.conviction === 'high' ? 'bg-emerald-900/40 text-emerald-400' : 'bg-amber-900/40 text-amber-400'
+          }`}>
+            {data.conviction.toUpperCase()} conviction
+          </span>
+          <span className="text-[10px] text-zinc-600">{data.eventCount} events</span>
+          <span className="text-[10px] text-zinc-600">{data.confirmationRatio}% agree</span>
+        </div>
+      )}
 
       <div className="flex items-center justify-between pt-2.5 border-t border-zinc-800/50 mt-2.5">
         <span className="text-[10px] text-zinc-600">

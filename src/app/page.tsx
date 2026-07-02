@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BiasApiResponse, BiasResult } from '@/lib/types';
+import { BiasApiResponse, BiasResult, DataSource } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
@@ -11,6 +11,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [source, setSource] = useState<DataSource>('baseline');
   const [selected, setSelected] = useState<BiasResult | null>(null);
   const mountedRef = useRef(true);
 
@@ -22,6 +23,7 @@ export default function Home() {
       if (mountedRef.current) {
         setData(json.data);
         setLastUpdated(json.timestamp);
+        setSource(json.source);
         setError(null);
       }
     } catch (err) {
@@ -46,14 +48,29 @@ export default function Home() {
     };
   }, [fetchBias]);
 
+  const sourceColors: Record<DataSource, string> = {
+    live: 'bg-emerald-500',
+    hybrid: 'bg-emerald-400',
+    baseline: 'bg-amber-500',
+  };
+  const sourceLabels: Record<DataSource, string> = {
+    live: 'Live Data',
+    hybrid: 'Live + Baseline',
+    baseline: 'Baseline Only',
+  };
+
   return (
     <div className="flex flex-col flex-1">
       <header className="border-b border-zinc-800 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              MacroFlow
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-white tracking-tight">MacroFlow</h1>
+              <span className="flex items-center gap-1.5 text-[10px] text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded-full border border-zinc-800">
+                <span className={`w-1.5 h-1.5 rounded-full ${sourceColors[source]}`} />
+                {sourceLabels[source]}
+              </span>
+            </div>
             <p className="text-[11px] text-zinc-500 mt-0.5">
               Fundamental Trading Bias Dashboard
             </p>
@@ -81,10 +98,7 @@ export default function Home() {
         {loading && data.length === 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 animate-pulse"
-              >
+              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 animate-pulse">
                 <div className="h-4 w-20 bg-zinc-800 rounded mb-3" />
                 <div className="h-3 w-32 bg-zinc-800 rounded mb-4" />
                 <div className="h-2 w-full bg-zinc-800 rounded mb-2" />
@@ -117,8 +131,17 @@ export default function Home() {
           </div>
         )}
 
+        {data.length > 0 && source === 'baseline' && (
+          <div className="mt-4 rounded-lg border border-amber-800/30 bg-amber-950/10 px-4 py-3">
+            <p className="text-xs text-amber-400/80 text-center">
+              Showing baseline data — no live RSS feeds or APIs returned data. Bias values will update once
+              market data sources respond.
+            </p>
+          </div>
+        )}
+
         <p className="text-[10px] text-zinc-700 text-center mt-6">
-          Click any card for full details, sentiment, and tradeability analysis.
+          Click any card for full analysis: trading signal, conviction, sentiment, and event details.
         </p>
       </main>
 

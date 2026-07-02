@@ -1,9 +1,11 @@
 import {
   AssetSymbol,
   BiasResult,
+  Conviction,
   Direction,
   MacroEvent,
   Strength,
+  TradeSignal,
 } from './types';
 import { biasRules } from './rules';
 
@@ -42,6 +44,29 @@ function getStrength(score: number): Strength {
   if (abs > 50) return 'strong';
   if (abs > 25) return 'moderate';
   return 'weak';
+}
+
+function getConviction(
+  absScore: number,
+  eventCount: number,
+  highImpactCount: number,
+  agreementRatio: number
+): Conviction {
+  if (absScore > 40 && eventCount >= 3 && highImpactCount >= 1 && agreementRatio >= 0.6) {
+    return 'high';
+  }
+  if (absScore > 25 && eventCount >= 2) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function getSignal(direction: Direction, strength: Strength, conviction: Conviction): TradeSignal {
+  if (direction === 'bullish' && strength === 'strong' && conviction === 'high') return 'strong_buy';
+  if (direction === 'bullish' && conviction !== 'low') return 'buy';
+  if (direction === 'bearish' && strength === 'strong' && conviction === 'high') return 'strong_sell';
+  if (direction === 'bearish' && conviction !== 'low') return 'sell';
+  return 'neutral';
 }
 
 function getLabel(score: number, direction: Direction): string {
@@ -86,6 +111,24 @@ export function calculateBias(
     const direction = getDirection(totalScore);
     const strength = getStrength(totalScore);
 
+    const bullishCount = scoredEvents.filter((e) => e.scoreChange > 0).length;
+    const totalRelevant = scoredEvents.length;
+    const agreementRatio = totalRelevant > 0 ? bullishCount / totalRelevant : 0;
+    const confirmationRatio = totalRelevant > 0
+      ? Math.round((agreementRatio >= 0.5 ? agreementRatio : 1 - agreementRatio) * 100)
+      : 0;
+
+    const highImpactCount = scoredEvents.filter((e) => e.impact === 'high').length;
+
+    const conviction = getConviction(
+      Math.abs(totalScore),
+      totalRelevant,
+      highImpactCount,
+      agreementRatio
+    );
+
+    const signal = getSignal(direction, strength, conviction);
+
     const drivers = scoredEvents.map((e) => {
       const prefix =
         e.scoreChange > 0
@@ -103,9 +146,13 @@ export function calculateBias(
       biasPercent: totalScore >= 0 ? absPercent(totalScore) : -absPercent(totalScore),
       direction,
       strength,
+      conviction,
+      signal,
       dailyLabel: getLabel(totalScore, direction),
       drivers,
       events: scoredEvents,
+      confirmationRatio,
+      eventCount: totalRelevant,
       lastUpdated: new Date().toISOString(),
     };
   });
