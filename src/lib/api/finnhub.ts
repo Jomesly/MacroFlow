@@ -42,7 +42,7 @@ export async function fetchNews(): Promise<MacroEvent[]> {
       const classified = classifyHeadline(text);
       if (classified && !seen.has(classified.value + classified.category)) {
         seen.add(classified.value + classified.category);
-        events.push(createEventFromClassification(classified, 'finnhub'));
+        events.push(createEventFromClassification(classified, 'finnhub', article.url));
       }
     }
 

@@ -42,6 +42,7 @@ export async function fetchMarketData(): Promise<MacroEvent[]> {
             timestamp: new Date().toISOString(),
             impact: 'medium',
             value: change >= 0 ? 'strong' : 'weak',
+            sourceName: 'twelvedata',
           });
         }
       }
@@ -74,6 +75,7 @@ export async function fetchMarketData(): Promise<MacroEvent[]> {
               timestamp: new Date().toISOString(),
               impact: 'medium',
               value: diff >= 0 ? 'rising' : 'falling',
+              sourceName: 'alphavantage',
             });
           }
         }

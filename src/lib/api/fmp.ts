@@ -55,6 +55,7 @@ export async function fetchEconomicCalendar(): Promise<MacroEvent[]> {
           timestamp: new Date(item.date).toISOString(),
           impact: 'medium',
           value: classified.value,
+          sourceName: 'fmp',
         });
       }
     }

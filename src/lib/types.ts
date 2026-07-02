@@ -35,6 +35,8 @@ export interface MacroEvent {
   timestamp: string;
   impact: EventImpact;
   value: string;
+  url?: string;
+  sourceName?: string;
 }
 
 export interface BiasRule {
@@ -48,8 +50,11 @@ export interface ScoredEvent {
   id: string;
   category: EventCategory;
   title: string;
+  description: string;
   impact: EventImpact;
   scoreChange: number;
+  url?: string;
+  sourceName?: string;
 }
 
 export interface BiasResult {

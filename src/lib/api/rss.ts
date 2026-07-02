@@ -49,7 +49,7 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
             const signal = `${classified.category}:${classified.value}`;
             if (!seen.has(signal)) {
               seen.add(signal);
-              items.push(createEventFromClassification(classified, feed.sourceName));
+              items.push(createEventFromClassification(classified, feed.sourceName, item.link));
             }
           }
         }

@@ -181,7 +181,8 @@ export function classifyHeadline(text: string): SentimentResult | null {
 
 export function createEventFromClassification(
   classified: SentimentResult,
-  source: string
+  source: string,
+  url?: string
 ): MacroEvent {
   const id = `live-${source}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   return {
@@ -192,6 +193,8 @@ export function createEventFromClassification(
     timestamp: new Date().toISOString(),
     impact: classified.impact,
     value: classified.value,
+    url,
+    sourceName: source,
   };
 }
 

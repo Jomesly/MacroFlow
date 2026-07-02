@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { BiasResult, TradeSignal } from '@/lib/types';
 
 const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string }> = {
@@ -61,6 +62,8 @@ interface BiasDetailProps {
 }
 
 export default function BiasDetail({ data, onClose }: BiasDetailProps) {
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+
   const colors = DIRECTION_COLORS[data.direction] || DIRECTION_COLORS.neutral;
   const signal = SIGNAL_CONFIG[data.signal];
   const isBullish = data.direction === 'bullish';
@@ -197,24 +200,61 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
             <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
               All Drivers ({data.events.length})
             </p>
-            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-              {data.events.map((e) => (
-                <div key={e.id} className="flex items-center justify-between py-1.5 px-2 rounded bg-zinc-900/50">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className={`inline-block px-1.5 py-0.5 text-[9px] font-medium leading-none rounded border ${
-                      e.impact === 'high' ? 'bg-red-900/40 text-red-400 border-red-700/40'
-                        : e.impact === 'medium' ? 'bg-amber-900/40 text-amber-400 border-amber-700/40'
-                          : 'bg-zinc-800 text-zinc-400 border-zinc-700/40'
-                    }`}>{e.impact}</span>
-                    <span className="text-xs text-zinc-300 truncate">{e.title}</span>
+            <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
+              {data.events.map((e, idx) => {
+                const isExpanded = expandedIdx === idx;
+                return (
+                  <div key={e.id} className="rounded overflow-hidden">
+                    <button
+                      onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                      className="flex items-center justify-between w-full py-1.5 px-2 rounded bg-zinc-900/50 hover:bg-zinc-800/70 transition-colors text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className={`inline-block px-1.5 py-0.5 text-[9px] font-medium leading-none rounded border shrink-0 ${
+                          e.impact === 'high' ? 'bg-red-900/40 text-red-400 border-red-700/40'
+                            : e.impact === 'medium' ? 'bg-amber-900/40 text-amber-400 border-amber-700/40'
+                              : 'bg-zinc-800 text-zinc-400 border-zinc-700/40'
+                        }`}>{e.impact}</span>
+                        <span className="text-xs text-zinc-300 truncate">{e.title}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-xs font-mono font-medium tabular-nums ${
+                          e.scoreChange > 0 ? 'text-emerald-400' : e.scoreChange < 0 ? 'text-red-400' : 'text-zinc-500'
+                        }`}>
+                          {e.scoreChange > 0 ? '+' : ''}{e.scoreChange}
+                        </span>
+                        <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </button>
+                    {isExpanded && (
+                      <div className="px-2 pb-2 pt-1">
+                        <div className="rounded border border-zinc-700/50 bg-zinc-900/80 p-3 space-y-2">
+                          <p className="text-xs text-zinc-100 leading-relaxed">{e.description}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {e.sourceName && (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/40 uppercase tracking-wider">
+                                {e.sourceName}
+                              </span>
+                            )}
+                            {e.url && (
+                              <a
+                                href={e.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-blue-400 hover:text-blue-300 hover:underline transition-colors inline-flex items-center gap-1"
+                              >
+                                Open article →
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <span className={`text-xs font-mono font-medium ml-2 tabular-nums ${
-                    e.scoreChange > 0 ? 'text-emerald-400' : e.scoreChange < 0 ? 'text-red-400' : 'text-zinc-500'
-                  }`}>
-                    {e.scoreChange > 0 ? '+' : ''}{e.scoreChange}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

@@ -101,8 +101,11 @@ export function calculateBias(
           id: event.id,
           category: event.category,
           title: event.title,
+          description: event.description,
           impact: event.impact,
           scoreChange: rule.scoreChange,
+          url: event.url,
+          sourceName: event.sourceName,
         });
       }
     }
