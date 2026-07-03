@@ -14,7 +14,7 @@ interface CachedEvents {
   sourceHealth: SourceHealth;
 }
 
-export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt: string; sourceHealth: SourceHealth }> {
+export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt: string; sourceHealth: SourceHealth; stale?: boolean }> {
   const cached = await getCached<unknown>(CACHE_KEY);
   const isValid = cached !== null && typeof cached === 'object' && !Array.isArray(cached) && 'events' in (cached as any) && 'cachedAt' in (cached as any) && 'sourceHealth' in (cached as any);
   if (isValid) return cached as CachedEvents;
@@ -53,6 +53,9 @@ export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt
   }
 
   if (allEvents.length === 0) {
+    if (isValid) {
+      return { ...(cached as CachedEvents), sourceHealth, stale: true };
+    }
     return { events: [], cachedAt: new Date().toISOString(), sourceHealth };
   }
 

@@ -114,6 +114,7 @@ export interface BiasApiResponse {
   dxy?: DxyContext;
   nextEvent?: UpcomingEvent | null;
   sourceHealth?: SourceHealth;
+  stale?: boolean;
 }
 
 export interface EventsApiResponse {

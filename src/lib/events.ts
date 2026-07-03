@@ -18,12 +18,13 @@ export async function getEvents(): Promise<{
   source: DataSource;
   cachedAt: string;
   sourceHealth: SourceHealth;
+  stale?: boolean;
 }> {
   try {
-    const { events: liveEvents, cachedAt, sourceHealth } = await fetchAllEvents();
+    const { events: liveEvents, cachedAt, sourceHealth, stale } = await fetchAllEvents();
 
     if (liveEvents.length > 0) {
-      return { events: liveEvents, source: 'live', cachedAt, sourceHealth };
+      return { events: liveEvents, source: 'live', cachedAt, sourceHealth, stale };
     }
   } catch {
     // fall through
