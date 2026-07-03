@@ -36,12 +36,13 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/boe.*(hawkish|hike|tighten)/i], category: 'boe_tone', value: 'hawkish', impact: 'medium' },
 
   // ── Generic Central Bank (defaults to Fed for US-centric assets) ──
+  // Only matches when no non-Fed central bank is named in the text
   { patterns: [/central bank.*(cut|ease|dovish|lower|hold)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
   { patterns: [/central bank.*(hike|raise|hawkish|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
-  { patterns: [/rate (cut|ease|lower|dovish|hold)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
-  { patterns: [/rate (hike|rise|raise|hawkish|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
-  { patterns: [/interest rate.*(cut|lower|ease|hold)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
-  { patterns: [/interest rate.*(hike|rise|raise|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc)\\b).*rate (cut|ease|lower|dovish|hold)`, 'i')], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc)\\b).*rate (hike|rise|raise|hawkish|tighten)`, 'i')], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc)\\b).*interest rate.*(cut|lower|ease|hold)`, 'i')], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc)\\b).*interest rate.*(hike|rise|raise|tighten)`, 'i')], category: 'fed_tone', value: 'hawkish', impact: 'high' },
 
   // ── Inflation ──
   { patterns: [/cpi.*(high|hot|beat|rise|up|surge|climb)/i], category: 'inflation', value: 'high', impact: 'high' },

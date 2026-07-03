@@ -65,6 +65,15 @@ describe('classifyHeadline', () => {
     expect(results.filter((r) => r.category === 'risk_sentiment' && r.value === 'risk_off')).toHaveLength(0);
   });
 
+  it('does not classify BoE rate hike mention as fed_tone hawkish', () => {
+    const results = classifyHeadline("Bank of England's Mann suggests reduced rate hike bets boost case for action");
+    expect(results.filter((r) => r.category === 'fed_tone' && r.value === 'hawkish')).toHaveLength(0);
+  });
+
+  it('still classifies Fed rate hike mention as fed_tone hawkish', () => {
+    expect(hasSignal('Fed signals rate hike as inflation persists', 'fed_tone', 'hawkish')).toBe(true);
+  });
+
   it('still classifies clear directional headlines', () => {
     expect(hasSignal('USD gains as dollar strength returns', 'dollar_strength', 'strong')).toBe(true);
     expect(hasSignal('Nonfarm payrolls beat expectations', 'employment', 'strong')).toBe(true);
