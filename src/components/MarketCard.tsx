@@ -43,8 +43,15 @@ interface MarketCardProps {
   onClick: () => void;
 }
 
+function marketIsOpen(symbol: string): boolean {
+  if (symbol === 'BTCUSD') return true;
+  const day = new Date().getDay();
+  return day !== 0 && day !== 6;
+}
+
 export default function MarketCard({ data, onClick }: MarketCardProps) {
   const colors = DIRECTION_COLORS[data.direction] || DIRECTION_COLORS.neutral;
+  const open = marketIsOpen(data.symbol);
   const [flipInfo, setFlipInfo] = useState<{ from: string; to: string; trigger: string } | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -77,9 +84,15 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
         >
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h3 className="text-lg font-bold leading-none text-white group-hover:text-white transition-colors">
-                {data.symbol}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold leading-none text-white group-hover:text-white transition-colors">
+                  {data.symbol}
+                </h3>
+                <span className={`flex items-center gap-1 text-[9px] font-medium ${open ? 'text-emerald-500' : 'text-amber-500'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${open ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                  {open ? 'Open' : 'Closed'}
+                </span>
+              </div>
               <p className="text-xs text-zinc-500 mt-1 leading-none">{data.name}</p>
             </div>
             <div className="text-right">

@@ -161,11 +161,6 @@ function SourceStatus({ health }: { health: SourceHealth | null }) {
   );
 }
 
-function isWeekend(): boolean {
-  const day = new Date().getDay();
-  return day === 0 || day === 6;
-}
-
 export default function Home() {
   const [data, setData] = useState<BiasResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,11 +232,6 @@ export default function Home() {
                 <span className={`w-1.5 h-1.5 rounded-full ${sourceColors[source]}`} />
                 {sourceLabels[source]}
               </span>
-              {isWeekend() && (
-                <span className="text-[10px] text-amber-500 bg-amber-950/20 px-2 py-0.5 rounded-full border border-amber-800/30 whitespace-nowrap">
-                  Weekend — data may be stale
-                </span>
-              )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-0.5">
               Fundamental Trading Bias Dashboard
