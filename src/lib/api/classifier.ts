@@ -14,9 +14,9 @@ const COUNTRY_SENSITIVE_CATEGORIES = new Set<EventCategory>([
 ]);
 
 function inferCountry(text: string): string | undefined {
-  const t = text.toLowerCase();
-  const usMatch = /\b(us|united states|america|federal reserve|fed)\b/.test(t);
-  const ukMatch = /\b(uk|united kingdom|britain|boe|bank of england)\b/.test(t);
+  // Require capitalized "US" to avoid matching the pronoun "us" (e.g. "surprises us")
+  const usMatch = /\bUS\b/.test(text) || /\b(united states|america|federal reserve|fed)\b/i.test(text);
+  const ukMatch = /\b(uk|united kingdom|britain|boe|bank of england)\b/i.test(text);
   if (usMatch && !ukMatch) return 'US';
   if (ukMatch && !usMatch) return 'GB';
   return undefined;

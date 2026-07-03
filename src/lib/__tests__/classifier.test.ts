@@ -51,6 +51,24 @@ describe('classifyHeadline', () => {
     expect(risk?.country).toBeUndefined();
   });
 
+  it('does not infer US from the pronoun "us" in lowercase text', () => {
+    const results = classifyHeadline('Retail sales data surprises us with strong growth');
+    const retail = results.find((r) => r.category === 'retail_sales');
+    expect(retail?.country).toBeUndefined();
+  });
+
+  it('still infers US from capitalized "US" in headline', () => {
+    const results = classifyHeadline('US CPI comes in hot, inflation fears grow');
+    const inflation = results.find((r) => r.category === 'inflation');
+    expect(inflation?.country).toBe('US');
+  });
+
+  it('still infers GB from "UK" in headline', () => {
+    const results = classifyHeadline('UK inflation cools sharply, pound slides');
+    const inflation = results.find((r) => r.category === 'inflation');
+    expect(inflation?.country).toBe('GB');
+  });
+
   it('does not classify standalone "uncertainty" as risk_off', () => {
     const results = classifyHeadline('Fed decision creates some uncertainty ahead of the meeting');
     expect(results.filter((r) => r.category === 'risk_sentiment' && r.value === 'risk_off')).toHaveLength(0);
