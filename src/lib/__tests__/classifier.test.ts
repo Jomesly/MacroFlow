@@ -51,6 +51,15 @@ describe('classifyHeadline', () => {
     expect(risk?.country).toBeUndefined();
   });
 
+  it('does not classify standalone "uncertainty" as risk_off', () => {
+    const results = classifyHeadline('Fed decision creates some uncertainty ahead of the meeting');
+    expect(results.filter((r) => r.category === 'risk_sentiment' && r.value === 'risk_off')).toHaveLength(0);
+  });
+
+  it('still classifies "panic selling grips markets amid crisis" as risk_off', () => {
+    expect(hasSignal('panic selling grips markets amid crisis', 'risk_sentiment', 'risk_off')).toBe(true);
+  });
+
   it('still classifies clear directional headlines', () => {
     expect(hasSignal('USD gains as dollar strength returns', 'dollar_strength', 'strong')).toBe(true);
     expect(hasSignal('Nonfarm payrolls beat expectations', 'employment', 'strong')).toBe(true);

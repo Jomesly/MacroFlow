@@ -85,7 +85,7 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/consumer.*spend.*(down|fall|weak)/i], category: 'retail_sales', value: 'miss', impact: 'low' },
 
   // ── Risk Sentiment ──
-  { patterns: [/safe.?haven|risk.?off|turmoil|crisis|uncertainty|fear|panic/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
+  { patterns: [/safe.?haven|risk.?off|turmoil|crisis|fear|panic/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
   { patterns: [/risk.?on|rally|optimism|bullish|euphoria/i], category: 'risk_sentiment', value: 'risk_on', impact: 'high' },
   { patterns: [/market.*(fear|plunge|sell.?off|crash|turmoil|retreat|decline)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
   { patterns: [/market.*(rally|surge|climb|optimism|rebound|gains|advance|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
