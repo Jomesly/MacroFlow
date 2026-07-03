@@ -101,4 +101,20 @@ describe('calculateBias', () => {
     ], 'US100');
     expect(result.biasScore).toBe(40);
   });
+
+  it('scores retail_sales events for US100 with correct sign and nonzero contribution', () => {
+    const [beatResult] = calculateBias([
+      event({ category: 'retail_sales', value: 'beat', title: 'Retail sales beat' }),
+    ], 'US100');
+    expect(beatResult.biasScore).toBe(10);
+    expect(beatResult.events).toHaveLength(1);
+    expect(beatResult.events[0].scoreChange).toBe(10);
+
+    const [missResult] = calculateBias([
+      event({ category: 'retail_sales', value: 'miss', title: 'Retail sales miss' }),
+    ], 'US100');
+    expect(missResult.biasScore).toBe(-10);
+    expect(missResult.events).toHaveLength(1);
+    expect(missResult.events[0].scoreChange).toBe(-10);
+  });
 });

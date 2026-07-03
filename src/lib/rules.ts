@@ -92,6 +92,8 @@ export const biasRules: BiasRule[] = [
   { eventCategory: 'gdp', eventValue: 'miss', symbol: 'US100', scoreChange: -20 },
   { eventCategory: 'pmi', eventValue: 'beat', symbol: 'US100', scoreChange: 10 },
   { eventCategory: 'pmi', eventValue: 'miss', symbol: 'US100', scoreChange: -10 },
+  { eventCategory: 'retail_sales', eventValue: 'beat', symbol: 'US100', scoreChange: 10 },
+  { eventCategory: 'retail_sales', eventValue: 'miss', symbol: 'US100', scoreChange: -10 },
 
   // ── DJ30 (Dow Jones) ───────────────────────────────────
   { eventCategory: 'fed_tone', eventValue: 'hawkish', symbol: 'DJ30', scoreChange: -25 },
