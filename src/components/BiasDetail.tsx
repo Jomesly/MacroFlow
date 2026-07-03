@@ -87,9 +87,9 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
         : { label: 'Low conviction — wait for clearer signal', color: 'text-zinc-500' };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 pt-12 px-4 pb-4 overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 pt-8 px-4 pb-4 overflow-y-auto" onClick={onClose}>
       <div
-        className="relative w-full max-w-lg rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl"
+        className="relative w-full max-w-5xl rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300 transition-colors text-lg leading-none">✕</button>
@@ -107,157 +107,163 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
           </div>
         </div>
 
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-zinc-500">Trading Signal</span>
-            <span className={`text-sm font-bold ${signal.color}`}>{signal.label}</span>
-          </div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-zinc-500">Conviction</span>
-            <span className={`text-xs font-semibold ${data.conviction === 'high' ? 'text-emerald-400' : data.conviction === 'medium' ? 'text-amber-400' : 'text-zinc-500'}`}>
-              {data.conviction.toUpperCase()}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-500">Probability</span>
-            <span className={`text-xs font-semibold ${tradingReadiness.color}`}>{tradingReadiness.label}</span>
-          </div>
-        </div>
+        <div className="grid grid-cols-5 gap-5 mb-5">
+          <div className="col-span-3 space-y-4">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-zinc-500">Trading Signal</span>
+                <span className={`text-sm font-bold ${signal.color}`}>{signal.label}</span>
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-zinc-500">Conviction</span>
+                <span className={`text-xs font-semibold ${data.conviction === 'high' ? 'text-emerald-400' : data.conviction === 'medium' ? 'text-amber-400' : 'text-zinc-500'}`}>
+                  {data.conviction.toUpperCase()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">Probability</span>
+                <span className={`text-xs font-semibold ${tradingReadiness.color}`}>{tradingReadiness.label}</span>
+              </div>
+            </div>
 
-        <div className="mb-5">
-          <div className="flex items-baseline justify-between mb-1.5">
-            <span className="text-xs text-zinc-500">Bias Score</span>
-            <span className={`text-sm font-semibold ${colors.text}`}>{data.biasScore > 0 ? '+' : ''}{data.biasScore} / +100</span>
-          </div>
-          <ScoreBar score={data.biasScore} />
-          <div className="flex justify-between mt-1">
-            <span className="text-[10px] text-zinc-600">Bearish -100</span>
-            <span className="text-[10px] text-zinc-500">0</span>
-            <span className="text-[10px] text-zinc-600">+100 Bullish</span>
-          </div>
-        </div>
+            <div>
+              <div className="flex items-baseline justify-between mb-1.5">
+                <span className="text-xs text-zinc-500">Bias Score</span>
+                <span className={`text-sm font-semibold ${colors.text}`}>{data.biasScore > 0 ? '+' : ''}{data.biasScore} / +100</span>
+              </div>
+              <ScoreBar score={data.biasScore} />
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-zinc-600">Bearish -100</span>
+                <span className="text-[10px] text-zinc-500">0</span>
+                <span className="text-[10px] text-zinc-600">+100 Bullish</span>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Direction</p>
-            <p className={`text-sm font-semibold capitalize ${colors.text}`}>{data.direction}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Events</p>
-            <p className="text-sm font-semibold text-zinc-200">{data.eventCount}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Agreement</p>
-            <p className="text-sm font-semibold text-zinc-200">{data.confirmationRatio}%</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Bullish</p>
-            <p className="text-sm font-semibold text-emerald-400">{bullishCount}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Bearish</p>
-            <p className="text-sm font-semibold text-red-400">{bearishCount}</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">High Impact</p>
-            <p className="text-sm font-semibold text-zinc-200">{highImpactCount}</p>
-          </div>
-        </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Direction</p>
+                <p className={`text-sm font-semibold capitalize ${colors.text}`}>{data.direction}</p>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Events</p>
+                <p className="text-sm font-semibold text-zinc-200">{data.eventCount}</p>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Agreement</p>
+                <p className="text-sm font-semibold text-zinc-200">{data.confirmationRatio}%</p>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Bullish</p>
+                <p className="text-sm font-semibold text-emerald-400">{bullishCount}</p>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Bearish</p>
+                <p className="text-sm font-semibold text-red-400">{bearishCount}</p>
+              </div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">High Impact</p>
+                <p className="text-sm font-semibold text-zinc-200">{highImpactCount}</p>
+              </div>
+            </div>
 
-        <div className="mb-5">
-          <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Market Sentiment</p>
-          <SentimentGauge sentiment={sentiment} />
-        </div>
+            <div>
+              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Market Sentiment</p>
+              <SentimentGauge sentiment={sentiment} />
+            </div>
 
-        <div className="mb-5">
-          <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Assessment</p>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-            {isBullish ? (
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Fundamental bias is <span className="text-emerald-400 font-medium">bullish</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
-                {bullishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
-                {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
-                {data.conviction === 'high' ? ' This is a high-probability alignment between technical and fundamental analysis.' : ''}
-              </p>
-            ) : isBearish ? (
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Fundamental bias is <span className="text-red-400 font-medium">bearish</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
-                {bearishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
-                {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
-                {data.conviction === 'high' ? ' This is a high-probability alignment between technical and fundamental analysis.' : ''}
-              </p>
-            ) : (
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                No dominant fundamental bias detected. Signals are either mixed or too weak to establish direction.
-                Wait for stronger macroeconomic data or news catalysts before entering a position.
-              </p>
+            <div>
+              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Assessment</p>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                {isBullish ? (
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    Fundamental bias is <span className="text-emerald-400 font-medium">bullish</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
+                    {bullishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
+                    {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
+                    {data.conviction === 'high' ? ' This is a high-probability alignment between technical and fundamental analysis.' : ''}
+                  </p>
+                ) : isBearish ? (
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    Fundamental bias is <span className="text-red-400 font-medium">bearish</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
+                    {bearishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
+                    {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
+                    {data.conviction === 'high' ? ' This is a high-probability alignment between technical and fundamental analysis.' : ''}
+                  </p>
+                ) : (
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    No dominant fundamental bias detected. Signals are either mixed or too weak to establish direction.
+                    Wait for stronger macroeconomic data or news catalysts before entering a position.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="col-span-2">
+            {data.events.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+                  All Drivers ({data.events.length})
+                </p>
+                <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1">
+                  {data.events.map((e, idx) => {
+                    const isExpanded = expandedIdx === idx;
+                    return (
+                      <div key={e.id} className="rounded overflow-hidden">
+                        <button
+                          onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                          className="flex items-center justify-between w-full py-1.5 px-2 rounded bg-zinc-900/50 hover:bg-zinc-800/70 transition-colors text-left cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <span className={`inline-block px-1.5 py-0.5 text-[9px] font-medium leading-none rounded border shrink-0 ${
+                              e.impact === 'high' ? 'bg-red-900/40 text-red-400 border-red-700/40'
+                                : e.impact === 'medium' ? 'bg-amber-900/40 text-amber-400 border-amber-700/40'
+                                  : 'bg-zinc-800 text-zinc-400 border-zinc-700/40'
+                            }`}>{e.impact}</span>
+                            <span className="text-xs text-zinc-300 truncate">{e.title}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-xs font-mono font-medium tabular-nums ${
+                              e.scoreChange > 0 ? 'text-emerald-400' : e.scoreChange < 0 ? 'text-red-400' : 'text-zinc-500'
+                            }`}>
+                              {e.scoreChange > 0 ? '+' : ''}{e.scoreChange}
+                            </span>
+                            <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </button>
+                        {isExpanded && (
+                          <div className="px-2 pb-2 pt-1">
+                            <div className="rounded border border-zinc-700/50 bg-zinc-900/80 p-3 space-y-2">
+                              <p className="text-xs text-zinc-100 leading-relaxed">{e.description}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {e.sourceName && (
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/40 uppercase tracking-wider">
+                                    {e.sourceName}
+                                  </span>
+                                )}
+                                {e.url && (
+                                  <a
+                                    href={e.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] text-blue-400 hover:text-blue-300 hover:underline transition-colors inline-flex items-center gap-1"
+                                  >
+                                    Open article →
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         </div>
-
-        {data.events.length > 0 && (
-          <div className="mb-3">
-            <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
-              All Drivers ({data.events.length})
-            </p>
-            <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
-              {data.events.map((e, idx) => {
-                const isExpanded = expandedIdx === idx;
-                return (
-                  <div key={e.id} className="rounded overflow-hidden">
-                    <button
-                      onClick={() => setExpandedIdx(isExpanded ? null : idx)}
-                      className="flex items-center justify-between w-full py-1.5 px-2 rounded bg-zinc-900/50 hover:bg-zinc-800/70 transition-colors text-left cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className={`inline-block px-1.5 py-0.5 text-[9px] font-medium leading-none rounded border shrink-0 ${
-                          e.impact === 'high' ? 'bg-red-900/40 text-red-400 border-red-700/40'
-                            : e.impact === 'medium' ? 'bg-amber-900/40 text-amber-400 border-amber-700/40'
-                              : 'bg-zinc-800 text-zinc-400 border-zinc-700/40'
-                        }`}>{e.impact}</span>
-                        <span className="text-xs text-zinc-300 truncate">{e.title}</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-xs font-mono font-medium tabular-nums ${
-                          e.scoreChange > 0 ? 'text-emerald-400' : e.scoreChange < 0 ? 'text-red-400' : 'text-zinc-500'
-                        }`}>
-                          {e.scoreChange > 0 ? '+' : ''}{e.scoreChange}
-                        </span>
-                        <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </button>
-                    {isExpanded && (
-                      <div className="px-2 pb-2 pt-1">
-                        <div className="rounded border border-zinc-700/50 bg-zinc-900/80 p-3 space-y-2">
-                          <p className="text-xs text-zinc-100 leading-relaxed">{e.description}</p>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {e.sourceName && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/40 uppercase tracking-wider">
-                                {e.sourceName}
-                              </span>
-                            )}
-                            {e.url && (
-                              <a
-                                href={e.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[10px] text-blue-400 hover:text-blue-300 hover:underline transition-colors inline-flex items-center gap-1"
-                              >
-                                Open article →
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         <div className="pt-3 border-t border-zinc-800 space-y-1">
           <p className="text-[10px] text-zinc-600">Updated: {new Date(data.lastUpdated).toLocaleString()}</p>

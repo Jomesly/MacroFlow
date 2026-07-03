@@ -6,7 +6,7 @@ import { fetchRssFeeds } from './rss';
 import { getCached, setCache } from './cache';
 
 const CACHE_KEY = 'merged_events';
-const CACHE_TTL = 120_000;
+const CACHE_TTL = 900_000;
 
 export async function fetchAllEvents(): Promise<MacroEvent[]> {
   const cached = getCached<MacroEvent[]>(CACHE_KEY);

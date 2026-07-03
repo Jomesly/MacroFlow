@@ -76,7 +76,7 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
   const dismissFlip = () => setFlipInfo(null);
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       {flipInfo && (
         <div className={`absolute -top-2 left-0 right-0 z-10 mx-1 rounded-lg border-2 px-3 py-2 animate-pulse ${
           flipInfo.to === 'bullish' ? 'border-emerald-500/60 bg-emerald-950/90' : 'border-red-500/60 bg-red-950/90'
@@ -106,11 +106,11 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
       )}
 
       <div
-        className={`rounded-xl border ${colors.border} ${colors.bg} overflow-hidden ${flipInfo ? 'ring-2 ring-amber-400/50' : ''}`}
+        className={`rounded-xl border ${colors.border} ${colors.bg} flex flex-col h-full ${flipInfo ? 'ring-2 ring-amber-400/50' : ''}`}
       >
         <button
           onClick={onClick}
-          className={`w-full p-4 transition-all text-left cursor-pointer
+          className={`w-full p-4 flex-1 transition-all text-left cursor-pointer
             hover:scale-[1.03] hover:shadow-[0_0_20px_-5px] hover:shadow-${data.direction === 'bullish' ? 'emerald' : data.direction === 'bearish' ? 'red' : 'white'}-500/20
             hover:border-white/20 active:scale-[0.98] group outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
         >
@@ -151,17 +151,19 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
           </span>
         </div>
 
-        {data.conviction !== 'low' && data.eventCount > 0 && (
-          <div className="mb-2 flex items-center gap-2">
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-              data.conviction === 'high' ? 'bg-emerald-900/40 text-emerald-400' : 'bg-amber-900/40 text-amber-400'
-            }`}>
-              {data.conviction.toUpperCase()} conviction
-            </span>
-            <span className="text-[10px] text-zinc-600">{data.eventCount} events</span>
-            <span className="text-[10px] text-zinc-600">{data.confirmationRatio}% agree</span>
-          </div>
-        )}
+        <div className="mb-2 min-h-[20px]">
+          {data.conviction !== 'low' && data.eventCount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                data.conviction === 'high' ? 'bg-emerald-900/40 text-emerald-400' : 'bg-amber-900/40 text-amber-400'
+              }`}>
+                {data.conviction.toUpperCase()} conviction
+              </span>
+              <span className="text-[10px] text-zinc-600">{data.eventCount} events</span>
+              <span className="text-[10px] text-zinc-600">{data.confirmationRatio}% agree</span>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-between pt-2.5 border-t border-zinc-800/50 mt-2.5">
           <span className="text-[10px] text-zinc-600">

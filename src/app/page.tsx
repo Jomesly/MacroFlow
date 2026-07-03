@@ -86,6 +86,31 @@ function NextEventBar({ nextEvent }: { nextEvent: UpcomingEvent }) {
   );
 }
 
+function NextUpdateTimer({ lastUpdated }: { lastUpdated: string | null }) {
+  const [display, setDisplay] = useState('');
+
+  useEffect(() => {
+    function tick() {
+      if (!lastUpdated) { setDisplay(''); return; }
+      const elapsed = Date.now() - new Date(lastUpdated).getTime();
+      const remaining = Math.max(0, 15 * 60 * 1000 - elapsed);
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      setDisplay(`${mins}:${secs.toString().padStart(2, '0')}`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lastUpdated]);
+
+  if (!lastUpdated) return null;
+  return (
+    <span className="text-[11px] text-zinc-500 tabular-nums">
+      Next refresh in {display}
+    </span>
+  );
+}
+
 export default function Home() {
   const [data, setData] = useState<BiasResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +149,7 @@ export default function Home() {
   useEffect(() => {
     mountedRef.current = true;
     const id = setTimeout(() => { fetchBias(); }, 0);
-    const interval = setInterval(() => { fetchBias(); }, 60000);
+    const interval = setInterval(() => { fetchBias(); }, 900000);
     return () => {
       mountedRef.current = false;
       clearTimeout(id);
@@ -161,19 +186,13 @@ export default function Home() {
           </div>
           <div className="text-right">
             {lastUpdated && (
-              <p className="text-[11px] text-zinc-600">
-                Updated: {new Date(lastUpdated).toLocaleTimeString()}
-              </p>
+              <>
+                <p className="text-[11px] text-zinc-600">
+                  Updated: {new Date(lastUpdated).toLocaleTimeString()}
+                </p>
+                <NextUpdateTimer lastUpdated={lastUpdated} />
+              </>
             )}
-            <button
-              onClick={() => {
-                setLoading(true);
-                fetchBias();
-              }}
-              className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              Refresh
-            </button>
           </div>
         </div>
       </header>
