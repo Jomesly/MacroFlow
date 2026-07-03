@@ -16,19 +16,22 @@ export const baselineEvents: MacroEvent[] = [
 export async function getEvents(): Promise<{
   events: MacroEvent[];
   source: DataSource;
+  cachedAt: string;
 }> {
   try {
-    const liveEvents = await fetchAllEvents();
+    const { events: liveEvents, cachedAt } = await fetchAllEvents();
 
     if (liveEvents.length > 0) {
-      return { events: liveEvents, source: 'live' };
+      return { events: liveEvents, source: 'live', cachedAt };
     }
   } catch {
     // fall through
   }
 
+  const cachedAt = new Date().toISOString();
   return {
-    events: baselineEvents.map((e) => ({ ...e, timestamp: new Date().toISOString() })),
+    events: baselineEvents.map((e) => ({ ...e, timestamp: cachedAt })),
     source: 'baseline',
+    cachedAt,
   };
 }

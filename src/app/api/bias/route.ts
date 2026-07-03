@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
   const symbol = symbolParam && ALL_SYMBOLS.includes(symbolParam) ? symbolParam : undefined;
 
-  const { events, source } = await getEvents();
+  const { events, source, cachedAt } = await getEvents();
   const results = calculateBias(events, symbol);
 
   const dxy = getDxyContext(events);
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 
   const response: BiasApiResponse = {
     data,
-    timestamp: new Date().toISOString(),
+    timestamp: cachedAt,
     source,
     dxy,
     nextEvent,

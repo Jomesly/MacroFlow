@@ -8,8 +8,13 @@ import { getCached, setCache } from './cache';
 const CACHE_KEY = 'merged_events';
 const CACHE_TTL = 900_000;
 
-export async function fetchAllEvents(): Promise<MacroEvent[]> {
-  const cached = await getCached<MacroEvent[]>(CACHE_KEY);
+interface CachedEvents {
+  events: MacroEvent[];
+  cachedAt: string;
+}
+
+export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt: string }> {
+  const cached = await getCached<CachedEvents>(CACHE_KEY);
   if (cached) return cached;
 
   const results = await Promise.allSettled([
@@ -34,9 +39,10 @@ export async function fetchAllEvents(): Promise<MacroEvent[]> {
   }
 
   if (allEvents.length === 0) {
-    return [];
+    return { events: [], cachedAt: new Date().toISOString() };
   }
 
-  await setCache(CACHE_KEY, allEvents, CACHE_TTL);
-  return allEvents;
+  const cachedAt = new Date().toISOString();
+  await setCache(CACHE_KEY, { events: allEvents, cachedAt }, CACHE_TTL);
+  return { events: allEvents, cachedAt };
 }
