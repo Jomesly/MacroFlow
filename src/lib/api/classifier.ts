@@ -40,8 +40,8 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/pp[iI].*(fall|drop|miss|low)/i], category: 'inflation', value: 'low', impact: 'medium' },
 
   // ── Employment ──
-  { patterns: [/nonfarm|payroll|nfp.*(beat|strong|rise|surge|up)/i], category: 'employment', value: 'strong', impact: 'high' },
-  { patterns: [/nonfarm|payroll|nfp.*(miss|weak|fall|drop|disappoint)/i], category: 'employment', value: 'weak', impact: 'high' },
+  { patterns: [/(nonfarm|payroll|nfp).*(beat|strong|rise|surge|up)/i], category: 'employment', value: 'strong', impact: 'high' },
+  { patterns: [/(nonfarm|payroll|nfp).*(miss|weak|fall|drop|disappoint)/i], category: 'employment', value: 'weak', impact: 'high' },
   { patterns: [/unemployment.*(low|fall|drop|down)/i], category: 'employment', value: 'strong', impact: 'medium' },
   { patterns: [/unemployment.*(high|rise|up|climb)/i], category: 'employment', value: 'weak', impact: 'medium' },
   { patterns: [/jobless claims.*(rise|up|high|climb)/i], category: 'employment', value: 'weak', impact: 'medium' },
@@ -77,8 +77,8 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/market.*(rally|surge|climb|optimism|rebound|gains|advance|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
   { patterns: [/stock.*(fall|drop|plunge|sell.?off|decline|retreat)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
   { patterns: [/stock.*(rally|surge|climb|gain|rise|advance)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
-  { patterns: [/equities|shares.*(fall|drop|plunge|decline)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
-  { patterns: [/equities|shares.*(rally|surge|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
+  { patterns: [/(equities|shares).*(fall|drop|plunge|decline)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
+  { patterns: [/(equities|shares).*(rally|surge|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
   { patterns: [/wall.?street.*(lower|fall|drop|decline)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
   { patterns: [/wall.?street.*(higher|rise|rally|gain)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'high' },
   { patterns: [/trade.*(war|tension|escalat)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
@@ -87,31 +87,31 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/safe haven|safe-haven/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
 
   // ── Dollar Strength (additional generic patterns) ──
-  { patterns: [/usd|dollar.*(pressure|retreat|slip|soft|ease)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
-  { patterns: [/usd|dollar.*(strength|support|firm|gain|climb)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
-  { patterns: [/pound|sterling|cable.*(gain|rise|rally|strong)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
-  { patterns: [/pound|sterling|cable.*(fall|drop|weak|decline)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
-  { patterns: [/euro|eur.*(gain|rise|rally|strong)/i], category: 'dollar_strength', value: 'weak', impact: 'low' },
-  { patterns: [/euro|eur.*(fall|drop|weak|decline)/i], category: 'dollar_strength', value: 'strong', impact: 'low' },
-  { patterns: [/forex|currency.*(dollar|usd).*(weak|lower|soft)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
-  { patterns: [/forex|currency.*(dollar|usd).*(strong|higher|firm)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
+  { patterns: [/(usd|dollar).*(pressure|retreat|slip|soft|ease)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
+  { patterns: [/(usd|dollar).*(strength|support|firm|gain|climb)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
+  { patterns: [/(pound|sterling|cable).*(gain|rise|rally|strong)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
+  { patterns: [/(pound|sterling|cable).*(fall|drop|weak|decline)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
+  { patterns: [/(euro|eur).*(gain|rise|rally|strong)/i], category: 'dollar_strength', value: 'weak', impact: 'low' },
+  { patterns: [/(euro|eur).*(fall|drop|weak|decline)/i], category: 'dollar_strength', value: 'strong', impact: 'low' },
+  { patterns: [/(forex|currency).*(dollar|usd).*(weak|lower|soft)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
+  { patterns: [/(forex|currency).*(dollar|usd).*(strong|higher|firm)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
 
   // ── Yields (additional) ──
-  { patterns: [/treasuries|bonds.*(sell.?off|yield.*up)/i], category: 'yields', value: 'rising', impact: 'medium' },
-  { patterns: [/treasuries|bonds.*(rally|yield.*down)/i], category: 'yields', value: 'falling', impact: 'medium' },
+  { patterns: [/(treasuries|bonds).*(sell.?off|yield.*up)/i], category: 'yields', value: 'rising', impact: 'medium' },
+  { patterns: [/(treasuries|bonds).*(rally|yield.*down)/i], category: 'yields', value: 'falling', impact: 'medium' },
   { patterns: [/yield.*(curve|spread).*(steepen|widen)/i], category: 'yields', value: 'rising', impact: 'low' },
   { patterns: [/yield.*(curve|spread).*(flatten|narrow)/i], category: 'yields', value: 'falling', impact: 'low' },
 
   // ── Gold-specific ──
   { patterns: [/gold.*(price|demand|buying|safe).*(rise|surge|climb|rally|gain)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
   { patterns: [/gold.*(drop|fall|decline|slide|retreat)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'low' },
-  { patterns: [/xau|gold.*(usd|dollar)/i], category: 'dollar_strength', value: 'weak', impact: 'low' },
+  { patterns: [/(xau|gold).*(usd|dollar)/i], category: 'dollar_strength', value: 'weak', impact: 'low' },
 
   // ── Bitcoin/Crypto specific ──
   { patterns: [/bitcoin.*(surge|rally|climb|gain|rise|bull)/i], category: 'crypto_regulation', value: 'positive', impact: 'medium' },
   { patterns: [/bitcoin.*(drop|crash|fall|decline|bear)/i], category: 'crypto_regulation', value: 'negative', impact: 'medium' },
-  { patterns: [/crypto|digital asset.*(surge|rally|gain|rise)/i], category: 'crypto_regulation', value: 'positive', impact: 'medium' },
-  { patterns: [/crypto|digital asset.*(crash|drop|fall|decline)/i], category: 'crypto_regulation', value: 'negative', impact: 'medium' },
+  { patterns: [/(crypto|digital asset).*(surge|rally|gain|rise)/i], category: 'crypto_regulation', value: 'positive', impact: 'medium' },
+  { patterns: [/(crypto|digital asset).*(crash|drop|fall|decline)/i], category: 'crypto_regulation', value: 'negative', impact: 'medium' },
 
   // ── Geopolitical ──
   { patterns: [/geopolitical.*(tension|risk|escalat|conflict|war)/i], category: 'geopolitical', value: 'tension', impact: 'high' },
@@ -122,8 +122,8 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   // ── Dollar Strength ──
   { patterns: [/dollar.*(surge|rally|strength|climb|up|bullish)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
   { patterns: [/dollar.*(weak|slide|fall|drop|down|retreat)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
-  { patterns: [/dxy|usd index.*(up|high|rise|surge)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
-  { patterns: [/dxy|usd index.*(down|low|fall|drop)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
+  { patterns: [/(dxy|usd index).*(up|high|rise|surge)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
+  { patterns: [/(dxy|usd index).*(down|low|fall|drop)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
   { patterns: [/greenback.*(strong|surge|rally|climb)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
   { patterns: [/greenback.*(weak|slide|fall|drop)/i], category: 'dollar_strength', value: 'weak', impact: 'medium' },
 
@@ -148,12 +148,12 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/regulatory.*(crack.?down|restrict|tighten)/i], category: 'crypto_regulation', value: 'negative', impact: 'medium' },
 
   // ── Nasdaq / Tech specific ──
-  { patterns: [/nasdaq|tech stock|technology.*(rally|surge|climb|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
-  { patterns: [/nasdaq|tech stock|technology.*(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
-  { patterns: [/dow|djia|industrial.*(rally|surge|climb|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
-  { patterns: [/dow|djia|industrial.*(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
-  { patterns: [/s&p|sp500|index.*(record|high|rally|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
-  { patterns: [/s&p|sp500|index.*(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
+  { patterns: [/(nasdaq|tech stock|technology).*(rally|surge|climb|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
+  { patterns: [/(nasdaq|tech stock|technology).*(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
+  { patterns: [/(dow|djia|industrial).*(rally|surge|climb|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
+  { patterns: [/(dow|djia|industrial).*(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
+  { patterns: [/(s&p|sp500|index).*(record|high|rally|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
+  { patterns: [/(s&p|sp500|index).*(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
 
   // ── Earnings ──
   { patterns: [/earnings.*(beat|surge|above|record|strong|positive)/i], category: 'earnings', value: 'positive', impact: 'high' },
@@ -162,8 +162,8 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/profit.*(miss|fall|below|decline|drop)/i], category: 'earnings', value: 'negative', impact: 'medium' },
   { patterns: [/tech.*(earnings|profit|revenue).*(beat|surge|record)/i], category: 'earnings', value: 'positive', impact: 'high' },
   { patterns: [/tech.*(earnings|profit|revenue).*(miss|decline|drop)/i], category: 'earnings', value: 'negative', impact: 'high' },
-  { patterns: [/apple|google|microsoft|amazon|meta|nvidia.*(earnings|profit|revenue).*(beat|surge|growth)/i], category: 'earnings', value: 'positive', impact: 'high' },
-  { patterns: [/apple|google|microsoft|amazon|meta|nvidia.*(miss|weak|decline|drop)/i], category: 'earnings', value: 'negative', impact: 'high' },
+  { patterns: [/(apple|google|microsoft|amazon|meta|nvidia).*(earnings|profit|revenue).*(beat|surge|growth)/i], category: 'earnings', value: 'positive', impact: 'high' },
+  { patterns: [/(apple|google|microsoft|amazon|meta|nvidia).*(miss|weak|decline|drop)/i], category: 'earnings', value: 'negative', impact: 'high' },
 ];
 
 export function classifyHeadline(text: string): SentimentResult[] {

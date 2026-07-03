@@ -9,6 +9,30 @@ import {
 } from './types';
 import { biasRules } from './rules';
 
+const CATEGORY_CAPS: Partial<Record<MacroEvent['category'], number>> = {
+  fed_tone: 40,
+  boe_tone: 40,
+  dollar_strength: 25,
+  yields: 30,
+  inflation: 25,
+  employment: 20,
+  gdp: 20,
+  pmi: 20,
+  retail_sales: 15,
+  risk_sentiment: 30,
+  geopolitical: 35,
+  crypto_regulation: 40,
+  earnings: 25,
+};
+
+const COUNTRY_SENSITIVE_GBP_CATEGORIES = new Set<MacroEvent['category']>([
+  'inflation',
+  'employment',
+  'gdp',
+  'pmi',
+  'retail_sales',
+]);
+
 export const ASSET_NAMES: Record<AssetSymbol, string> = {
   XAUUSD: 'Gold',
   GBPUSD: 'British Pound / US Dollar',
@@ -27,6 +51,39 @@ export const ALL_SYMBOLS: AssetSymbol[] = [
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function normalizeCountry(country?: string): string | undefined {
+  if (!country) return undefined;
+  const upper = country.toUpperCase();
+  if (upper === 'UNITED STATES') return 'US';
+  if (upper === 'UNITED KINGDOM') return 'GB';
+  return upper;
+}
+
+function ruleMatchesEvent(
+  rule: (typeof biasRules)[number],
+  event: MacroEvent,
+  symbol: AssetSymbol
+): boolean {
+  const eventCountry = normalizeCountry(event.country);
+  const ruleCountry = normalizeCountry(rule.country);
+
+  if (ruleCountry) return eventCountry === ruleCountry;
+
+  if (
+    symbol === 'GBPUSD' &&
+    eventCountry &&
+    COUNTRY_SENSITIVE_GBP_CATEGORIES.has(event.category)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function categoryCap(category: MacroEvent['category']): number {
+  return CATEGORY_CAPS[category] ?? 30;
 }
 
 function absPercent(score: number): number {
@@ -90,24 +147,38 @@ export function calculateBias(
   return symbols.map((sym) => {
     let totalScore = 0;
     const scoredEvents: BiasResult['events'] = [];
+    const categoryTotals: Partial<Record<MacroEvent['category'], number>> = {};
 
     for (const event of events) {
       const matchingRules = biasRules.filter(
         (r) =>
           r.symbol === sym &&
           r.eventCategory === event.category &&
-          r.eventValue === event.value
+          r.eventValue === event.value &&
+          ruleMatchesEvent(r, event, sym)
       );
 
       for (const rule of matchingRules) {
-        totalScore += rule.scoreChange;
+        const current = categoryTotals[event.category] ?? 0;
+        const cappedTotal = clamp(
+          current + rule.scoreChange,
+          -categoryCap(event.category),
+          categoryCap(event.category)
+        );
+        const appliedScore = cappedTotal - current;
+
+        if (appliedScore === 0) continue;
+
+        totalScore += appliedScore;
+        categoryTotals[event.category] = cappedTotal;
         scoredEvents.push({
           id: event.id,
           category: event.category,
           title: event.title,
           description: event.description,
           impact: event.impact,
-          scoreChange: rule.scoreChange,
+          scoreChange: appliedScore,
+          country: event.country,
           url: event.url,
           sourceName: event.sourceName,
         });
@@ -132,7 +203,7 @@ export function calculateBias(
       Math.abs(totalScore),
       totalRelevant,
       highImpactCount,
-      agreementRatio
+      confirmationRatio / 100
     );
 
     const signal = getSignal(direction, strength, conviction);

@@ -3,6 +3,20 @@ import { getCached, setCache } from './cache';
 
 const CACHE_KEY = 'market_data';
 const CACHE_TTL = 120_000;
+const DXY_THRESHOLD = 0.20;
+const YIELD_THRESHOLD_PP = 0.03;
+
+export function classifyDxyMove(percentChange: number): 'strong' | 'weak' | null {
+  if (percentChange >= DXY_THRESHOLD) return 'strong';
+  if (percentChange <= -DXY_THRESHOLD) return 'weak';
+  return null;
+}
+
+export function classifyYieldMove(diffPercentagePoints: number): 'rising' | 'falling' | null {
+  if (diffPercentagePoints >= YIELD_THRESHOLD_PP) return 'rising';
+  if (diffPercentagePoints <= -YIELD_THRESHOLD_PP) return 'falling';
+  return null;
+}
 
 export async function fetchMarketData(): Promise<MacroEvent[]> {
   const cached = await getCached<MacroEvent[]>(CACHE_KEY);
@@ -27,16 +41,19 @@ export async function fetchMarketData(): Promise<MacroEvent[]> {
         const prevClose = meta.chartPreviousClose;
         const change = price - prevClose;
         const percentChange = (change / prevClose) * 100;
-        events.push({
-          id: `td-dxy-${Date.now()}`,
-          category: 'dollar_strength',
-          title: `DXY is ${change >= 0 ? 'up' : 'down'} ${Math.abs(percentChange).toFixed(2)}% at ${price.toFixed(2)}`,
-          description: `US Dollar Index moved ${change >= 0 ? 'higher' : 'lower'}. Current: ${price.toFixed(2)}, Previous Close: ${prevClose.toFixed(2)} (${percentChange.toFixed(2)}%)`,
-          timestamp: new Date().toISOString(),
-          impact: 'medium',
-          value: percentChange >= 0 ? 'strong' : 'weak',
-          sourceName: 'yahoo',
-        });
+        const dxyValue = classifyDxyMove(percentChange);
+        if (dxyValue) {
+          events.push({
+            id: `td-dxy-${Date.now()}`,
+            category: 'dollar_strength',
+            title: `DXY is ${change >= 0 ? 'up' : 'down'} ${Math.abs(percentChange).toFixed(2)}% at ${price.toFixed(2)}`,
+            description: `US Dollar Index moved ${change >= 0 ? 'higher' : 'lower'}. Current: ${price.toFixed(2)}, Previous Close: ${prevClose.toFixed(2)} (${percentChange.toFixed(2)}%)`,
+            timestamp: new Date().toISOString(),
+            impact: 'medium',
+            value: dxyValue,
+            sourceName: 'yahoo',
+          });
+        }
       }
     }
   } catch {
@@ -59,16 +76,19 @@ export async function fetchMarketData(): Promise<MacroEvent[]> {
           const prev = parseFloat(data[1].value);
           if (!isNaN(latest) && !isNaN(prev)) {
             const diff = latest - prev;
-            events.push({
-              id: `td-tnx-${Date.now()}`,
-              category: 'yields',
-              title: `US 10Y Yield ${diff >= 0 ? 'rises' : 'falls'} ${Math.abs(diff).toFixed(2)}bps to ${latest.toFixed(2)}%`,
-              description: `US 10-year Treasury yield moved from ${prev.toFixed(2)}% to ${latest.toFixed(2)}%.`,
-              timestamp: new Date().toISOString(),
-              impact: 'medium',
-              value: diff >= 0 ? 'rising' : 'falling',
-              sourceName: 'alphavantage',
-            });
+            const yieldValue = classifyYieldMove(diff);
+            if (yieldValue) {
+              events.push({
+                id: `td-tnx-${Date.now()}`,
+                category: 'yields',
+                title: `US 10Y Yield ${diff >= 0 ? 'rises' : 'falls'} ${(Math.abs(diff) * 100).toFixed(0)}bps to ${latest.toFixed(2)}%`,
+                description: `US 10-year Treasury yield moved from ${prev.toFixed(2)}% to ${latest.toFixed(2)}%.`,
+                timestamp: new Date().toISOString(),
+                impact: 'medium',
+                value: yieldValue,
+                sourceName: 'alphavantage',
+              });
+            }
           }
         }
       }

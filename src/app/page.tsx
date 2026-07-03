@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BiasApiResponse, BiasResult, DataSource, DxyContext, UpcomingEvent } from '@/lib/types';
+import { BiasApiResponse, BiasResult, DataSource, DxyContext, SourceHealth, UpcomingEvent } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
@@ -111,6 +111,34 @@ function NextUpdateTimer({ lastUpdated }: { lastUpdated: string | null }) {
   );
 }
 
+function SourceHealthRow({ sourceHealth }: { sourceHealth: SourceHealth | null }) {
+  if (!sourceHealth) return null;
+
+  const labels: Record<string, string> = {
+    fmp: 'FMP',
+    finnhub: 'Finnhub',
+    market_data: 'Market',
+    rss: 'RSS',
+  };
+
+  const colors = {
+    ok: 'bg-emerald-500',
+    empty: 'bg-amber-500',
+    failed: 'bg-red-500',
+  };
+
+  return (
+    <div className="mt-1 flex items-center justify-end gap-2">
+      {Object.entries(sourceHealth).map(([sourceName, status]) => (
+        <span key={sourceName} className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-zinc-600">
+          <span className={`h-1.5 w-1.5 rounded-full ${colors[status]}`} />
+          {labels[sourceName] ?? sourceName}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const [data, setData] = useState<BiasResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +148,7 @@ export default function Home() {
   const [selected, setSelected] = useState<BiasResult | null>(null);
   const [dxy, setDxy] = useState<DxyContext | undefined>();
   const [nextEvent, setNextEvent] = useState<UpcomingEvent | undefined | null>();
+  const [sourceHealth, setSourceHealth] = useState<SourceHealth | null>(null);
   const mountedRef = useRef(true);
 
   const fetchBias = useCallback(async () => {
@@ -133,6 +162,7 @@ export default function Home() {
         setSource(json.source);
         setDxy(json.dxy);
         setNextEvent(json.nextEvent);
+        setSourceHealth(json.sourceHealth ?? null);
         setError(null);
       }
     } catch (err) {
@@ -191,6 +221,7 @@ export default function Home() {
                   Updated: {new Date(lastUpdated).toLocaleTimeString()}
                 </p>
                 <NextUpdateTimer lastUpdated={lastUpdated} />
+                <SourceHealthRow sourceHealth={sourceHealth} />
               </>
             )}
           </div>

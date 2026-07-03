@@ -1,4 +1,4 @@
-import { MacroEvent, DataSource } from './types';
+import { MacroEvent, DataSource, SourceHealth } from './types';
 import { fetchAllEvents } from './api';
 
 export const baselineEvents: MacroEvent[] = [
@@ -17,12 +17,13 @@ export async function getEvents(): Promise<{
   events: MacroEvent[];
   source: DataSource;
   cachedAt: string;
+  sourceHealth: SourceHealth;
 }> {
   try {
-    const { events: liveEvents, cachedAt } = await fetchAllEvents();
+    const { events: liveEvents, cachedAt, sourceHealth } = await fetchAllEvents();
 
     if (liveEvents.length > 0) {
-      return { events: liveEvents, source: 'live', cachedAt };
+      return { events: liveEvents, source: 'live', cachedAt, sourceHealth };
     }
   } catch {
     // fall through
@@ -33,5 +34,11 @@ export async function getEvents(): Promise<{
     events: baselineEvents.map((e) => ({ ...e, timestamp: cachedAt })),
     source: 'baseline',
     cachedAt,
+    sourceHealth: {
+      fmp: 'failed',
+      finnhub: 'failed',
+      market_data: 'failed',
+      rss: 'failed',
+    },
   };
 }

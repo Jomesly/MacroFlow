@@ -36,6 +36,7 @@ export interface MacroEvent {
   timestamp: string;
   impact: EventImpact;
   value: string;
+  country?: string;
   url?: string;
   sourceName?: string;
 }
@@ -45,7 +46,12 @@ export interface BiasRule {
   eventValue: string;
   symbol: AssetSymbol;
   scoreChange: number;
+  country?: string;
 }
+
+export type SourceStatus = 'ok' | 'empty' | 'failed';
+
+export type SourceHealth = Record<string, SourceStatus>;
 
 export interface ScoredEvent {
   id: string;
@@ -54,6 +60,7 @@ export interface ScoredEvent {
   description: string;
   impact: EventImpact;
   scoreChange: number;
+  country?: string;
   url?: string;
   sourceName?: string;
 }
@@ -106,6 +113,7 @@ export interface BiasApiResponse {
   disclaimer: string;
   dxy?: DxyContext;
   nextEvent?: UpcomingEvent | null;
+  sourceHealth?: SourceHealth;
 }
 
 export interface EventsApiResponse {

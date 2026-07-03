@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEvents } from '@/lib/events';
 import { calculateBias, ALL_SYMBOLS } from '@/lib/engine';
-import { biasRules } from '@/lib/rules';
-import { AssetSymbol, BiasApiResponse, DxyContext, EventCategory, UpcomingEvent } from '@/lib/types';
+import { fetchUpcomingEconomicCalendar } from '@/lib/api/fmp';
+import { AssetSymbol, BiasApiResponse, DxyContext } from '@/lib/types';
 import { getHistory, recordDailySnapshot } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
@@ -23,47 +23,18 @@ function getDxyContext(events: Awaited<ReturnType<typeof getEvents>>['events']):
   return { price, percentChange, status, summary };
 }
 
-function getAffectedSymbols(category: EventCategory, value: string): string[] {
-  const affected = biasRules
-    .filter((r) => r.eventCategory === category && r.eventValue === value)
-    .map((r) => r.symbol);
-  return [...new Set(affected)];
-}
-
-function getNextEvent(events: Awaited<ReturnType<typeof getEvents>>['events']): UpcomingEvent | null {
-  const now = new Date();
-  const upcoming = events
-    .filter((e) => e.impact === 'high' || e.impact === 'medium')
-    .filter((e) => new Date(e.timestamp) > now)
-    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-
-  if (upcoming.length === 0) return null;
-
-  const next = upcoming[0];
-  const affects = getAffectedSymbols(next.category, next.value);
-  const name = next.title.replace(/^[A-Z]{2,3}\s+/, '').replace(/\s*—.*$/, '');
-  const country = next.title.match(/^([A-Z]{2,3})\s+/)?.[1] ?? '';
-
-  return {
-    name,
-    country,
-    date: next.timestamp,
-    impact: next.impact as 'high' | 'medium',
-    affects,
-  };
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbolParam = searchParams.get('symbol')?.toUpperCase() as AssetSymbol | null;
 
   const symbol = symbolParam && ALL_SYMBOLS.includes(symbolParam) ? symbolParam : undefined;
 
-  const { events, source, cachedAt } = await getEvents();
+  const { events, source, cachedAt, sourceHealth } = await getEvents();
   const results = calculateBias(events, symbol);
 
   const dxy = getDxyContext(events);
-  const nextEvent = getNextEvent(events);
+  const upcomingEvents = await fetchUpcomingEconomicCalendar();
+  const nextEvent = upcomingEvents[0] ?? null;
 
   const data = await Promise.all(
     results.map(async (r) => {
@@ -77,6 +48,7 @@ export async function GET(request: NextRequest) {
     data,
     timestamp: cachedAt,
     source,
+    sourceHealth,
     dxy,
     nextEvent,
     disclaimer:

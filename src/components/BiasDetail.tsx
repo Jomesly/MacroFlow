@@ -81,9 +81,9 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
 
   const tradingReadiness =
     data.conviction === 'high' && Math.abs(data.biasScore) > 40
-      ? { label: 'High probability setup', color: 'text-emerald-400' }
+      ? { label: 'Strong macro alignment', color: 'text-emerald-400' }
       : data.conviction === 'medium' && Math.abs(data.biasScore) > 25
-        ? { label: 'Moderate probability — manage risk', color: 'text-amber-400' }
+        ? { label: 'Moderate macro alignment — manage risk', color: 'text-amber-400' }
         : { label: 'Low conviction — wait for clearer signal', color: 'text-zinc-500' };
 
   return (
@@ -121,7 +121,7 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Probability</span>
+                <span className="text-xs text-zinc-500">Macro Alignment</span>
                 <span className={`text-xs font-semibold ${tradingReadiness.color}`}>{tradingReadiness.label}</span>
               </div>
             </div>
@@ -179,14 +179,14 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                     Fundamental bias is <span className="text-emerald-400 font-medium">bullish</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
                     {bullishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
                     {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
-                    {data.conviction === 'high' ? ' This is a high-probability alignment between technical and fundamental analysis.' : ''}
+                    {data.conviction === 'high' ? ' This is a strong alignment between technical and fundamental drivers.' : ''}
                   </p>
                 ) : isBearish ? (
                   <p className="text-xs text-zinc-300 leading-relaxed">
                     Fundamental bias is <span className="text-red-400 font-medium">bearish</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
                     {bearishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
                     {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
-                    {data.conviction === 'high' ? ' This is a high-probability alignment between technical and fundamental analysis.' : ''}
+                    {data.conviction === 'high' ? ' This is a strong alignment between technical and fundamental drivers.' : ''}
                   </p>
                 ) : (
                   <p className="text-xs text-zinc-400 leading-relaxed">
