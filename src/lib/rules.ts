@@ -2,8 +2,8 @@ import { BiasRule } from './types';
 
 export const biasRules: BiasRule[] = [
   // ── XAUUSD (Gold) ──────────────────────────────────────
-  { eventCategory: 'central_bank', eventValue: 'hawkish', symbol: 'XAUUSD', scoreChange: -30 },
-  { eventCategory: 'central_bank', eventValue: 'dovish', symbol: 'XAUUSD', scoreChange: 30 },
+  { eventCategory: 'fed_tone', eventValue: 'hawkish', symbol: 'XAUUSD', scoreChange: -30 },
+  { eventCategory: 'fed_tone', eventValue: 'dovish', symbol: 'XAUUSD', scoreChange: 30 },
   { eventCategory: 'dollar_strength', eventValue: 'strong', symbol: 'XAUUSD', scoreChange: -25 },
   { eventCategory: 'dollar_strength', eventValue: 'weak', symbol: 'XAUUSD', scoreChange: 25 },
   { eventCategory: 'yields', eventValue: 'rising', symbol: 'XAUUSD', scoreChange: -20 },
@@ -24,8 +24,10 @@ export const biasRules: BiasRule[] = [
   { eventCategory: 'pmi', eventValue: 'miss', symbol: 'XAUUSD', scoreChange: 10 },
 
   // ── GBPUSD ─────────────────────────────────────────────
-  { eventCategory: 'central_bank', eventValue: 'hawkish', symbol: 'GBPUSD', scoreChange: -20 },
-  { eventCategory: 'central_bank', eventValue: 'dovish', symbol: 'GBPUSD', scoreChange: 20 },
+  { eventCategory: 'fed_tone', eventValue: 'hawkish', symbol: 'GBPUSD', scoreChange: -15 },
+  { eventCategory: 'fed_tone', eventValue: 'dovish', symbol: 'GBPUSD', scoreChange: 15 },
+  { eventCategory: 'boe_tone', eventValue: 'hawkish', symbol: 'GBPUSD', scoreChange: -30 },
+  { eventCategory: 'boe_tone', eventValue: 'dovish', symbol: 'GBPUSD', scoreChange: 30 },
   { eventCategory: 'dollar_strength', eventValue: 'strong', symbol: 'GBPUSD', scoreChange: -20 },
   { eventCategory: 'dollar_strength', eventValue: 'weak', symbol: 'GBPUSD', scoreChange: 20 },
   { eventCategory: 'inflation', eventValue: 'high', symbol: 'GBPUSD', scoreChange: 15 },
@@ -42,8 +44,8 @@ export const biasRules: BiasRule[] = [
   { eventCategory: 'yields', eventValue: 'falling', symbol: 'GBPUSD', scoreChange: 10 },
 
   // ── US100 (Nasdaq) ─────────────────────────────────────
-  { eventCategory: 'central_bank', eventValue: 'hawkish', symbol: 'US100', scoreChange: -40 },
-  { eventCategory: 'central_bank', eventValue: 'dovish', symbol: 'US100', scoreChange: 40 },
+  { eventCategory: 'fed_tone', eventValue: 'hawkish', symbol: 'US100', scoreChange: -40 },
+  { eventCategory: 'fed_tone', eventValue: 'dovish', symbol: 'US100', scoreChange: 40 },
   { eventCategory: 'dollar_strength', eventValue: 'strong', symbol: 'US100', scoreChange: -10 },
   { eventCategory: 'dollar_strength', eventValue: 'weak', symbol: 'US100', scoreChange: 10 },
   { eventCategory: 'yields', eventValue: 'rising', symbol: 'US100', scoreChange: -30 },
@@ -62,8 +64,8 @@ export const biasRules: BiasRule[] = [
   { eventCategory: 'pmi', eventValue: 'miss', symbol: 'US100', scoreChange: -10 },
 
   // ── DJ30 (Dow Jones) ───────────────────────────────────
-  { eventCategory: 'central_bank', eventValue: 'hawkish', symbol: 'DJ30', scoreChange: -25 },
-  { eventCategory: 'central_bank', eventValue: 'dovish', symbol: 'DJ30', scoreChange: 25 },
+  { eventCategory: 'fed_tone', eventValue: 'hawkish', symbol: 'DJ30', scoreChange: -25 },
+  { eventCategory: 'fed_tone', eventValue: 'dovish', symbol: 'DJ30', scoreChange: 25 },
   { eventCategory: 'dollar_strength', eventValue: 'strong', symbol: 'DJ30', scoreChange: -5 },
   { eventCategory: 'dollar_strength', eventValue: 'weak', symbol: 'DJ30', scoreChange: 5 },
   { eventCategory: 'yields', eventValue: 'rising', symbol: 'DJ30', scoreChange: -15 },
@@ -82,8 +84,8 @@ export const biasRules: BiasRule[] = [
   { eventCategory: 'pmi', eventValue: 'miss', symbol: 'DJ30', scoreChange: -10 },
 
   // ── BTCUSD ─────────────────────────────────────────────
-  { eventCategory: 'central_bank', eventValue: 'hawkish', symbol: 'BTCUSD', scoreChange: -25 },
-  { eventCategory: 'central_bank', eventValue: 'dovish', symbol: 'BTCUSD', scoreChange: 30 },
+  { eventCategory: 'fed_tone', eventValue: 'hawkish', symbol: 'BTCUSD', scoreChange: -25 },
+  { eventCategory: 'fed_tone', eventValue: 'dovish', symbol: 'BTCUSD', scoreChange: 30 },
   { eventCategory: 'dollar_strength', eventValue: 'strong', symbol: 'BTCUSD', scoreChange: -15 },
   { eventCategory: 'dollar_strength', eventValue: 'weak', symbol: 'BTCUSD', scoreChange: 15 },
   { eventCategory: 'risk_sentiment', eventValue: 'risk_on', symbol: 'BTCUSD', scoreChange: 25 },
@@ -92,8 +94,8 @@ export const biasRules: BiasRule[] = [
   { eventCategory: 'crypto_regulation', eventValue: 'negative', symbol: 'BTCUSD', scoreChange: -40 },
   { eventCategory: 'yields', eventValue: 'rising', symbol: 'BTCUSD', scoreChange: -15 },
   { eventCategory: 'yields', eventValue: 'falling', symbol: 'BTCUSD', scoreChange: 15 },
-  { eventCategory: 'inflation', eventValue: 'high', symbol: 'BTCUSD', scoreChange: 10 },
-  { eventCategory: 'inflation', eventValue: 'low', symbol: 'BTCUSD', scoreChange: -10 },
+  { eventCategory: 'inflation', eventValue: 'high', symbol: 'BTCUSD', scoreChange: -10 },
+  { eventCategory: 'inflation', eventValue: 'low', symbol: 'BTCUSD', scoreChange: 10 },
   { eventCategory: 'employment', eventValue: 'strong', symbol: 'BTCUSD', scoreChange: 5 },
   { eventCategory: 'employment', eventValue: 'weak', symbol: 'BTCUSD', scoreChange: -10 },
   { eventCategory: 'gdp', eventValue: 'beat', symbol: 'BTCUSD', scoreChange: 5 },

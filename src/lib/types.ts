@@ -9,7 +9,8 @@ export type Conviction = 'high' | 'medium' | 'low';
 export type TradeSignal = 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_sell';
 
 export type EventCategory =
-  | 'central_bank'
+  | 'fed_tone'
+  | 'boe_tone'
   | 'inflation'
   | 'employment'
   | 'gdp'

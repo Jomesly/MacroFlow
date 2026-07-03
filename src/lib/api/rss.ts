@@ -26,7 +26,7 @@ const FEEDS: FeedConfig[] = [
 
 export async function fetchRssFeeds(): Promise<MacroEvent[]> {
   const cacheKey = 'rss_events';
-  const cached = getCached<MacroEvent[]>(cacheKey);
+  const cached = await getCached<MacroEvent[]>(cacheKey);
   if (cached) return cached;
 
   const allEvents: MacroEvent[] = [];
@@ -44,8 +44,8 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
         const items: MacroEvent[] = [];
         for (const item of parsed.items.slice(0, feed.maxItems)) {
           const text = `${item.title ?? ''} ${item.contentSnippet ?? ''}`;
-          const classified = classifyHeadline(text);
-          if (classified) {
+          const classifiedList = classifyHeadline(text);
+          for (const classified of classifiedList) {
             const signal = `${classified.category}:${classified.value}`;
             if (!seen.has(signal)) {
               seen.add(signal);
@@ -66,6 +66,6 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
     }
   }
 
-  setCache(cacheKey, allEvents, CACHE_TTL);
+  await setCache(cacheKey, allEvents, CACHE_TTL);
   return allEvents;
 }

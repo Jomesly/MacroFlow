@@ -19,7 +19,7 @@ interface FinnhubArticle {
 }
 
 export async function fetchNews(): Promise<MacroEvent[]> {
-  const cached = getCached<MacroEvent[]>(CACHE_KEY);
+  const cached = await getCached<MacroEvent[]>(CACHE_KEY);
   if (cached) return cached;
 
   const apiKey = process.env.FINNHUB_API_KEY;
@@ -39,14 +39,17 @@ export async function fetchNews(): Promise<MacroEvent[]> {
 
     for (const article of data.slice(0, 30)) {
       const text = `${article.headline} ${article.summary}`;
-      const classified = classifyHeadline(text);
-      if (classified && !seen.has(classified.value + classified.category)) {
-        seen.add(classified.value + classified.category);
-        events.push(createEventFromClassification(classified, 'finnhub', article.url));
+      const classifiedList = classifyHeadline(text);
+      for (const classified of classifiedList) {
+        const key = `${classified.category}:${classified.value}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          events.push(createEventFromClassification(classified, 'finnhub', article.url));
+        }
       }
     }
 
-    setCache(CACHE_KEY, events, CACHE_TTL);
+    await setCache(CACHE_KEY, events, CACHE_TTL);
     return events;
   } catch {
     return [];

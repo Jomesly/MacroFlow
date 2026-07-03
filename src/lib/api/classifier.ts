@@ -9,21 +9,25 @@ type SentimentResult = {
 };
 
 const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impact: EventImpact }[] = [
-  // ── Central Bank ──
-  { patterns: [/fed\s*(cut|dovish|ease|lower|pause|hold)/i], category: 'central_bank', value: 'dovish', impact: 'high' },
-  { patterns: [/fed\s*(hike|hawkish|tighten|raise|taper)/i], category: 'central_bank', value: 'hawkish', impact: 'high' },
-  { patterns: [/federal reserve.*(dovish|cut|ease)/i], category: 'central_bank', value: 'dovish', impact: 'high' },
-  { patterns: [/federal reserve.*(hawkish|hike|tighten)/i], category: 'central_bank', value: 'hawkish', impact: 'high' },
-  { patterns: [/bank of england.*(dovish|cut|ease|hold)/i], category: 'central_bank', value: 'dovish', impact: 'high' },
-  { patterns: [/bank of england.*(hawkish|hike|tighten)/i], category: 'central_bank', value: 'hawkish', impact: 'high' },
-  { patterns: [/boe.*(dovish|cut|ease)/i], category: 'central_bank', value: 'dovish', impact: 'medium' },
-  { patterns: [/boe.*(hawkish|hike|tighten)/i], category: 'central_bank', value: 'hawkish', impact: 'medium' },
-  { patterns: [/central bank.*(cut|ease|dovish|lower|hold)/i], category: 'central_bank', value: 'dovish', impact: 'high' },
-  { patterns: [/central bank.*(hike|raise|hawkish|tighten)/i], category: 'central_bank', value: 'hawkish', impact: 'high' },
-  { patterns: [/rate (cut|ease|lower|dovish|hold)/i], category: 'central_bank', value: 'dovish', impact: 'high' },
-  { patterns: [/rate (hike|rise|raise|hawkish|tighten)/i], category: 'central_bank', value: 'hawkish', impact: 'high' },
-  { patterns: [/interest rate.*(cut|lower|ease|hold)/i], category: 'central_bank', value: 'dovish', impact: 'high' },
-  { patterns: [/interest rate.*(hike|rise|raise|tighten)/i], category: 'central_bank', value: 'hawkish', impact: 'high' },
+  // ── Fed Tone ──
+  { patterns: [/fed\s*(cut|dovish|ease|lower|pause|hold)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [/fed\s*(hike|hawkish|tighten|raise|taper)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [/federal reserve.*(dovish|cut|ease)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [/federal reserve.*(hawkish|hike|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+
+  // ── BoE Tone ──
+  { patterns: [/bank of england.*(dovish|cut|ease|hold)/i], category: 'boe_tone', value: 'dovish', impact: 'high' },
+  { patterns: [/bank of england.*(hawkish|hike|tighten)/i], category: 'boe_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [/boe.*(dovish|cut|ease)/i], category: 'boe_tone', value: 'dovish', impact: 'medium' },
+  { patterns: [/boe.*(hawkish|hike|tighten)/i], category: 'boe_tone', value: 'hawkish', impact: 'medium' },
+
+  // ── Generic Central Bank (defaults to Fed for US-centric assets) ──
+  { patterns: [/central bank.*(cut|ease|dovish|lower|hold)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [/central bank.*(hike|raise|hawkish|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [/rate (cut|ease|lower|dovish|hold)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [/rate (hike|rise|raise|hawkish|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [/interest rate.*(cut|lower|ease|hold)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [/interest rate.*(hike|rise|raise|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
 
   // ── Inflation ──
   { patterns: [/cpi.*(high|hot|beat|rise|up|surge|climb)/i], category: 'inflation', value: 'high', impact: 'high' },
@@ -162,21 +166,27 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/apple|google|microsoft|amazon|meta|nvidia.*(miss|weak|decline|drop)/i], category: 'earnings', value: 'negative', impact: 'high' },
 ];
 
-export function classifyHeadline(text: string): SentimentResult | null {
+export function classifyHeadline(text: string): SentimentResult[] {
+  const seen = new Set<string>();
+  const results: SentimentResult[] = [];
   for (const rule of RULES) {
     for (const pattern of rule.patterns) {
       if (pattern.test(text)) {
-        return {
-          category: rule.category,
-          value: rule.value,
-          impact: rule.impact,
-          title: text.length > 80 ? text.slice(0, 77) + '...' : text,
-          description: text,
-        };
+        const key = `${rule.category}:${rule.value}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          results.push({
+            category: rule.category,
+            value: rule.value,
+            impact: rule.impact,
+            title: text.length > 80 ? text.slice(0, 77) + '...' : text,
+            description: text,
+          });
+        }
       }
     }
   }
-  return null;
+  return results;
 }
 
 export function createEventFromClassification(
@@ -203,9 +213,12 @@ export function classifyEconomicEvent(
   actual: number | null,
   forecast: number | null
 ): { category: EventCategory; value: string } | null {
+  // Skip events with no actual data — they haven't occurred yet
+  if (actual === null) return null;
+
   const name = eventName.toLowerCase();
 
-  const isBeat = actual !== null && forecast !== null ? actual >= forecast : null;
+  const isBeat = forecast !== null ? actual >= forecast : null;
 
   if (/cpi|inflation|core/i.test(name)) {
     return { category: 'inflation', value: isBeat === true ? 'high' : isBeat === false ? 'low' : 'high' };
@@ -227,12 +240,12 @@ export function classifyEconomicEvent(
   }
   if (/fed|interest rate|central bank/i.test(name)) {
     if (/cut|lower|ease|dovish|hold/i.test(name)) {
-      return { category: 'central_bank', value: 'dovish' };
+      return { category: 'fed_tone', value: 'dovish' };
     }
     if (/hike|raise|tighten|hawkish/i.test(name)) {
-      return { category: 'central_bank', value: 'hawkish' };
+      return { category: 'fed_tone', value: 'hawkish' };
     }
-    return { category: 'central_bank', value: 'dovish' };
+    return { category: 'fed_tone', value: 'dovish' };
   }
 
   return null;

@@ -9,7 +9,7 @@ const CACHE_KEY = 'merged_events';
 const CACHE_TTL = 900_000;
 
 export async function fetchAllEvents(): Promise<MacroEvent[]> {
-  const cached = getCached<MacroEvent[]>(CACHE_KEY);
+  const cached = await getCached<MacroEvent[]>(CACHE_KEY);
   if (cached) return cached;
 
   const results = await Promise.allSettled([
@@ -37,6 +37,6 @@ export async function fetchAllEvents(): Promise<MacroEvent[]> {
     return [];
   }
 
-  setCache(CACHE_KEY, allEvents, CACHE_TTL);
+  await setCache(CACHE_KEY, allEvents, CACHE_TTL);
   return allEvents;
 }

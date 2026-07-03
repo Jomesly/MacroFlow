@@ -17,7 +17,7 @@ interface FmpEconomicEvent {
 }
 
 export async function fetchEconomicCalendar(): Promise<MacroEvent[]> {
-  const cached = getCached<MacroEvent[]>(CACHE_KEY);
+  const cached = await getCached<MacroEvent[]>(CACHE_KEY);
   if (cached) return cached;
 
   const apiKey = process.env.FMP_API_KEY;
@@ -60,7 +60,7 @@ export async function fetchEconomicCalendar(): Promise<MacroEvent[]> {
       }
     }
 
-    setCache(CACHE_KEY, events, CACHE_TTL);
+    await setCache(CACHE_KEY, events, CACHE_TTL);
     return events;
   } catch {
     return [];

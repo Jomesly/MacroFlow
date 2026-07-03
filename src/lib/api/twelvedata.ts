@@ -5,7 +5,7 @@ const CACHE_KEY = 'market_data';
 const CACHE_TTL = 120_000;
 
 export async function fetchMarketData(): Promise<MacroEvent[]> {
-  const cached = getCached<MacroEvent[]>(CACHE_KEY);
+  const cached = await getCached<MacroEvent[]>(CACHE_KEY);
   if (cached) return cached;
 
   const events: MacroEvent[] = [];
@@ -77,6 +77,6 @@ export async function fetchMarketData(): Promise<MacroEvent[]> {
     // non-critical
   }
 
-  setCache(CACHE_KEY, events, CACHE_TTL);
+  await setCache(CACHE_KEY, events, CACHE_TTL);
   return events;
 }
