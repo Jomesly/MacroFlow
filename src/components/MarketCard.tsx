@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { BiasResult } from '@/lib/types';
+import { marketIsOpen } from '@/lib/marketIsOpen';
 
-const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string }> = {
-  bullish: { text: 'text-emerald-400', bg: 'bg-emerald-950/30', border: 'border-emerald-800/30' },
-  bearish: { text: 'text-red-400', bg: 'bg-red-950/30', border: 'border-red-800/30' },
-  neutral: { text: 'text-zinc-400', bg: 'bg-zinc-800/30', border: 'border-zinc-700/30' },
+const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string; borderAccent: string }> = {
+  bullish: { text: 'text-emerald-400', bg: 'bg-zinc-900', border: 'border-zinc-800', borderAccent: 'border-t-emerald-500' },
+  bearish: { text: 'text-red-400', bg: 'bg-zinc-900', border: 'border-zinc-800', borderAccent: 'border-t-red-500' },
+  neutral: { text: 'text-zinc-400', bg: 'bg-zinc-900', border: 'border-zinc-800', borderAccent: 'border-t-zinc-700' },
 };
 
 const SIGNAL_COLORS: Record<string, string> = {
@@ -43,12 +44,6 @@ interface MarketCardProps {
   onClick: () => void;
 }
 
-function marketIsOpen(symbol: string): boolean {
-  if (symbol === 'BTCUSD') return true;
-  const day = new Date().getDay();
-  return day !== 0 && day !== 6;
-}
-
 export default function MarketCard({ data, onClick }: MarketCardProps) {
   const colors = DIRECTION_COLORS[data.direction] || DIRECTION_COLORS.neutral;
   const open = marketIsOpen(data.symbol);
@@ -75,7 +70,7 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
 
   return (
     <div className="relative flex flex-col gap-1.5 h-full">
-      <div className={`rounded-xl border ${colors.border} ${colors.bg} flex flex-col flex-1`}>
+      <div className={`rounded-xl border ${colors.border} ${colors.borderAccent} border-t-4 ${colors.bg} flex flex-col flex-1`}>
         <button
           onClick={onClick}
           className={`w-full p-4 flex-1 transition-all text-left cursor-pointer
@@ -88,10 +83,6 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
                 <h3 className="text-lg font-bold leading-none text-white group-hover:text-white transition-colors">
                   {data.symbol}
                 </h3>
-                <span className={`flex items-center gap-1 text-[9px] font-medium ${open ? 'text-emerald-500' : 'text-amber-500'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${open ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                  {open ? 'Open' : 'Closed'}
-                </span>
               </div>
               <p className="text-xs text-zinc-500 mt-1 leading-none">{data.name}</p>
             </div>
@@ -122,7 +113,7 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
 
           <div className="flex items-center justify-between pt-2.5 border-t border-zinc-800/50 mt-2.5">
             <span className="text-[10px] text-zinc-600">
-              {new Date(data.lastUpdated).toLocaleTimeString()}
+              {new Date(data.lastUpdated).toLocaleTimeString()} · {open ? 'Market Open' : 'Market Closed'}
             </span>
             <span className="text-[10px] text-blue-400 transition-all duration-200 group-hover:text-blue-300 group-hover:translate-x-0.5">
               Click for details →
