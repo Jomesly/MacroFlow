@@ -1,25 +1,12 @@
 import { MacroEvent } from '../types';
 import { getCached, setCache } from './cache';
 
-const BASE_URL = 'https://api.twelvedata.com';
-const CACHE_KEY = 'twelvedata_quotes';
+const CACHE_KEY = 'market_data';
 const CACHE_TTL = 120_000;
-
-interface TwelveDataQuote {
-  symbol: string;
-  name: string;
-  price: string;
-  change: string;
-  percent_change: string;
-  previous_close: string;
-}
 
 export async function fetchMarketData(): Promise<MacroEvent[]> {
   const cached = getCached<MacroEvent[]>(CACHE_KEY);
   if (cached) return cached;
-
-  const apiKey = process.env.TWELVE_DATA_API_KEY;
-  if (!apiKey) return [];
 
   const events: MacroEvent[] = [];
 
