@@ -32,17 +32,11 @@ function MiniBar({ score }: { score: number }) {
   );
 }
 
-function getConfidenceColor(ratio: number): string {
-  if (ratio >= 0.6) return 'text-emerald-400';
-  if (ratio >= 0.3) return 'text-amber-400';
-  return 'text-red-400';
-}
-
-function getConfidenceLevel(ratio: number): string {
-  if (ratio >= 0.6) return 'High';
-  if (ratio >= 0.3) return 'Medium';
-  return 'Low';
-}
+const CONVICTION_STYLES: Record<string, string> = {
+  high: 'bg-emerald-900/40 text-emerald-400',
+  medium: 'bg-amber-900/40 text-amber-400',
+  low: 'bg-zinc-800/60 text-zinc-500',
+};
 
 interface MarketCardProps {
   data: BiasResult;
@@ -53,10 +47,6 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
   const colors = DIRECTION_COLORS[data.direction] || DIRECTION_COLORS.neutral;
   const [flipInfo, setFlipInfo] = useState<{ from: string; to: string; trigger: string } | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
-
-  const ratio = data.totalPossibleSignals > 0 ? data.confidenceCount / data.totalPossibleSignals : 0;
-  const confidenceColor = getConfidenceColor(ratio);
-  const confidenceLevel = getConfidenceLevel(ratio);
 
   useEffect(() => {
     const key = `mf-direction-${data.symbol}`;
@@ -104,36 +94,17 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
           </div>
 
           <div className="mb-2">
-            <div className="flex items-baseline justify-between mb-1.5">
-              <span className="text-[11px] text-zinc-500">Bias</span>
-              <span className={`text-xs font-semibold leading-none ${colors.text}`}>
-                {data.dailyLabel}
-              </span>
-            </div>
+            <span className="text-[11px] text-zinc-500 block mb-1.5">Bias</span>
             <MiniBar score={data.biasScore} />
           </div>
 
-          <div className="mb-2 flex items-center gap-2">
-            <span className={`text-[10px] font-semibold ${confidenceColor}`}>
-              Confidence: {confidenceLevel}
+          <div className="mb-2 flex items-center gap-2 min-h-[20px]">
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${CONVICTION_STYLES[data.conviction]}`}>
+              {data.conviction.toUpperCase()} CONVICTION
             </span>
             <span className="text-[10px] text-zinc-600">
-              {data.confidenceCount} of {data.totalPossibleSignals} signals
+              {data.eventCount} events · {data.confirmationRatio}% agree
             </span>
-          </div>
-
-          <div className="mb-2 min-h-[20px]">
-            {data.conviction !== 'low' && data.eventCount > 0 && (
-              <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                  data.conviction === 'high' ? 'bg-emerald-900/40 text-emerald-400' : 'bg-amber-900/40 text-amber-400'
-                }`}>
-                  {data.conviction.toUpperCase()} conviction
-                </span>
-                <span className="text-[10px] text-zinc-600">{data.eventCount} events</span>
-                <span className="text-[10px] text-zinc-600">{data.confirmationRatio}% agree</span>
-              </div>
-            )}
           </div>
 
           <div className="flex items-center justify-between pt-2.5 border-t border-zinc-800/50 mt-2.5">

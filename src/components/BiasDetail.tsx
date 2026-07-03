@@ -120,9 +120,13 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                   {data.conviction.toUpperCase()}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-zinc-500">Macro Alignment</span>
                 <span className={`text-xs font-semibold ${tradingReadiness.color}`}>{tradingReadiness.label}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">Signal Coverage</span>
+                <span className="text-xs font-semibold text-zinc-300">{data.confidenceCount} / {data.totalPossibleSignals} possible signals</span>
               </div>
             </div>
 
