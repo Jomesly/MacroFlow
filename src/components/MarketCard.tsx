@@ -77,36 +77,8 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
 
   return (
     <div className="relative h-full">
-      {flipInfo && (
-        <div className={`absolute -top-2 left-0 right-0 z-10 mx-1 rounded-lg border-2 px-3 py-2 animate-pulse ${
-          flipInfo.to === 'bullish' ? 'border-emerald-500/60 bg-emerald-950/90' : 'border-red-500/60 bg-red-950/90'
-        }`}>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M13 2L4 14h6v8l7-12h-6z" />
-                </svg>
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                  flipInfo.to === 'bullish' ? 'text-emerald-300' : 'text-red-300'
-                }`}>
-                  Bias Flipped
-                </span>
-              </div>
-              <p className="text-[10px] text-zinc-300">
-                {flipInfo.from.charAt(0).toUpperCase() + flipInfo.from.slice(1)} → {flipInfo.to.charAt(0).toUpperCase() + flipInfo.to.slice(1)}
-              </p>
-              <p className="text-[9px] text-zinc-500 mt-0.5 leading-tight truncate">
-                Triggered by: {flipInfo.trigger.slice(0, 60)}...
-              </p>
-            </div>
-            <button onClick={dismissFlip} className="text-zinc-500 hover:text-zinc-300 shrink-0 text-xs leading-none mt-0.5">✕</button>
-          </div>
-        </div>
-      )}
-
       <div
-        className={`rounded-xl border ${colors.border} ${colors.bg} flex flex-col h-full ${flipInfo ? 'ring-2 ring-amber-400/50' : ''}`}
+        className={`rounded-xl border ${colors.border} ${colors.bg} flex flex-col h-full`}
       >
         <button
           onClick={onClick}
@@ -174,6 +146,32 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
           </span>
         </div>
       </button>
+
+      {flipInfo && (
+        <div className={`border-t ${flipInfo.to === 'bullish' ? 'border-emerald-800/30 bg-emerald-950/50' : 'border-red-800/30 bg-red-950/50'} px-4 py-2.5`}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M13 2L4 14h6v8l7-12h-6z" />
+                </svg>
+                <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                  flipInfo.to === 'bullish' ? 'text-emerald-300' : 'text-red-300'
+                }`}>
+                  Bias Flipped
+                </span>
+                <span className="text-[9px] text-zinc-500">
+                  {flipInfo.from.charAt(0).toUpperCase() + flipInfo.from.slice(1)} → {flipInfo.to.charAt(0).toUpperCase() + flipInfo.to.slice(1)}
+                </span>
+              </div>
+              <p className="text-[9px] text-zinc-600 leading-tight truncate">
+                {flipInfo.trigger.slice(0, 70)}
+              </p>
+            </div>
+            <button onClick={dismissFlip} className="text-zinc-600 hover:text-zinc-300 shrink-0 text-xs leading-none mt-0.5">✕</button>
+          </div>
+        </div>
+      )}
 
       {data.history.length > 0 && (
         <div className="border-t border-zinc-800/50">
