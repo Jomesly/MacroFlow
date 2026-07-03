@@ -14,8 +14,9 @@ interface CachedEvents {
 }
 
 export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt: string }> {
-  const cached = await getCached<CachedEvents>(CACHE_KEY);
-  if (cached) return cached;
+  const cached = await getCached<unknown>(CACHE_KEY);
+  const isValid = cached !== null && typeof cached === 'object' && !Array.isArray(cached) && 'events' in (cached as any) && 'cachedAt' in (cached as any);
+  if (isValid) return cached as CachedEvents;
 
   const results = await Promise.allSettled([
     fetchEconomicCalendar(),
