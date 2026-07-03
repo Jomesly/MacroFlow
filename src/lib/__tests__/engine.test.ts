@@ -70,4 +70,35 @@ describe('calculateBias', () => {
 
     expect(result.biasScore).toBe(30);
   });
+
+  it('ignores non-US macro events for US100 score', () => {
+    const [gbResult] = calculateBias([
+      event({ category: 'gdp', value: 'miss', country: 'GB', title: 'UK GDP miss' }),
+    ], 'US100');
+    expect(gbResult.biasScore).toBe(0);
+
+    const [usResult] = calculateBias([
+      event({ category: 'gdp', value: 'miss', country: 'US', title: 'US GDP miss' }),
+    ], 'US100');
+    expect(usResult.biasScore).toBe(-20);
+  });
+
+  it('ignores non-US macro events for DJ30 score', () => {
+    const [gbResult] = calculateBias([
+      event({ category: 'gdp', value: 'beat', country: 'GB', title: 'UK GDP beat' }),
+    ], 'DJ30');
+    expect(gbResult.biasScore).toBe(0);
+
+    const [usResult] = calculateBias([
+      event({ category: 'gdp', value: 'beat', country: 'US', title: 'US GDP beat' }),
+    ], 'DJ30');
+    expect(usResult.biasScore).toBe(15);
+  });
+
+  it('still allows country-free events for US100', () => {
+    const [result] = calculateBias([
+      event({ category: 'fed_tone', value: 'dovish', country: undefined, title: 'Fed dovish' }),
+    ], 'US100');
+    expect(result.biasScore).toBe(40);
+  });
 });

@@ -25,13 +25,18 @@ const CATEGORY_CAPS: Partial<Record<MacroEvent['category'], number>> = {
   earnings: 25,
 };
 
-const COUNTRY_SENSITIVE_GBP_CATEGORIES = new Set<MacroEvent['category']>([
+const COUNTRY_SENSITIVE_CATEGORIES = new Set<MacroEvent['category']>([
   'inflation',
   'employment',
   'gdp',
   'pmi',
   'retail_sales',
 ]);
+
+const COUNTRY_HOME_SYMBOLS: Partial<Record<AssetSymbol, string>> = {
+  US100: 'US',
+  DJ30: 'US',
+};
 
 export const ASSET_NAMES: Record<AssetSymbol, string> = {
   XAUUSD: 'Gold',
@@ -74,7 +79,17 @@ function ruleMatchesEvent(
   if (
     symbol === 'GBPUSD' &&
     eventCountry &&
-    COUNTRY_SENSITIVE_GBP_CATEGORIES.has(event.category)
+    COUNTRY_SENSITIVE_CATEGORIES.has(event.category)
+  ) {
+    return false;
+  }
+
+  const homeCountry = COUNTRY_HOME_SYMBOLS[symbol];
+  if (
+    homeCountry &&
+    eventCountry &&
+    COUNTRY_SENSITIVE_CATEGORIES.has(event.category) &&
+    eventCountry !== homeCountry
   ) {
     return false;
   }
