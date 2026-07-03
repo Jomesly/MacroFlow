@@ -1,0 +1,389 @@
+[
+  {
+    "id": "synth-ism-services-pmi-2026-06-03",
+    "event": "ISM Services PMI",
+    "country": "US",
+    "date": "2026-06-03T23:34:32.210Z",
+    "actual": 51.84,
+    "forecast": 53.18,
+    "previous": null
+  },
+  {
+    "id": "synth-nonfarm-payrolls-2026-06-04",
+    "event": "Nonfarm Payrolls",
+    "country": "US",
+    "date": "2026-06-04T23:34:32.210Z",
+    "actual": 166.14,
+    "forecast": 191.78,
+    "previous": null
+  },
+  {
+    "id": "synth-unemployment-rate-2026-06-04",
+    "event": "Unemployment Rate",
+    "country": "US",
+    "date": "2026-06-04T23:34:32.210Z",
+    "actual": 4.32,
+    "forecast": 4.19,
+    "previous": null
+  },
+  {
+    "id": "synth-ism-services-pmi-2026-06-04",
+    "event": "ISM Services PMI",
+    "country": "US",
+    "date": "2026-06-04T23:34:32.210Z",
+    "actual": 54.79,
+    "forecast": 55.67,
+    "previous": null
+  },
+  {
+    "id": "synth-boe-interest-rate-decision-2026-06-04",
+    "event": "BoE Interest Rate Decision",
+    "country": "GB",
+    "date": "2026-06-04T23:34:32.210Z",
+    "actual": 5.38,
+    "forecast": 5.24,
+    "previous": null
+  },
+  {
+    "id": "synth-boe-interest-rate-decision-2026-06-05",
+    "event": "BoE Interest Rate Decision",
+    "country": "GB",
+    "date": "2026-06-05T23:34:32.210Z",
+    "actual": 5.43,
+    "forecast": 5.34,
+    "previous": null
+  },
+  {
+    "id": "synth-boe-interest-rate-decision-2026-06-06",
+    "event": "BoE Interest Rate Decision",
+    "country": "GB",
+    "date": "2026-06-06T23:34:32.210Z",
+    "actual": 5.41,
+    "forecast": 5.18,
+    "previous": null
+  },
+  {
+    "id": "synth-boe-interest-rate-decision-2026-06-07",
+    "event": "BoE Interest Rate Decision",
+    "country": "GB",
+    "date": "2026-06-07T23:34:32.210Z",
+    "actual": 4.3,
+    "forecast": 4.47,
+    "previous": null
+  },
+  {
+    "id": "synth-cpi-2026-06-09",
+    "event": "CPI",
+    "country": "US",
+    "date": "2026-06-09T23:34:32.210Z",
+    "actual": 3.62,
+    "forecast": 3.49,
+    "previous": null
+  },
+  {
+    "id": "synth-core-cpi-2026-06-09",
+    "event": "Core CPI",
+    "country": "US",
+    "date": "2026-06-09T23:34:32.210Z",
+    "actual": 3.06,
+    "forecast": 2.91,
+    "previous": null
+  },
+  {
+    "id": "synth-cpi-2026-06-10",
+    "event": "CPI",
+    "country": "US",
+    "date": "2026-06-10T23:34:32.210Z",
+    "actual": 3.34,
+    "forecast": 3.18,
+    "previous": null
+  },
+  {
+    "id": "synth-core-cpi-2026-06-10",
+    "event": "Core CPI",
+    "country": "US",
+    "date": "2026-06-10T23:34:32.210Z",
+    "actual": 2.29,
+    "forecast": 2.29,
+    "previous": null
+  },
+  {
+    "id": "synth-cpi-2026-06-11",
+    "event": "CPI",
+    "country": "US",
+    "date": "2026-06-11T23:34:32.210Z",
+    "actual": 2.72,
+    "forecast": 2.68,
+    "previous": null
+  },
+  {
+    "id": "synth-core-cpi-2026-06-11",
+    "event": "Core CPI",
+    "country": "US",
+    "date": "2026-06-11T23:34:32.210Z",
+    "actual": 2.16,
+    "forecast": 2.34,
+    "previous": null
+  },
+  {
+    "id": "synth-nonfarm-payrolls-2026-06-11",
+    "event": "Nonfarm Payrolls",
+    "country": "US",
+    "date": "2026-06-11T23:34:32.210Z",
+    "actual": 188.93,
+    "forecast": 227.41,
+    "previous": null
+  },
+  {
+    "id": "synth-unemployment-rate-2026-06-11",
+    "event": "Unemployment Rate",
+    "country": "US",
+    "date": "2026-06-11T23:34:32.210Z",
+    "actual": 4.24,
+    "forecast": 4.08,
+    "previous": null
+  },
+  {
+    "id": "synth-cpi-2026-06-12",
+    "event": "CPI",
+    "country": "US",
+    "date": "2026-06-12T23:34:32.210Z",
+    "actual": 2.42,
+    "forecast": 2.57,
+    "previous": null
+  },
+  {
+    "id": "synth-core-cpi-2026-06-12",
+    "event": "Core CPI",
+    "country": "US",
+    "date": "2026-06-12T23:34:32.210Z",
+    "actual": 2.75,
+    "forecast": 2.61,
+    "previous": null
+  },
+  {
+    "id": "synth-retail-sales-2026-06-13",
+    "event": "Retail Sales",
+    "country": "US",
+    "date": "2026-06-13T23:34:32.210Z",
+    "actual": 0.23,
+    "forecast": 0.03,
+    "previous": null
+  },
+  {
+    "id": "synth-retail-sales-2026-06-14",
+    "event": "Retail Sales",
+    "country": "US",
+    "date": "2026-06-14T23:34:32.210Z",
+    "actual": 0.71,
+    "forecast": 0.7,
+    "previous": null
+  },
+  {
+    "id": "synth-retail-sales-2026-06-15",
+    "event": "Retail Sales",
+    "country": "US",
+    "date": "2026-06-15T23:34:32.210Z",
+    "actual": 0.98,
+    "forecast": 0.81,
+    "previous": null
+  },
+  {
+    "id": "synth-retail-sales-2026-06-16",
+    "event": "Retail Sales",
+    "country": "US",
+    "date": "2026-06-16T23:34:32.210Z",
+    "actual": 0.54,
+    "forecast": 0.58,
+    "previous": null
+  },
+  {
+    "id": "synth-cpi-2026-06-17",
+    "event": "CPI",
+    "country": "GB",
+    "date": "2026-06-17T23:34:32.210Z",
+    "actual": 1.9,
+    "forecast": 2.08,
+    "previous": null
+  },
+  {
+    "id": "synth-cpi-2026-06-18",
+    "event": "CPI",
+    "country": "GB",
+    "date": "2026-06-18T23:34:32.210Z",
+    "actual": 2.28,
+    "forecast": 2.51,
+    "previous": null
+  },
+  {
+    "id": "synth-cpi-2026-06-19",
+    "event": "CPI",
+    "country": "GB",
+    "date": "2026-06-19T23:34:32.210Z",
+    "actual": 3.4,
+    "forecast": 3.31,
+    "previous": null
+  },
+  {
+    "id": "synth-cpi-2026-06-20",
+    "event": "CPI",
+    "country": "GB",
+    "date": "2026-06-20T23:34:32.210Z",
+    "actual": 3.95,
+    "forecast": 3.92,
+    "previous": null
+  },
+  {
+    "id": "synth-gdp-2026-06-24",
+    "event": "GDP",
+    "country": "US",
+    "date": "2026-06-24T23:34:32.210Z",
+    "actual": 2.58,
+    "forecast": 2.09,
+    "previous": null
+  },
+  {
+    "id": "synth-gdp-2026-06-25",
+    "event": "GDP",
+    "country": "US",
+    "date": "2026-06-25T23:34:32.210Z",
+    "actual": 2.57,
+    "forecast": 2.56,
+    "previous": null
+  },
+  {
+    "id": "synth-gdp-2026-06-26",
+    "event": "GDP",
+    "country": "US",
+    "date": "2026-06-26T23:34:32.210Z",
+    "actual": 1.49,
+    "forecast": 1.71,
+    "previous": null
+  },
+  {
+    "id": "synth-gdp-2026-06-27",
+    "event": "GDP",
+    "country": "US",
+    "date": "2026-06-27T23:34:32.210Z",
+    "actual": 2.92,
+    "forecast": 2.97,
+    "previous": null
+  },
+  {
+    "id": "synth-fed-interest-rate-decision-2026-06-27",
+    "event": "Fed Interest Rate Decision",
+    "country": "US",
+    "date": "2026-06-27T23:34:32.210Z",
+    "actual": 4.48,
+    "forecast": 4.69,
+    "previous": null
+  },
+  {
+    "id": "synth-gdp-2026-06-28",
+    "event": "GDP",
+    "country": "US",
+    "date": "2026-06-28T23:34:32.210Z",
+    "actual": 2.07,
+    "forecast": 1.88,
+    "previous": null
+  },
+  {
+    "id": "synth-fed-interest-rate-decision-2026-06-28",
+    "event": "Fed Interest Rate Decision",
+    "country": "US",
+    "date": "2026-06-28T23:34:32.210Z",
+    "actual": 3.76,
+    "forecast": 4,
+    "previous": null
+  },
+  {
+    "id": "synth-gdp-2026-06-29",
+    "event": "GDP",
+    "country": "US",
+    "date": "2026-06-29T23:34:32.210Z",
+    "actual": 2.75,
+    "forecast": 2.55,
+    "previous": null
+  },
+  {
+    "id": "synth-fed-interest-rate-decision-2026-06-29",
+    "event": "Fed Interest Rate Decision",
+    "country": "US",
+    "date": "2026-06-29T23:34:32.210Z",
+    "actual": 4.02,
+    "forecast": 4.23,
+    "previous": null
+  },
+  {
+    "id": "synth-ism-manufacturing-pmi-2026-06-30",
+    "event": "ISM Manufacturing PMI",
+    "country": "US",
+    "date": "2026-06-30T23:34:32.210Z",
+    "actual": 51.47,
+    "forecast": 51.14,
+    "previous": null
+  },
+  {
+    "id": "synth-fed-interest-rate-decision-2026-06-30",
+    "event": "Fed Interest Rate Decision",
+    "country": "US",
+    "date": "2026-06-30T23:34:32.210Z",
+    "actual": 5.27,
+    "forecast": 5.12,
+    "previous": null
+  },
+  {
+    "id": "synth-ism-manufacturing-pmi-2026-07-01",
+    "event": "ISM Manufacturing PMI",
+    "country": "US",
+    "date": "2026-07-01T23:34:32.210Z",
+    "actual": 53.41,
+    "forecast": 52.61,
+    "previous": null
+  },
+  {
+    "id": "synth-nonfarm-payrolls-2026-07-02",
+    "event": "Nonfarm Payrolls",
+    "country": "US",
+    "date": "2026-07-02T23:34:32.210Z",
+    "actual": 248.59,
+    "forecast": 198.83,
+    "previous": null
+  },
+  {
+    "id": "synth-unemployment-rate-2026-07-02",
+    "event": "Unemployment Rate",
+    "country": "US",
+    "date": "2026-07-02T23:34:32.210Z",
+    "actual": 3.45,
+    "forecast": 3.57,
+    "previous": null
+  },
+  {
+    "id": "synth-ism-manufacturing-pmi-2026-07-02",
+    "event": "ISM Manufacturing PMI",
+    "country": "US",
+    "date": "2026-07-02T23:34:32.210Z",
+    "actual": 55.49,
+    "forecast": 53.59,
+    "previous": null
+  },
+  {
+    "id": "synth-ism-services-pmi-2026-07-02",
+    "event": "ISM Services PMI",
+    "country": "US",
+    "date": "2026-07-02T23:34:32.210Z",
+    "actual": 57.73,
+    "forecast": 57.45,
+    "previous": null
+  },
+  {
+    "id": "synth-ism-services-pmi-2026-07-03",
+    "event": "ISM Services PMI",
+    "country": "US",
+    "date": "2026-07-03T23:34:32.210Z",
+    "actual": 49.29,
+    "forecast": 50.4,
+    "previous": null
+  }
+]

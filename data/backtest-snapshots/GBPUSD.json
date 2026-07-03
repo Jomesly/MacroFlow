@@ -1,0 +1,822 @@
+[
+  {
+    "timestamp": "2026-06-03T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 10,
+    "biasPercent": 10,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 1,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 10
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 70,
+    "biasPercent": 70,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 5,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 30
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 70,
+    "biasPercent": 70,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 5,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 30
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 70,
+    "biasPercent": 70,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 5,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 30
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 70,
+    "biasPercent": 70,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 5,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 30
+    }
+  },
+  {
+    "timestamp": "2026-06-05T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 80,
+    "biasPercent": 80,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 6,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-06T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 80,
+    "biasPercent": 80,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 6,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-07T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 50,
+    "biasPercent": 50,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "buy",
+    "eventCount": 7,
+    "confirmationRatio": 86,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10
+    }
+  },
+  {
+    "timestamp": "2026-06-09T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 25,
+    "biasPercent": 25,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 9,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -25
+    }
+  },
+  {
+    "timestamp": "2026-06-09T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 25,
+    "biasPercent": 25,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 9,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -25
+    }
+  },
+  {
+    "timestamp": "2026-06-10T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 10,
+    "confirmationRatio": 70,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-10T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 10,
+    "confirmationRatio": 70,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 12,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 12,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 12,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 12,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-12T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 14,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-12T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 14,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-13T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 15,
+    "confirmationRatio": 60,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10,
+      "retail_sales": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-14T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 25,
+    "biasPercent": 25,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 16,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10,
+      "retail_sales": -15
+    }
+  },
+  {
+    "timestamp": "2026-06-15T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 25,
+    "biasPercent": 25,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 16,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10,
+      "retail_sales": -15
+    }
+  },
+  {
+    "timestamp": "2026-06-16T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 35,
+    "biasPercent": 35,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 17,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-17T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 20,
+    "biasPercent": 20,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 18,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -25,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-18T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 20,
+    "biasPercent": 20,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 18,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -25,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-19T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 35,
+    "biasPercent": 35,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 19,
+    "confirmationRatio": 58,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": -10,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-20T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 50,
+    "biasPercent": 50,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "buy",
+    "eventCount": 20,
+    "confirmationRatio": 60,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-24T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 35,
+    "biasPercent": 35,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 21,
+    "confirmationRatio": 57,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -15
+    }
+  },
+  {
+    "timestamp": "2026-06-25T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 22,
+    "confirmationRatio": 55,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-26T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 45,
+    "biasPercent": 45,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 23,
+    "confirmationRatio": 57,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-27T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 75,
+    "biasPercent": 75,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 25,
+    "confirmationRatio": 60,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-06-27T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 75,
+    "biasPercent": 75,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 25,
+    "confirmationRatio": 60,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-06-28T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 75,
+    "biasPercent": 75,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 27,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -5,
+      "fed_tone": 30
+    }
+  },
+  {
+    "timestamp": "2026-06-28T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 75,
+    "biasPercent": 75,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 27,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -5,
+      "fed_tone": 30
+    }
+  },
+  {
+    "timestamp": "2026-06-29T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 70,
+    "biasPercent": 70,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 29,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-29T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 70,
+    "biasPercent": 70,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 29,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-30T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 45,
+    "biasPercent": 45,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 31,
+    "confirmationRatio": 55,
+    "categoryBreakdown": {
+      "pmi": 10,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-06-30T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 45,
+    "biasPercent": 45,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 31,
+    "confirmationRatio": 55,
+    "categoryBreakdown": {
+      "pmi": 10,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-07-01T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 35,
+    "biasPercent": 35,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 32,
+    "confirmationRatio": 53,
+    "categoryBreakdown": {
+      "pmi": 0,
+      "employment": 20,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 36,
+    "confirmationRatio": 53,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": 0,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 36,
+    "confirmationRatio": 53,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": 0,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 36,
+    "confirmationRatio": 53,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": 0,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 36,
+    "confirmationRatio": 53,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": 0,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-07-03T23:34:32.210Z",
+    "symbol": "GBPUSD",
+    "score": 5,
+    "biasPercent": 5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 37,
+    "confirmationRatio": 51,
+    "categoryBreakdown": {
+      "pmi": -10,
+      "employment": 0,
+      "boe_tone": 10,
+      "inflation": 5,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  }
+]

@@ -1,0 +1,780 @@
+[
+  {
+    "timestamp": "2026-06-03T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 10,
+    "biasPercent": 10,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 1,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 10
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20
+    }
+  },
+  {
+    "timestamp": "2026-06-05T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20
+    }
+  },
+  {
+    "timestamp": "2026-06-06T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20
+    }
+  },
+  {
+    "timestamp": "2026-06-07T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20
+    }
+  },
+  {
+    "timestamp": "2026-06-09T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 15,
+    "biasPercent": 15,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 6,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -25
+    }
+  },
+  {
+    "timestamp": "2026-06-09T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 15,
+    "biasPercent": 15,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 6,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -25
+    }
+  },
+  {
+    "timestamp": "2026-06-10T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 7,
+    "confirmationRatio": 71,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-10T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 7,
+    "confirmationRatio": 71,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 9,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 9,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 9,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 9,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-12T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 11,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-12T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 30,
+    "biasPercent": 30,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 11,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-13T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 20,
+    "biasPercent": 20,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 12,
+    "confirmationRatio": 58,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-14T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 15,
+    "biasPercent": 15,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 13,
+    "confirmationRatio": 54,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -15
+    }
+  },
+  {
+    "timestamp": "2026-06-15T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 15,
+    "biasPercent": 15,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 13,
+    "confirmationRatio": 54,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -15
+    }
+  },
+  {
+    "timestamp": "2026-06-16T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 25,
+    "biasPercent": 25,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 14,
+    "confirmationRatio": 57,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-17T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 15,
+    "confirmationRatio": 60,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": 5,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-18T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_buy",
+    "eventCount": 16,
+    "confirmationRatio": 63,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": 20,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-19T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 40,
+    "biasPercent": 40,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 17,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": 5,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-20T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 25,
+    "biasPercent": 25,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 18,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-24T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 15,
+    "biasPercent": 15,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 19,
+    "confirmationRatio": 53,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-25T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 5,
+    "biasPercent": 5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 20,
+    "confirmationRatio": 50,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-26T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 15,
+    "biasPercent": 15,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 21,
+    "confirmationRatio": 52,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-27T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 23,
+    "confirmationRatio": 57,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": 0,
+      "fed_tone": 30
+    }
+  },
+  {
+    "timestamp": "2026-06-27T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 23,
+    "confirmationRatio": 57,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": 0,
+      "fed_tone": 30
+    }
+  },
+  {
+    "timestamp": "2026-06-28T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 25,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -10,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-28T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 25,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -10,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-29T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 45,
+    "biasPercent": 45,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 26,
+    "confirmationRatio": 54,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-29T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 45,
+    "biasPercent": 45,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 26,
+    "confirmationRatio": 54,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-30T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 5,
+    "biasPercent": 5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 28,
+    "confirmationRatio": 50,
+    "categoryBreakdown": {
+      "pmi": 10,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 10
+    }
+  },
+  {
+    "timestamp": "2026-06-30T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": 5,
+    "biasPercent": 5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 28,
+    "confirmationRatio": 50,
+    "categoryBreakdown": {
+      "pmi": 10,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 10
+    }
+  },
+  {
+    "timestamp": "2026-07-01T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 29,
+    "confirmationRatio": 52,
+    "categoryBreakdown": {
+      "pmi": 0,
+      "employment": 20,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 10
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 33,
+    "confirmationRatio": 58,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": 0,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 10
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 33,
+    "confirmationRatio": 58,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": 0,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 10
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 33,
+    "confirmationRatio": 58,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": 0,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 10
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 33,
+    "confirmationRatio": 58,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": 0,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 10
+    }
+  },
+  {
+    "timestamp": "2026-07-03T23:34:32.210Z",
+    "symbol": "XAUUSD",
+    "score": -35,
+    "biasPercent": -35,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 34,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": -10,
+      "employment": 0,
+      "inflation": -10,
+      "retail_sales": -5,
+      "gdp": -20,
+      "fed_tone": 10
+    }
+  }
+]

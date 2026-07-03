@@ -1,0 +1,780 @@
+[
+  {
+    "timestamp": "2026-06-03T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -10,
+    "biasPercent": -10,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 1,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -10
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-04T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-05T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-06T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-07T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 4,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20
+    }
+  },
+  {
+    "timestamp": "2026-06-09T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -65,
+    "biasPercent": -65,
+    "direction": "bearish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_sell",
+    "eventCount": 6,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -25
+    }
+  },
+  {
+    "timestamp": "2026-06-09T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -65,
+    "biasPercent": -65,
+    "direction": "bearish",
+    "strength": "strong",
+    "conviction": "high",
+    "signal": "strong_sell",
+    "eventCount": 6,
+    "confirmationRatio": 100,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -25
+    }
+  },
+  {
+    "timestamp": "2026-06-10T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "sell",
+    "eventCount": 7,
+    "confirmationRatio": 86,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-10T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "sell",
+    "eventCount": 7,
+    "confirmationRatio": 86,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "sell",
+    "eventCount": 9,
+    "confirmationRatio": 78,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "sell",
+    "eventCount": 9,
+    "confirmationRatio": 78,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "sell",
+    "eventCount": 9,
+    "confirmationRatio": 78,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-11T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "sell",
+    "eventCount": 9,
+    "confirmationRatio": 78,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-12T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "sell",
+    "eventCount": 11,
+    "confirmationRatio": 73,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-12T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -45,
+    "biasPercent": -45,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "high",
+    "signal": "sell",
+    "eventCount": 11,
+    "confirmationRatio": 73,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5
+    }
+  },
+  {
+    "timestamp": "2026-06-13T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -35,
+    "biasPercent": -35,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 12,
+    "confirmationRatio": 67,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 10
+    }
+  },
+  {
+    "timestamp": "2026-06-14T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -30,
+    "biasPercent": -30,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 13,
+    "confirmationRatio": 62,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 15
+    }
+  },
+  {
+    "timestamp": "2026-06-15T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -30,
+    "biasPercent": -30,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 13,
+    "confirmationRatio": 62,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 15
+    }
+  },
+  {
+    "timestamp": "2026-06-16T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 14,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5
+    }
+  },
+  {
+    "timestamp": "2026-06-17T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 14,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5
+    }
+  },
+  {
+    "timestamp": "2026-06-18T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 14,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5
+    }
+  },
+  {
+    "timestamp": "2026-06-19T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 14,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5
+    }
+  },
+  {
+    "timestamp": "2026-06-20T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 14,
+    "confirmationRatio": 64,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5
+    }
+  },
+  {
+    "timestamp": "2026-06-24T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -25,
+    "biasPercent": -25,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 15,
+    "confirmationRatio": 60,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 15
+    }
+  },
+  {
+    "timestamp": "2026-06-25T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -20,
+    "biasPercent": -20,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 16,
+    "confirmationRatio": 56,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 20
+    }
+  },
+  {
+    "timestamp": "2026-06-26T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -40,
+    "biasPercent": -40,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 17,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 0
+    }
+  },
+  {
+    "timestamp": "2026-06-27T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -35,
+    "biasPercent": -35,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 19,
+    "confirmationRatio": 58,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-06-27T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -35,
+    "biasPercent": -35,
+    "direction": "bearish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "sell",
+    "eventCount": 19,
+    "confirmationRatio": 58,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": -20,
+      "fed_tone": 25
+    }
+  },
+  {
+    "timestamp": "2026-06-28T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 21,
+    "confirmationRatio": 52,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": -5,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-28T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 21,
+    "confirmationRatio": 52,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": -5,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-29T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": 10,
+    "biasPercent": 10,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 22,
+    "confirmationRatio": 50,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-29T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": 10,
+    "biasPercent": 10,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 22,
+    "confirmationRatio": 50,
+    "categoryBreakdown": {
+      "pmi": -20,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 40
+    }
+  },
+  {
+    "timestamp": "2026-06-30T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 24,
+    "confirmationRatio": 50,
+    "categoryBreakdown": {
+      "pmi": -10,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-06-30T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": -5,
+    "biasPercent": -5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 24,
+    "confirmationRatio": 50,
+    "categoryBreakdown": {
+      "pmi": -10,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-07-01T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": 5,
+    "biasPercent": 5,
+    "direction": "neutral",
+    "strength": "weak",
+    "conviction": "low",
+    "signal": "neutral",
+    "eventCount": 25,
+    "confirmationRatio": 52,
+    "categoryBreakdown": {
+      "pmi": 0,
+      "employment": -20,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 29,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 10,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 29,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 10,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 29,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 10,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-07-02T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": 55,
+    "biasPercent": 55,
+    "direction": "bullish",
+    "strength": "strong",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 29,
+    "confirmationRatio": 59,
+    "categoryBreakdown": {
+      "pmi": 20,
+      "employment": 10,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  },
+  {
+    "timestamp": "2026-07-03T23:34:32.210Z",
+    "symbol": "DJ30",
+    "score": 45,
+    "biasPercent": 45,
+    "direction": "bullish",
+    "strength": "moderate",
+    "conviction": "medium",
+    "signal": "buy",
+    "eventCount": 30,
+    "confirmationRatio": 57,
+    "categoryBreakdown": {
+      "pmi": 10,
+      "employment": 10,
+      "inflation": -5,
+      "retail_sales": 5,
+      "gdp": 10,
+      "fed_tone": 15
+    }
+  }
+]
