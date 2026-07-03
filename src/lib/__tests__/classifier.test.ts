@@ -74,6 +74,18 @@ describe('classifyHeadline', () => {
     expect(hasSignal('Fed signals rate hike as inflation persists', 'fed_tone', 'hawkish')).toBe(true);
   });
 
+  it('does not produce contradictory dollar signals from cross-clause text', () => {
+    const results = classifyHeadline('South African rand strengthens as dollar tumbles after weak US jobs data');
+    const dollarStrong = results.filter((r) => r.category === 'dollar_strength' && r.value === 'strong');
+    const dollarWeak = results.filter((r) => r.category === 'dollar_strength' && r.value === 'weak');
+    expect(dollarStrong).toHaveLength(0);
+    expect(dollarWeak.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('still classifies same-clause dollar climb as dollar_strength strong', () => {
+    expect(hasSignal('Dollar climbs to two-week high on hawkish Fed comments', 'dollar_strength', 'strong')).toBe(true);
+  });
+
   it('still classifies clear directional headlines', () => {
     expect(hasSignal('USD gains as dollar strength returns', 'dollar_strength', 'strong')).toBe(true);
     expect(hasSignal('Nonfarm payrolls beat expectations', 'employment', 'strong')).toBe(true);
