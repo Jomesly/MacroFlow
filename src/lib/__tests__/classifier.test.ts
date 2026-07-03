@@ -60,6 +60,11 @@ describe('classifyHeadline', () => {
     expect(hasSignal('panic selling grips markets amid crisis', 'risk_sentiment', 'risk_off')).toBe(true);
   });
 
+  it('does not classify "Gold surges to new highs this week" as risk_off', () => {
+    const results = classifyHeadline('Gold surges to new highs this week');
+    expect(results.filter((r) => r.category === 'risk_sentiment' && r.value === 'risk_off')).toHaveLength(0);
+  });
+
   it('still classifies clear directional headlines', () => {
     expect(hasSignal('USD gains as dollar strength returns', 'dollar_strength', 'strong')).toBe(true);
     expect(hasSignal('Nonfarm payrolls beat expectations', 'employment', 'strong')).toBe(true);

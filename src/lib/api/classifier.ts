@@ -97,7 +97,6 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/wall.?street.*(higher|rise|rally|gain)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'high' },
   { patterns: [/trade.*(war|tension|escalat)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
   { patterns: [/trade.*(deal|truce|agreement)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
-  { patterns: [/\b(gold|silver)\b.*(rally|surge|climb|gain|rise|higher)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
   { patterns: [/safe haven|safe-haven/i], category: 'risk_sentiment', value: 'risk_off', impact: 'high' },
 
   // ── Dollar Strength (additional generic patterns) ──
