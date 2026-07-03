@@ -6,7 +6,21 @@ type SentimentResult = {
   impact: EventImpact;
   title: string;
   description: string;
+  country?: string;
 };
+
+const COUNTRY_SENSITIVE_CATEGORIES = new Set<EventCategory>([
+  'inflation', 'employment', 'gdp', 'pmi', 'retail_sales',
+]);
+
+function inferCountry(text: string): string | undefined {
+  const t = text.toLowerCase();
+  const usMatch = /\b(us|united states|america|federal reserve|fed)\b/.test(t);
+  const ukMatch = /\b(uk|united kingdom|britain|boe|bank of england)\b/.test(t);
+  if (usMatch && !ukMatch) return 'US';
+  if (ukMatch && !usMatch) return 'GB';
+  return undefined;
+}
 
 const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impact: EventImpact }[] = [
   // ── Fed Tone ──
@@ -117,7 +131,7 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/geopolitical.*(tension|risk|escalat|conflict|war)/i], category: 'geopolitical', value: 'tension', impact: 'high' },
   { patterns: [/sanction.*(new|escalat|tighten)/i], category: 'geopolitical', value: 'tension', impact: 'medium' },
   { patterns: [/sanction.*(ease|lift|remove)/i], category: 'geopolitical', value: 'easing', impact: 'medium' },
-  { patterns: [/ceasefire|truce|peace.*(deal|agreement)/i], category: 'geopolitical', value: 'easing', impact: 'medium' },
+  { patterns: [/(ceasefire|truce|peace).*(deal|agreement)/i], category: 'geopolitical', value: 'easing', impact: 'medium' },
 
   // ── Dollar Strength ──
   { patterns: [/dollar.*(surge|rally|strength|climb|up|bullish)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
@@ -181,6 +195,7 @@ export function classifyHeadline(text: string): SentimentResult[] {
             impact: rule.impact,
             title: text.length > 80 ? text.slice(0, 77) + '...' : text,
             description: text,
+            country: COUNTRY_SENSITIVE_CATEGORIES.has(rule.category) ? inferCountry(text) : undefined,
           });
         }
       }
@@ -203,6 +218,7 @@ export function createEventFromClassification(
     timestamp: new Date().toISOString(),
     impact: classified.impact,
     value: classified.value,
+    country: classified.country,
     url,
     sourceName: source,
   };

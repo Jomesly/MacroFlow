@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BiasApiResponse, BiasResult, DataSource, DxyContext, UpcomingEvent } from '@/lib/types';
+import { BiasApiResponse, BiasResult, DataSource, DxyContext, SourceHealth, UpcomingEvent } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
@@ -111,6 +111,52 @@ function NextUpdateTimer({ lastUpdated }: { lastUpdated: string | null }) {
   );
 }
 
+function SourceStatus({ health }: { health: SourceHealth | null }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  if (!health) return null;
+
+  const statusLabels: Record<string, string> = {
+    ok: 'ok',
+    empty: 'no data',
+    failed: 'failed',
+  };
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen(!open)}
+        className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer uppercase tracking-wider"
+      >
+        Data Sources
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-zinc-800 bg-zinc-950 shadow-xl z-50 py-1">
+          {Object.entries(health).map(([sourceName, status]) => (
+            <div key={sourceName} className="flex items-center justify-between px-3 py-1 text-[10px]">
+              <span className="text-zinc-400">{sourceName}</span>
+              <span className={`${
+                status === 'ok' ? 'text-emerald-400' : status === 'empty' ? 'text-amber-400' : 'text-red-400'
+              }`}>
+                {statusLabels[status]}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const [data, setData] = useState<BiasResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +166,8 @@ export default function Home() {
   const [selected, setSelected] = useState<BiasResult | null>(null);
   const [dxy, setDxy] = useState<DxyContext | undefined>();
   const [nextEvent, setNextEvent] = useState<UpcomingEvent | undefined | null>();
+  const [sourceHealth, setSourceHealth] = useState<SourceHealth | null>(null);
+  const [healthOpen, setHealthOpen] = useState(false);
   const mountedRef = useRef(true);
 
   const fetchBias = useCallback(async () => {
@@ -133,6 +181,7 @@ export default function Home() {
         setSource(json.source);
         setDxy(json.dxy);
         setNextEvent(json.nextEvent);
+        setSourceHealth(json.sourceHealth ?? null);
         setError(null);
       }
     } catch (err) {
@@ -191,6 +240,7 @@ export default function Home() {
                   Updated: {new Date(lastUpdated).toLocaleTimeString()}
                 </p>
                 <NextUpdateTimer lastUpdated={lastUpdated} />
+                <SourceStatus health={sourceHealth} />
               </>
             )}
           </div>

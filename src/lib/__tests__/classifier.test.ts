@@ -30,6 +30,27 @@ describe('classifyHeadline', () => {
     expect(results.filter((result) => result.category === 'risk_sentiment')).toHaveLength(0);
   });
 
+  it('does not classify bare ceasefire mentions as geopolitical easing', () => {
+    const results = classifyHeadline('Ceasefire holding in eastern Ukraine');
+    expect(results.filter((result) => result.category === 'geopolitical' && result.value === 'easing')).toHaveLength(0);
+  });
+
+  it('classifies ceasefire deal as geopolitical easing', () => {
+    expect(hasSignal('Ceasefire deal reached between parties', 'geopolitical', 'easing')).toBe(true);
+  });
+
+  it('infers country from headline text for sensitive categories', () => {
+    const results = classifyHeadline('UK CPI rises 0.3% as BoE holds rates');
+    const inflation = results.find((r) => r.category === 'inflation');
+    expect(inflation?.country).toBe('GB');
+  });
+
+  it('does not infer country for non-sensitive categories', () => {
+    const results = classifyHeadline('Nasdaq rallies on tech earnings');
+    const risk = results.find((r) => r.category === 'risk_sentiment');
+    expect(risk?.country).toBeUndefined();
+  });
+
   it('still classifies clear directional headlines', () => {
     expect(hasSignal('USD gains as dollar strength returns', 'dollar_strength', 'strong')).toBe(true);
     expect(hasSignal('Nonfarm payrolls beat expectations', 'employment', 'strong')).toBe(true);
