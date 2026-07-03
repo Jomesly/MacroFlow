@@ -135,12 +135,16 @@ function SourceStatus({ health }: { health: SourceHealth | null }) {
     <div ref={ref} className="relative inline-block">
       <button
         onClick={() => setOpen(!open)}
-        className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer uppercase tracking-wider"
+        className="text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer"
+        title="Data Sources"
       >
-        Data Sources
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 16v-4M12 8h.01" />
+        </svg>
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-zinc-800 bg-zinc-950 shadow-xl z-50 py-1">
+        <div className="absolute right-0 top-full mt-1.5 w-44 rounded-lg border border-zinc-800 bg-zinc-950 shadow-xl z-50 py-1">
           {Object.entries(health).map(([sourceName, status]) => (
             <div key={sourceName} className="flex items-center justify-between px-3 py-1 text-[10px]">
               <span className="text-zinc-400">{sourceName}</span>
@@ -155,6 +159,11 @@ function SourceStatus({ health }: { health: SourceHealth | null }) {
       )}
     </div>
   );
+}
+
+function isWeekend(): boolean {
+  const day = new Date().getDay();
+  return day === 0 || day === 6;
 }
 
 export default function Home() {
@@ -228,6 +237,11 @@ export default function Home() {
                 <span className={`w-1.5 h-1.5 rounded-full ${sourceColors[source]}`} />
                 {sourceLabels[source]}
               </span>
+              {isWeekend() && (
+                <span className="text-[10px] text-amber-500 bg-amber-950/20 px-2 py-0.5 rounded-full border border-amber-800/30 whitespace-nowrap">
+                  Weekend — data may be stale
+                </span>
+              )}
             </div>
             <p className="text-[11px] text-zinc-500 mt-0.5">
               Fundamental Trading Bias Dashboard
