@@ -5,6 +5,7 @@ import { getCached, setCache } from './cache';
 const BASE_URL = 'https://finnhub.io/api/v1';
 const CACHE_KEY = 'finnhub_news';
 const CACHE_TTL = 300_000;
+const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000;
 
 interface FinnhubArticle {
   category: string;
@@ -38,13 +39,16 @@ export async function fetchNews(): Promise<MacroEvent[]> {
     const seen = new Set<string>();
 
     for (const article of data.slice(0, 30)) {
+      const publishedAt = article.datetime ? new Date(article.datetime * 1000).toISOString() : undefined;
+      if (publishedAt && Date.now() - new Date(publishedAt).getTime() > MAX_ARTICLE_AGE_MS) continue;
+
       const text = `${article.headline} ${article.summary}`;
       const classifiedList = classifyHeadline(text);
       for (const classified of classifiedList) {
         const key = `${classified.category}:${classified.value}`;
         if (!seen.has(key)) {
           seen.add(key);
-          events.push(createEventFromClassification(classified, 'finnhub', article.url));
+          events.push(createEventFromClassification(classified, 'finnhub', article.url, publishedAt));
         }
       }
     }

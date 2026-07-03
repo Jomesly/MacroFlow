@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyHeadline } from '../api/classifier';
+import { classifyHeadline, createEventFromClassification } from '../api/classifier';
 
 function hasSignal(text: string, category: string, value: string): boolean {
   return classifyHeadline(text).some((result) => result.category === category && result.value === value);
@@ -91,5 +91,24 @@ describe('classifyHeadline', () => {
     expect(hasSignal('Nonfarm payrolls beat expectations', 'employment', 'strong')).toBe(true);
     expect(hasSignal('Treasuries sell off as yield up across curve', 'yields', 'rising')).toBe(true);
     expect(hasSignal('Nasdaq rallies as technology shares gain', 'risk_sentiment', 'risk_on')).toBe(true);
+  });
+});
+
+describe('createEventFromClassification', () => {
+  it('uses the passed publishedAt timestamp when provided', () => {
+    const classified = classifyHeadline('Fed signals rate hike')[0];
+    const fixedDate = '2025-01-15T10:30:00.000Z';
+    const event = createEventFromClassification(classified, 'test', undefined, fixedDate);
+    expect(event.timestamp).toBe(fixedDate);
+  });
+
+  it('falls back to current time when no publishedAt is provided', () => {
+    const classified = classifyHeadline('Fed signals rate hike')[0];
+    const before = Date.now();
+    const event = createEventFromClassification(classified, 'test');
+    const after = Date.now();
+    const eventTime = new Date(event.timestamp).getTime();
+    expect(eventTime).toBeGreaterThanOrEqual(before);
+    expect(eventTime).toBeLessThanOrEqual(after);
   });
 });

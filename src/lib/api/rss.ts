@@ -10,6 +10,7 @@ const parser = new Parser({
   timeout: 10000,
 });
 const CACHE_TTL = 300_000;
+const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000;
 
 interface FeedConfig {
   envKey: string;
@@ -43,13 +44,16 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
         const seen = new Set<string>();
         const items: MacroEvent[] = [];
         for (const item of parsed.items.slice(0, feed.maxItems)) {
+          const publishedAt = (item.isoDate ?? item.pubDate ?? undefined) ? new Date(item.isoDate ?? item.pubDate!).toISOString() : undefined;
+          if (publishedAt && Date.now() - new Date(publishedAt).getTime() > MAX_ARTICLE_AGE_MS) continue;
+
           const text = `${item.title ?? ''} ${item.contentSnippet ?? ''}`;
           const classifiedList = classifyHeadline(text);
           for (const classified of classifiedList) {
             const signal = `${classified.category}:${classified.value}`;
             if (!seen.has(signal)) {
               seen.add(signal);
-              items.push(createEventFromClassification(classified, feed.sourceName, item.link));
+              items.push(createEventFromClassification(classified, feed.sourceName, item.link, publishedAt));
             }
           }
         }
