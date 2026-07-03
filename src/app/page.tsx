@@ -111,6 +111,13 @@ function NextUpdateTimer({ lastUpdated }: { lastUpdated: string | null }) {
   );
 }
 
+function getStaleness(timestamp: string): { color: string; label: string } {
+  const age = Date.now() - new Date(timestamp).getTime();
+  if (age < 15 * 60 * 1000) return { color: 'text-emerald-400', label: 'Fresh' };
+  if (age < 60 * 60 * 1000) return { color: 'text-amber-400', label: 'Stale' };
+  return { color: 'text-red-400', label: 'Very stale' };
+}
+
 function SourceStatus({ health }: { health: SourceHealth | null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -171,7 +178,7 @@ export default function Home() {
   const [dxy, setDxy] = useState<DxyContext | undefined>();
   const [nextEvent, setNextEvent] = useState<UpcomingEvent | undefined | null>();
   const [sourceHealth, setSourceHealth] = useState<SourceHealth | null>(null);
-  const [healthOpen, setHealthOpen] = useState(false);
+  const [stale, setStale] = useState(false);
   const mountedRef = useRef(true);
 
   const fetchBias = useCallback(async () => {
@@ -186,6 +193,7 @@ export default function Home() {
         setDxy(json.dxy);
         setNextEvent(json.nextEvent);
         setSourceHealth(json.sourceHealth ?? null);
+        setStale(json.stale ?? false);
         setError(null);
       }
     } catch (err) {
@@ -240,8 +248,9 @@ export default function Home() {
           <div className="text-right">
             {lastUpdated && (
               <>
-                <p className="text-[11px] text-zinc-600">
+                <p className={`text-[11px] ${getStaleness(lastUpdated).color}`}>
                   Updated: {new Date(lastUpdated).toLocaleTimeString()}
+                  {stale && <span className="ml-1.5 text-[10px] text-amber-400">(stale)</span>}
                 </p>
                 <NextUpdateTimer lastUpdated={lastUpdated} />
                 <SourceStatus health={sourceHealth} />
@@ -277,7 +286,7 @@ export default function Home() {
           </div>
         )}
 
-        {error && (
+        {error && data.length === 0 && (
           <div className="rounded-xl border border-red-800/30 bg-red-950/20 p-6 text-center">
             <p className="text-red-400 text-sm">{error}</p>
             <button
@@ -288,6 +297,23 @@ export default function Home() {
               className="mt-3 text-sm text-blue-400 hover:text-blue-300 transition-colors"
             >
               Try again
+            </button>
+          </div>
+        )}
+
+        {stale && data.length > 0 && (
+          <div className="rounded-lg border border-amber-800/30 bg-amber-950/15 px-4 py-3 mb-4 flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <p className="text-xs text-amber-400/80">
+              Some data sources failed — showing last known data. It may be outdated.
+            </p>
+            <button
+              onClick={() => { setLoading(true); fetchBias(); }}
+              className="ml-auto text-xs text-amber-400 hover:text-amber-300 transition-colors shrink-0"
+            >
+              Retry
             </button>
           </div>
         )}
