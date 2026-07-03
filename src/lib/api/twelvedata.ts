@@ -24,27 +24,32 @@ export async function fetchMarketData(): Promise<MacroEvent[]> {
   const events: MacroEvent[] = [];
 
   try {
-    // DXY (US Dollar Index)
+    // DXY (US Dollar Index) via Yahoo Finance
     const dxyRes = await fetch(
-      `${BASE_URL}/quote?symbol=DX-Y.NYB&apikey=${apiKey}`,
-      { signal: AbortSignal.timeout(8000) }
+      'https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB',
+      {
+        signal: AbortSignal.timeout(8000),
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+      }
     );
     if (dxyRes.ok) {
-      const dxy: TwelveDataQuote = await dxyRes.json();
-      if (dxy.price) {
-        const change = parseFloat(dxy.percent_change);
-        if (!isNaN(change)) {
-          events.push({
-            id: `td-dxy-${Date.now()}`,
-            category: 'dollar_strength',
-            title: `DXY is ${change >= 0 ? 'up' : 'down'} ${Math.abs(change).toFixed(2)}% at ${dxy.price}`,
-            description: `US Dollar Index moved ${change >= 0 ? 'higher' : 'lower'}. Current: ${dxy.price}, Change: ${dxy.change} (${dxy.percent_change}%)`,
-            timestamp: new Date().toISOString(),
-            impact: 'medium',
-            value: change >= 0 ? 'strong' : 'weak',
-            sourceName: 'twelvedata',
-          });
-        }
+      const dxyData = await dxyRes.json();
+      const meta = dxyData?.chart?.result?.[0]?.meta;
+      if (meta?.regularMarketPrice && meta?.chartPreviousClose) {
+        const price = meta.regularMarketPrice;
+        const prevClose = meta.chartPreviousClose;
+        const change = price - prevClose;
+        const percentChange = (change / prevClose) * 100;
+        events.push({
+          id: `td-dxy-${Date.now()}`,
+          category: 'dollar_strength',
+          title: `DXY is ${change >= 0 ? 'up' : 'down'} ${Math.abs(percentChange).toFixed(2)}% at ${price.toFixed(2)}`,
+          description: `US Dollar Index moved ${change >= 0 ? 'higher' : 'lower'}. Current: ${price.toFixed(2)}, Previous Close: ${prevClose.toFixed(2)} (${percentChange.toFixed(2)}%)`,
+          timestamp: new Date().toISOString(),
+          impact: 'medium',
+          value: percentChange >= 0 ? 'strong' : 'weak',
+          sourceName: 'yahoo',
+        });
       }
     }
   } catch {
