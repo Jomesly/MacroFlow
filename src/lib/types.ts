@@ -71,7 +71,31 @@ export interface BiasResult {
   events: ScoredEvent[];
   confirmationRatio: number;
   eventCount: number;
+  confidenceCount: number;
+  totalPossibleSignals: number;
+  history: HistoryEntry[];
   lastUpdated: string;
+}
+
+export interface DxyContext {
+  price: string;
+  percentChange: number;
+  status: 'strengthening' | 'weakening';
+  summary: string;
+}
+
+export interface UpcomingEvent {
+  name: string;
+  country: string;
+  date: string;
+  impact: 'high' | 'medium';
+  affects: string[];
+}
+
+export interface HistoryEntry {
+  date: string;
+  direction: Direction;
+  biasScore: number;
 }
 
 export interface BiasApiResponse {
@@ -79,6 +103,8 @@ export interface BiasApiResponse {
   timestamp: string;
   source: DataSource;
   disclaimer: string;
+  dxy?: DxyContext;
+  nextEvent?: UpcomingEvent | null;
 }
 
 export interface EventsApiResponse {

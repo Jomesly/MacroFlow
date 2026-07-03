@@ -1,10 +1,90 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BiasApiResponse, BiasResult, DataSource } from '@/lib/types';
+import { BiasApiResponse, BiasResult, DataSource, DxyContext, UpcomingEvent } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
+
+function DxyBar({ dxy }: { dxy: DxyContext }) {
+  const isUp = dxy.status === 'strengthening';
+  return (
+    <div className={`rounded-lg border px-4 py-3 flex items-center justify-between ${
+      isUp ? 'border-red-800/30 bg-red-950/15' : 'border-emerald-800/30 bg-emerald-950/15'
+    }`}>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">DXY</span>
+          <span className="text-sm font-bold text-white">{dxy.price}</span>
+        </div>
+        <span className={`flex items-center gap-1 text-xs font-semibold ${
+          isUp ? 'text-red-400' : 'text-emerald-400'
+        }`}>
+          {isUp ? '↑' : '↓'} {Math.abs(dxy.percentChange).toFixed(2)}%
+          <span className="font-normal text-zinc-500 ml-0.5">
+            ({isUp ? 'STRENGTHENING' : 'WEAKENING'})
+          </span>
+        </span>
+      </div>
+      <p className={`text-[11px] ${isUp ? 'text-red-400/70' : 'text-emerald-400/70'}`}>
+        {dxy.summary}
+      </p>
+    </div>
+  );
+}
+
+function CountdownTimer({ target }: { target: string }) {
+  const [remaining, setRemaining] = useState('');
+
+  useEffect(() => {
+    function tick() {
+      const diff = new Date(target).getTime() - Date.now();
+      if (diff <= 0) { setRemaining('Starting soon'); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setRemaining(`${h}h ${m}m`);
+    }
+    tick();
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, [target]);
+
+  return <span className="tabular-nums">{remaining}</span>;
+}
+
+function NextEventBar({ nextEvent }: { nextEvent: UpcomingEvent }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rounded-lg border border-blue-800/30 bg-blue-950/15 px-4 py-3">
+      <button onClick={() => setExpanded(!expanded)} className="flex items-center justify-between w-full text-left cursor-pointer">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-400 border border-blue-700/40 uppercase shrink-0">
+            Next Event
+          </span>
+          <span className="text-xs text-zinc-300 font-medium truncate">{nextEvent.country} {nextEvent.name}</span>
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
+            nextEvent.impact === 'high' ? 'bg-red-900/40 text-red-400' : 'bg-amber-900/40 text-amber-400'
+          }`}>
+            {nextEvent.impact.toUpperCase()}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-blue-300 font-mono">
+            In <CountdownTimer target={nextEvent.date} />
+          </span>
+          <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      {expanded && (
+        <p className="text-[10px] text-zinc-500 mt-2 pt-2 border-t border-blue-800/20">
+          Affects: {nextEvent.affects.join(', ')}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
   const [data, setData] = useState<BiasResult[]>([]);
@@ -13,6 +93,8 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [source, setSource] = useState<DataSource>('baseline');
   const [selected, setSelected] = useState<BiasResult | null>(null);
+  const [dxy, setDxy] = useState<DxyContext | undefined>();
+  const [nextEvent, setNextEvent] = useState<UpcomingEvent | undefined | null>();
   const mountedRef = useRef(true);
 
   const fetchBias = useCallback(async () => {
@@ -24,6 +106,8 @@ export default function Home() {
         setData(json.data);
         setLastUpdated(json.timestamp);
         setSource(json.source);
+        setDxy(json.dxy);
+        setNextEvent(json.nextEvent);
         setError(null);
       }
     } catch (err) {
@@ -95,6 +179,18 @@ export default function Home() {
       </header>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
+        {dxy && (
+          <div className="mb-4">
+            <DxyBar dxy={dxy} />
+          </div>
+        )}
+
+        {nextEvent && (
+          <div className="mb-4">
+            <NextEventBar nextEvent={nextEvent} />
+          </div>
+        )}
+
         {loading && data.length === 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {[...Array(5)].map((_, i) => (

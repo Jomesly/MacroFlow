@@ -69,6 +69,10 @@ function getSignal(direction: Direction, strength: Strength, conviction: Convict
   return 'neutral';
 }
 
+function countRulesForSymbol(symbol: AssetSymbol): number {
+  return biasRules.filter((r) => r.symbol === symbol).length;
+}
+
 function getLabel(score: number, direction: Direction): string {
   if (direction === 'neutral') return 'Neutral Today';
   const strength = getStrength(score);
@@ -122,6 +126,7 @@ export function calculateBias(
       : 0;
 
     const highImpactCount = scoredEvents.filter((e) => e.impact === 'high').length;
+    const totalPossibleSignals = countRulesForSymbol(sym);
 
     const conviction = getConviction(
       Math.abs(totalScore),
@@ -156,6 +161,9 @@ export function calculateBias(
       events: scoredEvents,
       confirmationRatio,
       eventCount: totalRelevant,
+      confidenceCount: totalRelevant,
+      totalPossibleSignals,
+      history: [],
       lastUpdated: new Date().toISOString(),
     };
   });
