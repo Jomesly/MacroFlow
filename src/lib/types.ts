@@ -1,6 +1,6 @@
 export type AssetSymbol = 'XAUUSD' | 'GBPUSD' | 'US100' | 'DJ30' | 'BTCUSD';
 
-export type Direction = 'bullish' | 'bearish' | 'neutral';
+export type Direction = 'bullish' | 'weakly_bullish' | 'neutral' | 'weakly_bearish' | 'bearish';
 
 export type Strength = 'strong' | 'moderate' | 'weak';
 

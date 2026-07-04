@@ -5,8 +5,10 @@ import { BiasResult, TradeSignal } from '@/lib/types';
 
 const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string }> = {
   bullish: { text: 'text-emerald-400', bg: 'bg-emerald-950/20', border: 'border-emerald-800/30' },
-  bearish: { text: 'text-red-400', bg: 'bg-red-950/20', border: 'border-red-800/30' },
+  weakly_bullish: { text: 'text-emerald-300', bg: 'bg-emerald-950/15', border: 'border-emerald-800/25' },
   neutral: { text: 'text-zinc-400', bg: 'bg-zinc-800/20', border: 'border-zinc-700/30' },
+  weakly_bearish: { text: 'text-red-300', bg: 'bg-red-950/15', border: 'border-red-800/25' },
+  bearish: { text: 'text-red-400', bg: 'bg-red-950/20', border: 'border-red-800/30' },
 };
 
 const SIGNAL_CONFIG: Record<TradeSignal, { label: string; color: string; bg: string }> = {
@@ -66,8 +68,8 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
 
   const colors = DIRECTION_COLORS[data.direction] || DIRECTION_COLORS.neutral;
   const signal = SIGNAL_CONFIG[data.signal];
-  const isBullish = data.direction === 'bullish';
-  const isBearish = data.direction === 'bearish';
+  const isBullish = data.direction === 'bullish' || data.direction === 'weakly_bullish';
+  const isBearish = data.direction === 'bearish' || data.direction === 'weakly_bearish';
 
   const riskOffCount = data.events.filter((e) => e.category === 'risk_sentiment' && e.scoreChange < 0).length;
   const riskOnCount = data.events.filter((e) => e.category === 'risk_sentiment' && e.scoreChange > 0).length;
@@ -146,7 +148,11 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
                 <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Direction</p>
-                <p className={`text-sm font-semibold capitalize ${colors.text}`}>{data.direction}</p>
+                <p className={`text-sm font-semibold ${colors.text}`}>
+                  {data.direction === 'weakly_bullish' ? 'Leaning Bullish'
+                    : data.direction === 'weakly_bearish' ? 'Leaning Bearish'
+                      : data.direction.charAt(0).toUpperCase() + data.direction.slice(1)}
+                </p>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
                 <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Events</p>
@@ -180,16 +186,18 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
                 {isBullish ? (
                   <p className="text-xs text-zinc-300 leading-relaxed">
-                    Fundamental bias is <span className="text-emerald-400 font-medium">bullish</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
+                    Fundamental bias is <span className="text-emerald-400 font-medium">{data.direction === 'weakly_bullish' ? 'leaning bullish' : 'bullish'}</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
                     {bullishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
                     {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
+                    {data.direction === 'weakly_bullish' ? ' This is a weak lean — wait for stronger confirmation before acting.' : ''}
                     {data.conviction === 'high' ? ' This is a strong alignment between technical and fundamental drivers.' : ''}
                   </p>
                 ) : isBearish ? (
                   <p className="text-xs text-zinc-300 leading-relaxed">
-                    Fundamental bias is <span className="text-red-400 font-medium">bearish</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
+                    Fundamental bias is <span className="text-red-400 font-medium">{data.direction === 'weakly_bearish' ? 'leaning bearish' : 'bearish'}</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
                     {bearishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
                     {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
+                    {data.direction === 'weakly_bearish' ? ' This is a weak lean — wait for stronger confirmation before acting.' : ''}
                     {data.conviction === 'high' ? ' This is a strong alignment between technical and fundamental drivers.' : ''}
                   </p>
                 ) : (

@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BiasResult } from '@/lib/types';
+import { BiasResult, Direction, Conviction } from '@/lib/types';
 import { marketIsOpen } from '@/lib/marketIsOpen';
 
 const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string; borderAccent: string }> = {
   bullish: { text: 'text-emerald-400', bg: 'bg-emerald-950/40', border: 'border-emerald-800/40', borderAccent: 'border-t-emerald-500' },
-  bearish: { text: 'text-red-400', bg: 'bg-red-950/40', border: 'border-red-800/40', borderAccent: 'border-t-red-500' },
+  weakly_bullish: { text: 'text-emerald-300', bg: 'bg-emerald-950/20', border: 'border-emerald-800/25', borderAccent: 'border-t-emerald-500' },
   neutral: { text: 'text-zinc-400', bg: 'bg-zinc-900/50', border: 'border-zinc-800', borderAccent: 'border-t-zinc-700' },
+  weakly_bearish: { text: 'text-red-300', bg: 'bg-red-950/20', border: 'border-red-800/25', borderAccent: 'border-t-red-500' },
+  bearish: { text: 'text-red-400', bg: 'bg-red-950/40', border: 'border-red-800/40', borderAccent: 'border-t-red-500' },
 };
 
 const SIGNAL_COLORS: Record<string, string> = {
@@ -47,6 +49,21 @@ const CONVICTION_STYLES: Record<string, string> = {
   low: 'bg-zinc-600 text-zinc-300',
 };
 
+function getScoreTooltip(score: number, direction: Direction): string {
+  const abs = Math.abs(score);
+  if (abs > 50) return `Full ${direction === 'bullish' ? 'bullish' : 'bearish'} — past strong threshold`;
+  if (abs > 25) return `${50 - abs} points from strong threshold`;
+  if (abs >= 15) return `${25 - abs} points from moderate threshold`;
+  return `${15 - abs} points from leaning ${score >= 0 ? 'bearish' : 'bullish'} threshold`;
+}
+
+function getSignalDisplay(direction: Direction, conviction: Conviction): { label: string; showWarning: boolean } {
+  if ((direction === 'weakly_bullish' || direction === 'weakly_bearish') && conviction === 'low') {
+    return { label: `Leaning ${direction === 'weakly_bullish' ? 'Bullish' : 'Bearish'}`, showWarning: true };
+  }
+  return { label: '', showWarning: false };
+}
+
 interface MarketCardProps {
   data: BiasResult;
   onClick: () => void;
@@ -57,6 +74,7 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
   const open = marketIsOpen(data.symbol);
   const [flipInfo, setFlipInfo] = useState<{ from: string; to: string; trigger: string } | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const signalDisplay = getSignalDisplay(data.direction, data.conviction);
 
   useEffect(() => {
     const key = `mf-direction-${data.symbol}`;
@@ -76,13 +94,15 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
   const dismissFlip = () => setFlipInfo(null);
   const handleFlipClick = () => { onClick(); dismissFlip(); };
 
+  const isFlipBullish = flipInfo?.to === 'bullish' || flipInfo?.to === 'weakly_bullish';
+
   return (
     <div className="relative flex flex-col gap-1.5 h-full">
       <div className={`rounded-xl border ${colors.border} ${colors.borderAccent} border-t-4 ${colors.bg} flex flex-col flex-1`}>
         <button
           onClick={onClick}
           className={`w-full p-4 flex-1 transition-all text-left cursor-pointer
-            hover:scale-[1.03] hover:shadow-[0_0_20px_-5px] hover:shadow-${data.direction === 'bullish' ? 'emerald' : data.direction === 'bearish' ? 'red' : 'white'}-500/20
+            hover:scale-[1.03] hover:shadow-[0_0_20px_-5px] hover:shadow-${data.direction.includes('bullish') ? 'emerald' : data.direction.includes('bearish') ? 'red' : 'white'}-500/20
             hover:border-white/20 active:scale-[0.98] group outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
         >
           <div className="flex items-start justify-between mb-3">
@@ -95,19 +115,44 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
               <p className="text-xs text-zinc-500 mt-1 leading-none">{data.name}</p>
             </div>
             <div className="text-right">
-              <span className={`text-2xl font-bold leading-none ${colors.text} tabular-nums`}>
-                {data.biasPercent > 0 ? '+' : ''}{data.biasPercent}%
-              </span>
-                <div className="flex items-center gap-1.5 justify-end mt-1">
+              <div className="relative group/tooltip">
+                <span className={`text-2xl font-bold leading-none ${colors.text} tabular-nums`}>
+                  {data.biasPercent > 0 ? '+' : ''}{data.biasPercent}%
+                </span>
+                <div className="absolute right-0 top-full mt-1.5 opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
+                  <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                    <p className="text-[10px] text-zinc-300 font-mono">Score: {data.biasScore} / ±100</p>
+                    <p className="text-[10px] text-zinc-400 mt-0.5">{getScoreTooltip(data.biasScore, data.direction)}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 justify-end mt-1">
                 <div className={`w-2 h-2 rounded-full ${SIGNAL_COLORS[data.signal]}`} />
-                <span className={`text-[10px] font-semibold uppercase tracking-wider ${SIGNAL_TEXT_COLORS[data.signal]}`}>{data.signal.replace('_', ' ')}</span>
+                {signalDisplay.showWarning ? (
+                  <span className="flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2L1 21h22L12 2zm0 4l7.53 13H4.47L12 6zm-1 5v4h2v-4h-2zm0 6v2h2v-2h-2z" />
+                    </svg>
+                    {signalDisplay.label}
+                  </span>
+                ) : (
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${SIGNAL_TEXT_COLORS[data.signal]}`}>{data.signal.replace('_', ' ')}</span>
+                )}
               </div>
             </div>
           </div>
 
           <div className="mb-2">
             <span className="text-[11px] text-zinc-500 block mb-1.5">Bias</span>
-            <MiniBar score={data.biasScore} />
+            <div className="relative group/bar">
+              <MiniBar score={data.biasScore} />
+              <div className="absolute right-0 top-full mt-1.5 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-50">
+                <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                  <p className="text-[10px] text-zinc-300 font-mono">Score: {data.biasScore} / ±100</p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">{getScoreTooltip(data.biasScore, data.direction)}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mb-2 flex items-center gap-2 min-h-[20px]">
@@ -155,9 +200,13 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
                       <tr key={entry.date} className="border-b border-zinc-800/30 last:border-0">
                         <td className="py-1 text-zinc-400">{entry.date.slice(5)}</td>
                         <td className={`py-1 font-medium ${
-                          entry.direction === 'bullish' ? 'text-emerald-400' : entry.direction === 'bearish' ? 'text-red-400' : 'text-zinc-500'
+                          entry.direction === 'bullish' || entry.direction === 'weakly_bullish' ? 'text-emerald-400'
+                            : entry.direction === 'bearish' || entry.direction === 'weakly_bearish' ? 'text-red-400'
+                              : 'text-zinc-500'
                         }`}>
-                          {entry.direction.charAt(0).toUpperCase() + entry.direction.slice(1)}
+                          {entry.direction === 'weakly_bullish' ? 'Leaning Bullish'
+                            : entry.direction === 'weakly_bearish' ? 'Leaning Bearish'
+                              : entry.direction.charAt(0).toUpperCase() + entry.direction.slice(1)}
                         </td>
                         <td className={`py-1 text-right font-mono tabular-nums ${
                           entry.biasScore > 0 ? 'text-emerald-400' : entry.biasScore < 0 ? 'text-red-400' : 'text-zinc-500'
@@ -178,7 +227,7 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
         <button
           onClick={handleFlipClick}
           className={`rounded-xl border-2 text-left cursor-pointer px-4 py-2.5 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-            flipInfo.to === 'bullish'
+            isFlipBullish
               ? 'border-emerald-500/60 bg-emerald-950/80 hover:shadow-[0_0_15px_-3px] hover:shadow-emerald-500/30'
               : 'border-red-500/60 bg-red-950/80 hover:shadow-[0_0_15px_-3px] hover:shadow-red-500/30'
           }`}
@@ -187,11 +236,11 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
             <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 2L4 14h6v8l7-12h-6z" />
             </svg>
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${flipInfo.to === 'bullish' ? 'text-emerald-300' : 'text-red-300'}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isFlipBullish ? 'text-emerald-300' : 'text-red-300'}`}>
               Bias Flipped
             </span>
             <span className="text-[9px] text-zinc-500">
-              {flipInfo.from.charAt(0).toUpperCase() + flipInfo.from.slice(1)} → {flipInfo.to.charAt(0).toUpperCase() + flipInfo.to.slice(1)}
+              {flipInfo.from.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())} → {flipInfo.to.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
             </span>
             <span className="text-[9px] text-blue-400 ml-auto">Click to view details →</span>
           </div>

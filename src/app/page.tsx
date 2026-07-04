@@ -118,6 +118,17 @@ function getStaleness(timestamp: string): { color: string; label: string } {
   return { color: 'text-red-400', label: 'Very stale' };
 }
 
+function getDailySummary(data: BiasResult[]): string {
+  if (data.length === 0) return '';
+  const bearishCount = data.filter(d => d.direction === 'bearish' || d.direction === 'weakly_bearish').length;
+  const bullishCount = data.filter(d => d.direction === 'bullish' || d.direction === 'weakly_bullish').length;
+  const allNeutral = data.every(d => d.direction === 'neutral');
+  if (allNeutral) return 'No significant macro events detected today';
+  if (bearishCount >= 3) return `${bearishCount} of ${data.length} markets leaning bearish — risk-off environment detected`;
+  if (bullishCount >= 3) return `${bullishCount} of ${data.length} markets leaning bullish — risk-on environment detected`;
+  return 'Markets mixed — no clear macro direction today';
+}
+
 function SourceStatus({ health }: { health: SourceHealth | null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -271,6 +282,12 @@ export default function Home() {
           <div className="mb-4">
             <NextEventBar nextEvent={nextEvent} />
           </div>
+        )}
+
+        {data.length > 0 && (
+          <p className="text-xs text-zinc-400 mb-4">
+            {getDailySummary(data)}
+          </p>
         )}
 
         {loading && data.length === 0 && (

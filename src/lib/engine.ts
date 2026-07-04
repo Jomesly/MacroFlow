@@ -34,8 +34,10 @@ const COUNTRY_SENSITIVE_CATEGORIES = new Set<MacroEvent['category']>([
 ]);
 
 const COUNTRY_HOME_SYMBOLS: Partial<Record<AssetSymbol, string>> = {
+  XAUUSD: 'US',
   US100: 'US',
   DJ30: 'US',
+  BTCUSD: 'US',
 };
 
 export const ASSET_NAMES: Record<AssetSymbol, string> = {
@@ -106,9 +108,11 @@ function absPercent(score: number): number {
 }
 
 function getDirection(score: number): Direction {
-  if (score > 25) return 'bullish';
-  if (score < -25) return 'bearish';
-  return 'neutral';
+  if (score > 50) return 'bullish';
+  if (score >= 15) return 'weakly_bullish';
+  if (score >= -14) return 'neutral';
+  if (score >= -50) return 'weakly_bearish';
+  return 'bearish';
 }
 
 function getStrength(score: number): Strength {
@@ -127,7 +131,7 @@ function getConviction(
   if (absScore > 40 && eventCount >= 3 && highImpactCount >= 1 && agreementRatio >= 0.6) {
     return 'high';
   }
-  if (absScore > 25 && eventCount >= 2) {
+  if (absScore > 25 && eventCount >= 2 && highImpactCount >= 1) {
     return 'medium';
   }
   return 'low';
@@ -136,8 +140,10 @@ function getConviction(
 function getSignal(direction: Direction, strength: Strength, conviction: Conviction): TradeSignal {
   if (direction === 'bullish' && strength === 'strong' && conviction === 'high') return 'strong_buy';
   if (direction === 'bullish' && conviction !== 'low') return 'buy';
+  if (direction === 'weakly_bullish' && conviction !== 'low') return 'buy';
   if (direction === 'bearish' && strength === 'strong' && conviction === 'high') return 'strong_sell';
   if (direction === 'bearish' && conviction !== 'low') return 'sell';
+  if (direction === 'weakly_bearish' && conviction !== 'low') return 'sell';
   return 'neutral';
 }
 
@@ -147,6 +153,8 @@ function countRulesForSymbol(symbol: AssetSymbol): number {
 
 function getLabel(score: number, direction: Direction): string {
   if (direction === 'neutral') return 'Neutral Today';
+  if (direction === 'weakly_bullish') return 'Leaning Bullish Today';
+  if (direction === 'weakly_bearish') return 'Leaning Bearish Today';
   const strength = getStrength(score);
   const prefix = strength === 'strong' ? 'Strongly' : '';
   const dir = direction === 'bullish' ? 'Bullish' : 'Bearish';
