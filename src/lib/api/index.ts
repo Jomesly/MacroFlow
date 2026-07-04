@@ -2,6 +2,7 @@ import { MacroEvent, SourceHealth } from '../types';
 import { fetchNews } from './finnhub';
 import { fetchMarketData } from './twelvedata';
 import { fetchRssFeeds } from './rss';
+import { fetchFredEvents } from './fred';
 import { getCached, setCache } from './cache';
 
 const CACHE_KEY = 'merged_events';
@@ -18,12 +19,13 @@ export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt
   const isValid = cached !== null && typeof cached === 'object' && !Array.isArray(cached) && 'events' in (cached as any) && 'cachedAt' in (cached as any) && 'sourceHealth' in (cached as any);
   if (isValid) return cached as CachedEvents;
 
-  const sourceNames = ['finnhub', 'market_data', 'rss'] as const;
+  const sourceNames = ['finnhub', 'market_data', 'rss', 'fred'] as const;
 
   const results = await Promise.allSettled([
     fetchNews(),
     fetchMarketData(),
     fetchRssFeeds(),
+    fetchFredEvents(),
   ]);
 
   const allEvents: MacroEvent[] = [];

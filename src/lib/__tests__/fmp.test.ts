@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-describe('FMP calendar (stubbed — pending FRED integration)', () => {
+describe('FMP calendar (stubbed — replaced by FRED)', () => {
   it('fetchEconomicCalendar returns empty array', async () => {
     const { fetchEconomicCalendar } = await import('../api/fmp');
     const result = await fetchEconomicCalendar();

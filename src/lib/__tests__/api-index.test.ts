@@ -26,6 +26,10 @@ vi.mock('../api/rss', () => ({
   fetchRssFeeds: vi.fn(async () => []),
 }));
 
+vi.mock('../api/fred', () => ({
+  fetchFredEvents: vi.fn(async () => []),
+}));
+
 describe('fetchAllEvents source health', () => {
   it('reports ok and empty sources', async () => {
     const { fetchAllEvents } = await import('../api');
@@ -34,6 +38,7 @@ describe('fetchAllEvents source health', () => {
     expect(result.sourceHealth.finnhub).toBe('empty');
     expect(result.sourceHealth.market_data).toBe('ok');
     expect(result.sourceHealth.rss).toBe('empty');
+    expect(result.sourceHealth.fred).toBe('empty');
     expect(result.events).toHaveLength(1);
   });
 });

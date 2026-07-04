@@ -36,10 +36,10 @@ export async function getEvents(): Promise<{
     source: 'baseline',
     cachedAt,
     sourceHealth: {
-      fmp: 'failed',
       finnhub: 'failed',
       market_data: 'failed',
       rss: 'failed',
+      fred: 'failed',
     },
   };
 }
