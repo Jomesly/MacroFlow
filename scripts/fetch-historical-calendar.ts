@@ -204,10 +204,12 @@ async function main() {
 
       // Get the previous observation (second most recent as of this vintage)
       const prevObs = observations.length >= 2 ? observations[1] : null;
-      const prevVal = prevObs ? parseFloat(prevObs.value) : null;
 
       // We need at least 2 observations to classify beat/miss
-      if (prevVal === null || isNaN(prevVal)) continue;
+      if (!prevObs) continue;
+
+      const prevVal = parseFloat(prevObs.value);
+      if (isNaN(prevVal)) continue;
 
       // Check if this is a new data release (not just a revision)
       // A new release happens when the observation date changes
