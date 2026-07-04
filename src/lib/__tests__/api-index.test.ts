@@ -5,10 +5,6 @@ vi.mock('../api/cache', () => ({
   setCache: vi.fn(async () => undefined),
 }));
 
-vi.mock('../api/fmp', () => ({
-  fetchEconomicCalendar: vi.fn(async () => { throw new Error('down'); }),
-}));
-
 vi.mock('../api/finnhub', () => ({
   fetchNews: vi.fn(async () => []),
 }));
@@ -31,11 +27,10 @@ vi.mock('../api/rss', () => ({
 }));
 
 describe('fetchAllEvents source health', () => {
-  it('reports failed, ok, and empty sources', async () => {
+  it('reports ok and empty sources', async () => {
     const { fetchAllEvents } = await import('../api');
     const result = await fetchAllEvents();
 
-    expect(result.sourceHealth.fmp).toBe('failed');
     expect(result.sourceHealth.finnhub).toBe('empty');
     expect(result.sourceHealth.market_data).toBe('ok');
     expect(result.sourceHealth.rss).toBe('empty');

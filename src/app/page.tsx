@@ -284,6 +284,12 @@ export default function Home() {
           </div>
         )}
 
+        {!nextEvent && data.length > 0 && (
+          <div className="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3">
+            <p className="text-[11px] text-zinc-500">No upcoming events — economic calendar data unavailable</p>
+          </div>
+        )}
+
         {data.length > 0 && (
           <p className="text-xs text-zinc-400 mb-4">
             {getDailySummary(data)}

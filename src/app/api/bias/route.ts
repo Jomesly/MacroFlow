@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEvents } from '@/lib/events';
 import { calculateBias, ALL_SYMBOLS } from '@/lib/engine';
-import { fetchUpcomingEconomicCalendar } from '@/lib/api/fmp';
 import { AssetSymbol, BiasApiResponse, DxyContext } from '@/lib/types';
 import { getHistory, recordDailySnapshot } from '@/lib/redis';
 
@@ -33,8 +32,6 @@ export async function GET(request: NextRequest) {
   const results = calculateBias(events, symbol);
 
   const dxy = getDxyContext(events);
-  const upcomingEvents = await fetchUpcomingEconomicCalendar();
-  const nextEvent = upcomingEvents[0] ?? null;
 
   const data = await Promise.all(
     results.map(async (r) => {
@@ -51,7 +48,7 @@ export async function GET(request: NextRequest) {
     sourceHealth,
     stale,
     dxy,
-    nextEvent,
+    nextEvent: null,
     disclaimer:
       'This is not financial advice. Use this dashboard for informational purposes only. Always conduct your own research before trading.',
   };
