@@ -40,11 +40,15 @@ async function fetchRawCalendar(): Promise<FmpEconomicEvent[]> {
   const from = today.toISOString().slice(0, 10);
   const to = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const url = `${BASE_URL}/economic_calendar?from=${from}&to=${to}&apikey=${apiKey}`;
-  console.log('[FMP-DIAG] Making live API call to:', url);
+  console.log('[FMP-DIAG] Making live API call to:', url.replace(apiKey, 'API_KEY_REDACTED'));
   const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  console.log('[FMP-DIAG] FMP response status:', res.status);
+  console.log('[FMP-DIAG] FMP response status:', res.status, res.statusText);
 
-  if (!res.ok) throw new Error('FMP economic calendar request failed');
+  if (!res.ok) {
+    const body = await res.text().catch(() => 'unable to read body');
+    console.error('[FMP-DIAG] FMP error response body:', body.slice(0, 500));
+    throw new Error('FMP economic calendar request failed');
+  }
 
   const data: FmpEconomicEvent[] = await res.json();
   return Array.isArray(data) ? data : [];
