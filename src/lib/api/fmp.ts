@@ -33,13 +33,16 @@ function affectsSymbols(country: string, eventName: string): UpcomingEvent['affe
 
 async function fetchRawCalendar(): Promise<FmpEconomicEvent[]> {
   const apiKey = process.env.FMP_API_KEY;
+  console.log('[FMP-DIAG] fetchRawCalendar: apiKey exists?', !!apiKey, '| key length:', apiKey?.length ?? 0);
   if (!apiKey) return [];
 
   const today = new Date();
   const from = today.toISOString().slice(0, 10);
   const to = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const url = `${BASE_URL}/economic_calendar?from=${from}&to=${to}&apikey=${apiKey}`;
+  console.log('[FMP-DIAG] Making live API call to:', url);
   const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  console.log('[FMP-DIAG] FMP response status:', res.status);
 
   if (!res.ok) throw new Error('FMP economic calendar request failed');
 
@@ -48,8 +51,13 @@ async function fetchRawCalendar(): Promise<FmpEconomicEvent[]> {
 }
 
 export async function fetchEconomicCalendar(): Promise<MacroEvent[]> {
+  console.log('[FMP-DIAG] fetchEconomicCalendar called, checking cache...');
   const cached = await getCached<MacroEvent[]>(CACHE_KEY);
-  if (cached) return cached;
+  if (cached) {
+    console.log('[FMP-DIAG] Cache HIT — skipping API call, returning', cached.length, 'events');
+    return cached;
+  }
+  console.log('[FMP-DIAG] Cache MISS — will call FMP API');
 
   try {
     const data = await fetchRawCalendar();
@@ -83,15 +91,22 @@ export async function fetchEconomicCalendar(): Promise<MacroEvent[]> {
     }
 
     await setCache(CACHE_KEY, events, CACHE_TTL);
+    console.log('[FMP-DIAG] Fetched', events.length, 'events from FMP, cached');
     return events;
-  } catch {
+  } catch (error) {
+    console.error('[FMP-DIAG] FMP fetch error:', error instanceof Error ? error.message : String(error));
     throw new Error('FMP economic calendar unavailable');
   }
 }
 
 export async function fetchUpcomingEconomicCalendar(): Promise<UpcomingEvent[]> {
+  console.log('[FMP-DIAG] fetchUpcomingEconomicCalendar called, checking cache...');
   const cached = await getCached<UpcomingEvent[]>(UPCOMING_CACHE_KEY);
-  if (cached) return cached;
+  if (cached) {
+    console.log('[FMP-DIAG] Upcoming cache HIT — skipping API call, returning', cached.length, 'events');
+    return cached;
+  }
+  console.log('[FMP-DIAG] Upcoming cache MISS — will call FMP API');
 
   try {
     const now = Date.now();
@@ -108,8 +123,10 @@ export async function fetchUpcomingEconomicCalendar(): Promise<UpcomingEvent[]> 
       }));
 
     await setCache(UPCOMING_CACHE_KEY, upcoming, CACHE_TTL);
+    console.log('[FMP-DIAG] Fetched', upcoming.length, 'upcoming events from FMP, cached');
     return upcoming;
-  } catch {
+  } catch (error) {
+    console.error('[FMP-DIAG] FMP upcoming error:', error instanceof Error ? error.message : String(error));
     return [];
   }
 }

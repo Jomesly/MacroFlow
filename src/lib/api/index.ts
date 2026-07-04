@@ -15,9 +15,14 @@ interface CachedEvents {
 }
 
 export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt: string; sourceHealth: SourceHealth; stale?: boolean }> {
+  console.log('[FMP-DIAG] fetchAllEvents called, checking merged_events cache...');
   const cached = await getCached<unknown>(CACHE_KEY);
   const isValid = cached !== null && typeof cached === 'object' && !Array.isArray(cached) && 'events' in (cached as any) && 'cachedAt' in (cached as any) && 'sourceHealth' in (cached as any);
-  if (isValid) return cached as CachedEvents;
+  if (isValid) {
+    console.log('[FMP-DIAG] merged_events cache HIT — skipping ALL source fetches (FMP, Finnhub, RSS, TwelveData)');
+    return cached as CachedEvents;
+  }
+  console.log('[FMP-DIAG] merged_events cache MISS — will fetch from all sources');
 
   const sourceNames = ['fmp', 'finnhub', 'market_data', 'rss'] as const;
 
