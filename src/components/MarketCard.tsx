@@ -5,9 +5,9 @@ import { BiasResult } from '@/lib/types';
 import { marketIsOpen } from '@/lib/marketIsOpen';
 
 const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string; borderAccent: string }> = {
-  bullish: { text: 'text-emerald-400', bg: 'bg-zinc-900', border: 'border-zinc-800', borderAccent: 'border-t-emerald-500' },
-  bearish: { text: 'text-red-400', bg: 'bg-zinc-900', border: 'border-zinc-800', borderAccent: 'border-t-red-500' },
-  neutral: { text: 'text-zinc-400', bg: 'bg-zinc-900', border: 'border-zinc-800', borderAccent: 'border-t-zinc-700' },
+  bullish: { text: 'text-emerald-400', bg: 'bg-emerald-950/40', border: 'border-emerald-800/40', borderAccent: 'border-t-emerald-500' },
+  bearish: { text: 'text-red-400', bg: 'bg-red-950/40', border: 'border-red-800/40', borderAccent: 'border-t-red-500' },
+  neutral: { text: 'text-zinc-400', bg: 'bg-zinc-900/50', border: 'border-zinc-800', borderAccent: 'border-t-zinc-700' },
 };
 
 const SIGNAL_COLORS: Record<string, string> = {
@@ -18,11 +18,19 @@ const SIGNAL_COLORS: Record<string, string> = {
   strong_sell: 'bg-red-500',
 };
 
+const SIGNAL_TEXT_COLORS: Record<string, string> = {
+  strong_buy: 'text-emerald-400',
+  buy: 'text-emerald-400',
+  neutral: 'text-zinc-500',
+  sell: 'text-red-400',
+  strong_sell: 'text-red-400',
+};
+
 function MiniBar({ score }: { score: number }) {
   const barWidth = Math.min(Math.abs(score), 100);
   const isPositive = score >= 0;
   return (
-    <div className="relative h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+    <div className="relative h-2.5 w-full rounded-full bg-zinc-800/80 overflow-hidden">
       <div className={`absolute top-0 h-full rounded-full transition-all duration-500 ${isPositive ? 'bg-emerald-500' : 'bg-red-500'}`}
         style={{ width: `${barWidth}%`, left: isPositive ? '50%' : `${50 - barWidth}%` }}
       />
@@ -34,9 +42,9 @@ function MiniBar({ score }: { score: number }) {
 }
 
 const CONVICTION_STYLES: Record<string, string> = {
-  high: 'bg-emerald-900/40 text-emerald-400',
-  medium: 'bg-amber-900/40 text-amber-400',
-  low: 'bg-zinc-800/60 text-zinc-500',
+  high: 'bg-emerald-600 text-white',
+  medium: 'bg-amber-600 text-white',
+  low: 'bg-zinc-600 text-zinc-300',
 };
 
 interface MarketCardProps {
@@ -90,9 +98,9 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
               <span className={`text-2xl font-bold leading-none ${colors.text} tabular-nums`}>
                 {data.biasPercent > 0 ? '+' : ''}{data.biasPercent}%
               </span>
-              <div className="flex items-center gap-1 justify-end mt-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${SIGNAL_COLORS[data.signal]}`} />
-                <span className="text-[9px] text-zinc-500 uppercase tracking-wider">{data.signal.replace('_', ' ')}</span>
+                <div className="flex items-center gap-1.5 justify-end mt-1">
+                <div className={`w-2 h-2 rounded-full ${SIGNAL_COLORS[data.signal]}`} />
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${SIGNAL_TEXT_COLORS[data.signal]}`}>{data.signal.replace('_', ' ')}</span>
               </div>
             </div>
           </div>
