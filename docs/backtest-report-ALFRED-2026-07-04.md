@@ -1,6 +1,6 @@
 # MacroFlow Backtest Report
 
-Generated: 2026-07-04T12:08:10.199Z
+Generated: 2026-07-04T12:05:51.119Z
 
 ## Executive Summary
 
@@ -140,11 +140,10 @@ Comparing development vs out-of-sample performance to detect potential overfitti
 
 ## Recommendations
 
-1. **Sample size is the primary limitation**: ~6 months of data produces small buckets (N<30 everywhere). Extend to 12+ months when API access allows.
-2. **Employment regime-dependence confirmed**: Strong jobs data consistently appears in bearish equity buckets. This is a known structural bias — the scoring engine correctly captures it, but the direction may flip depending on macro regime (rate-hike fears vs economic strength). Consider context-dependent employment rules as a follow-up.
-3. **Calendar-only backtest**: RSS/news-driven categories (dollar strength, risk sentiment, geopolitical, crypto regulation, earnings) need forward validation only.
+1. **Sample size is the primary limitation**: 30 days is insufficient for most statistical conclusions. Extend to 90+ days when API access allows.
+2. **Calendar-only backtest**: RSS/news-driven categories (dollar strength, risk sentiment, geopolitical, crypto regulation, earnings) need forward validation only.
+3. **Category caps may need tuning**: If certain categories consistently underperform, their caps could be adjusted (separate follow-up).
 4. **No probability claims yet**: Results do not support converting bias scores to probability labels. Continue using directional language ("bullish/bearish alignment") rather than "X% probability."
-5. **GBPUSD country-specific rules not validated**: FRED has limited UK series coverage. UK-specific rules need Bank of England data for backtesting.
 
 ---
 

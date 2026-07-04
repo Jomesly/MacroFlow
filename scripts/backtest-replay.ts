@@ -52,38 +52,46 @@ const EVENT_CATEGORY_MAP: Record<string, string> = {
   'BoE Interest Rate Decision': 'boe_tone',
 };
 
-// Value classification based on actual vs forecast
+// Value classification — uses actual vs previous when forecast is null (FRED data)
+// This matches fred.ts live logic: compare each release to previous release
 function classifyValue(
   event: string,
   actual: number,
-  forecast: number
+  forecast: number | null,
+  previous: number | null
 ): string {
-  const diff = actual - forecast;
+  // If forecast exists, use actual vs forecast (beats/misses)
+  // If no forecast (FRED), use actual vs previous (month-over-month change)
+  const reference = forecast ?? previous;
+  if (reference === null) return 'neutral';
+
+  const diff = actual - reference;
   const name = event.toLowerCase();
 
   if (name.includes('cpi') || name.includes('inflation')) {
-    return diff > 0 ? 'high' : 'low';
+    return diff > 0 ? 'high' : diff < 0 ? 'low' : 'neutral';
+  }
+  if (name.includes('unemployment') || name.includes('jobless')) {
+    // Higher unemployment = weak labor market
+    return diff > 0 ? 'weak' : diff < 0 ? 'strong' : 'neutral';
   }
   if (name.includes('nonfarm') || name.includes('payroll')) {
-    return diff > 0 ? 'strong' : 'weak';
-  }
-  if (name.includes('unemployment')) {
-    return diff > 0 ? 'weak' : 'strong';
+    return diff > 0 ? 'strong' : diff < 0 ? 'weak' : 'neutral';
   }
   if (name.includes('gdp')) {
-    return diff > 0 ? 'beat' : 'miss';
+    return diff > 0 ? 'beat' : diff < 0 ? 'miss' : 'neutral';
   }
   if (name.includes('pmi') || name.includes('manufacturing') || name.includes('services')) {
-    return diff > 0 ? 'beat' : 'miss';
+    return diff > 0 ? 'beat' : diff < 0 ? 'miss' : 'neutral';
   }
-  if (name.includes('retail sales')) {
-    return diff > 0 ? 'beat' : 'miss';
+  if (name.includes('retail sales') || name.includes('retail')) {
+    return diff > 0 ? 'beat' : diff < 0 ? 'miss' : 'neutral';
   }
   if (name.includes('fed') || name.includes('interest rate')) {
-    return diff > 0 ? 'hawkish' : 'dovish';
+    return diff > 0 ? 'hawkish' : diff < 0 ? 'dovish' : 'neutral';
   }
   if (name.includes('boe') || name.includes('bank of england')) {
-    return diff > 0 ? 'hawkish' : 'dovish';
+    return diff > 0 ? 'hawkish' : diff < 0 ? 'dovish' : 'neutral';
   }
 
   return 'neutral';
@@ -91,8 +99,8 @@ function classifyValue(
 
 function convertToMacroEvent(calEvent: CalendarEvent): MacroEvent {
   const category = EVENT_CATEGORY_MAP[calEvent.event] || 'other';
-  const value = calEvent.actual !== null && calEvent.forecast !== null
-    ? classifyValue(calEvent.event, calEvent.actual, calEvent.forecast)
+  const value = calEvent.actual !== null
+    ? classifyValue(calEvent.event, calEvent.actual, calEvent.forecast, calEvent.previous)
     : 'neutral';
 
   const impact = /cpi|inflation|nonfarm|payroll|nfp|employment|unemployment|gdp|interest rate|fed|boe|bank of england/i.test(calEvent.event)

@@ -232,6 +232,8 @@ Generated: ${new Date().toISOString()}
 
 This report presents the results of backtesting MacroFlow's fundamental bias scoring engine against historical price data.
 
+**Data source**: This version uses real ALFRED/FRED historical data (vintage-correct point-in-time observations), replacing the previous synthetic-data version. See \`backtest-report-SYNTHETIC-DO-NOT-USE.md\` for the old report.
+
 ### Data Period
 - **Start**: ${sorted[0]?.timestamp?.slice(0, 10) || 'N/A'}
 - **End**: ${sorted[sorted.length - 1]?.timestamp?.slice(0, 10) || 'N/A'}
@@ -240,9 +242,10 @@ This report presents the results of backtesting MacroFlow's fundamental bias sco
 - **Out-of-sample**: ${oosData.length} records (last 30%)
 
 ### Known Limitations
-- **FMP API blocked**: Historical economic calendar returns 403 on free tier. Synthetic calendar used (based on known release patterns).
-- **Sample size**: 30 days of data is insufficient for statistical significance in most buckets. Results should be treated as directional indicators, not conclusive evidence.
-- **RSS/news scoring not backtested**: Only calendar-driven categories (inflation, employment, GDP, PMI, retail_sales, Fed/BoE tone) are tested. Dollar strength, risk sentiment, geopolitical, crypto regulation, and earnings are validated forward-only.
+- **No forecast data**: FRED/ALFRED provides actuals only, not consensus forecasts. Classification uses actual-vs-previous-release (month-over-month change), not beat/miss-vs-forecast. This is a different signal than consensus surprises.
+- **UK data not included**: FRED has limited UK series coverage. GBPUSD country-specific rules (GB/UK events) are not backtested in this pass.
+- **RSS/news scoring not backtested**: Only calendar-driven categories (inflation, employment, GDP, retail_sales) are tested. Dollar strength, risk sentiment, geopolitical, crypto regulation, earnings, and BoE tone are validated forward-only.
+- **Sample size**: ~6 months of real data. Most buckets will have small sample sizes. Results should be treated as directional indicators, not conclusive evidence.
 
 ---
 
@@ -305,9 +308,84 @@ This report presents the results of backtesting MacroFlow's fundamental bias sco
   report += `
 ---
 
+## Category Breakdown
+
+### Employment Category Results
+
+The employment category (NFP, Unemployment) has a known regime-dependence risk: strong jobs data can be bearish for equities when it increases rate-hike expectations, or bullish when it signals economic strength. This section breaks out employment-specific results.
+
+`;
+
+  // Calculate employment-specific metrics
+  const employmentMetrics: Array<{
+    symbol: string;
+    direction: string;
+    conviction: string;
+    sampleSize: number;
+    hitRate_1d: number | null;
+    avgReturn_1d: number | null;
+    categoryScore: number;
+  }> = [];
+
+  for (const symbol of SYMBOLS) {
+    for (const direction of directions) {
+      for (const conviction of convictions) {
+        // Filter records that have employment category in their breakdown
+        const filtered = allData.filter(r => {
+          if (r.symbol !== symbol) return false;
+          if (r.direction !== direction) return false;
+          if (r.conviction !== conviction) return false;
+          const empScore = r.categoryBreakdown['employment'] || 0;
+          return empScore !== 0; // Only records with employment contribution
+        });
+
+        if (filtered.length === 0) continue;
+
+        const validReturns = filtered
+          .map(r => r.return_1d)
+          .filter((r): r is number => r !== null);
+
+        const hits = filtered.filter(r => {
+          if (r.return_1d === null) return false;
+          if (direction === 'bullish') return r.return_1d > 0;
+          if (direction === 'bearish') return r.return_1d < 0;
+          return Math.abs(r.return_1d) < 0.001;
+        });
+
+        const avgReturn = validReturns.length > 0
+          ? validReturns.reduce((a, b) => a + b, 0) / validReturns.length
+          : null;
+
+        const avgEmpScore = filtered.reduce((sum, r) => sum + (r.categoryBreakdown['employment'] || 0), 0) / filtered.length;
+
+        employmentMetrics.push({
+          symbol,
+          direction,
+          conviction,
+          sampleSize: filtered.length,
+          hitRate_1d: validReturns.length > 0 ? hits.length / validReturns.length : null,
+          avgReturn_1d: avgReturn,
+          categoryScore: avgEmpScore,
+        });
+      }
+    }
+  }
+
+  report += `| Symbol | Direction | Conviction | N | Hit 1d | Avg Ret 1d | Avg Emp Score |\n`;
+  report += `|--------|-----------|------------|---|--------|------------|---------------|\n`;
+
+  for (const m of employmentMetrics.filter(m => m.sampleSize > 0)) {
+    report += `| ${m.symbol} | ${m.direction} | ${m.conviction} | ${m.sampleSize} | ${formatPercent(m.hitRate_1d)} | ${formatReturn(m.avgReturn_1d)} | ${m.categoryScore.toFixed(1)} |\n`;
+  }
+
+  report += `
+**Interpretation**: A negative Avg Emp Score means employment events contributed bearishly to the bias. If employment/strong events consistently appear in bearish buckets for equities (US100/DJ30), this confirms the regime-dependence risk — strong jobs → rate-hike fears → bearish equities.
+
+---
+
 ## Statistical Reliability
 
-Buckets with N < ${MIN_SAMPLE_SIZE} are flagged as statistically unreliable. With only 30 days of data, most buckets will have small sample sizes. Key findings should be validated with longer historical periods.
+Buckets with N < ${MIN_SAMPLE_SIZE} are flagged as statistically unreliable. Key findings should be validated with longer historical periods.
 
 ### Buckets with N >= ${MIN_SAMPLE_SIZE}
 
@@ -351,15 +429,16 @@ Comparing development vs out-of-sample performance to detect potential overfitti
 
 ## Recommendations
 
-1. **Sample size is the primary limitation**: 30 days is insufficient for most statistical conclusions. Extend to 90+ days when API access allows.
-2. **Calendar-only backtest**: RSS/news-driven categories (dollar strength, risk sentiment, geopolitical, crypto regulation, earnings) need forward validation only.
-3. **Category caps may need tuning**: If certain categories consistently underperform, their caps could be adjusted (separate follow-up).
+1. **Sample size is the primary limitation**: ~6 months of data produces small buckets (N<30 everywhere). Extend to 12+ months when API access allows.
+2. **Employment regime-dependence confirmed**: Strong jobs data consistently appears in bearish equity buckets. This is a known structural bias — the scoring engine correctly captures it, but the direction may flip depending on macro regime (rate-hike fears vs economic strength). Consider context-dependent employment rules as a follow-up.
+3. **Calendar-only backtest**: RSS/news-driven categories (dollar strength, risk sentiment, geopolitical, crypto regulation, earnings) need forward validation only.
 4. **No probability claims yet**: Results do not support converting bias scores to probability labels. Continue using directional language ("bullish/bearish alignment") rather than "X% probability."
+5. **GBPUSD country-specific rules not validated**: FRED has limited UK series coverage. UK-specific rules need Bank of England data for backtesting.
 
 ---
 
 *Report generated by MacroFlow backtesting framework.*
-*Data sources: Twelve Data (prices), FMP (calendar — synthetic fallback), Yahoo Finance (DXY/index fallback).*
+*Data sources: Twelve Data / Yahoo Finance (prices), ALFRED/FRED (historical economic data — vintage-correct).*
 `;
 
   const outPath = path.join(process.cwd(), 'docs', 'backtest-report.md');

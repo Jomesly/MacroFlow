@@ -148,13 +148,13 @@ async function main() {
   for (const symbol of SYMBOLS) {
     console.log(`\nFetching ${symbol}...`);
 
-    // Try Twelve Data first (15min intervals for backtesting)
-    let bars = await fetchTwelveData(symbol, '15min', startStr, endStr);
+    // Try Twelve Data first (daily intervals for longer lookback)
+    let bars = await fetchTwelveData(symbol, '1day', startStr, endStr);
 
     // Fallback to Yahoo if Twelve Data fails (for BTCUSD especially)
     if (bars.length === 0) {
       console.log(`  Falling back to Yahoo Finance for ${symbol}...`);
-      bars = await fetchYahooFinance(symbol, `${daysBack}d`, '15m');
+      bars = await fetchYahooFinance(symbol, `${daysBack}d`, '1d');
     }
 
     // Sort chronologically
