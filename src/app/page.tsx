@@ -5,6 +5,7 @@ import { BiasApiResponse, BiasResult, DataSource, DxyContext, SourceHealth, Upco
 import MarketCard from '@/components/MarketCard';
 import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
+import JournalToggle from '@/components/JournalToggle';
 
 function DxyBar({ dxy }: { dxy: DxyContext }) {
   const isUp = dxy.status === 'strengthening';
@@ -372,6 +373,8 @@ export default function Home() {
       {selected && (
         <BiasDetail data={selected} onClose={() => setSelected(null)} />
       )}
+
+      <JournalToggle />
     </div>
   );
 }

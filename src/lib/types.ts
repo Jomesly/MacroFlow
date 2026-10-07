@@ -122,3 +122,45 @@ export interface EventsApiResponse {
   timestamp: string;
   source: DataSource;
 }
+
+// ── Trading Journal ─────────────────────────────────────────────────
+
+export type TradeSymbol = 'XAUUSD' | 'GBPUSD' | 'US100' | 'DJ30' | 'BTCUSD';
+
+export type TradeDirection = 'long' | 'short';
+
+export type TradeResult = 'win' | 'loss' | 'breakeven';
+
+export const TRADE_SYMBOLS: TradeSymbol[] = ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD'];
+
+export const SETUP_TAGS = ['Sweep', 'IFVG', 'Fib', 'Asian Range'];
+
+export interface Trade {
+  id: string;
+  timestamp: string;
+  symbol: TradeSymbol;
+  direction: TradeDirection;
+  entryPrice: number;
+  exitPrice: number | null;
+  result: TradeResult | null;
+  pnlPercent: number | null;
+  setupTags: string[];
+  notes: string;
+}
+
+export interface TradePatch {
+  entryPrice?: number;
+  exitPrice?: number | null;
+  result?: TradeResult | null;
+  setupTags?: string[];
+  notes?: string;
+}
+
+export interface TradeApiResponse {
+  trade: Trade;
+}
+
+export interface TradesApiResponse {
+  trades: Trade[];
+  timestamp: string;
+}
