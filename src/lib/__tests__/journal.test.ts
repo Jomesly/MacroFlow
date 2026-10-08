@@ -1,67 +1,220 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const kv = new Map<string, unknown>();
-const lists = new Map<string, string[]>();
+const h = vi.hoisted(() => {
+  type Row = Record<string, unknown>;
 
-vi.mock('@upstash/redis', () => ({
-  Redis: class Redis {
-    async get<T>(key: string): Promise<T | null> {
-      return (kv.get(key) as T | undefined) ?? null;
+  interface QueryError {
+    message: string;
+    code?: string;
+  }
+
+  interface QueryResult {
+    data: unknown;
+    error: QueryError | null;
+  }
+
+  interface QueryState {
+    table: string;
+    kind: 'select' | 'insert' | 'update' | 'delete';
+    payload: Row | null;
+    filters: Array<[string, unknown]>;
+    orders: Array<[string, boolean]>;
+    single: boolean;
+    projection: string | null;
+  }
+
+  const tables = new Map<string, Row[]>();
+  let seq = 0;
+
+  function getTable(name: string): Row[] {
+    let table = tables.get(name);
+    if (!table) {
+      table = [];
+      tables.set(name, table);
     }
+    return table;
+  }
 
-    async set(key: string, value: unknown): Promise<void> {
-      kv.set(key, value);
-    }
+  function nextSeq(): string {
+    seq += 1;
+    return String(seq).padStart(12, '0');
+  }
 
-    async del(key: string): Promise<void> {
-      kv.delete(key);
-      lists.delete(key);
-    }
+  function cmp(a: unknown, b: unknown): number {
+    if (a === b) return 0;
+    if (a === null || a === undefined) return -1;
+    if (b === null || b === undefined) return 1;
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return String(a) < String(b) ? -1 : 1;
+  }
 
-    async mget(...keys: string[]): Promise<unknown[]> {
-      return keys.map((k) => kv.get(k) ?? null);
-    }
+  function project(rows: Row[], projection: string | null): Row[] {
+    if (!projection || projection === '*') return rows;
+    const cols = projection.split(',').map((c) => c.trim());
+    return rows.map((row) => {
+      const picked: Row = {};
+      for (const col of cols) picked[col] = row[col];
+      return picked;
+    });
+  }
 
-    async lpush(key: string, ...elements: string[]): Promise<number> {
-      const list = lists.get(key) ?? [];
-      list.unshift(...[...elements].reverse());
-      lists.set(key, list);
-      return list.length;
-    }
+  function run(q: QueryState): QueryResult {
+    const rows = getTable(q.table);
 
-    async lrange<TResult = string>(key: string, start: number, stop: number): Promise<TResult[]> {
-      const list = lists.get(key) ?? [];
-      const end = stop === -1 ? list.length : stop + 1;
-      return list.slice(start, end) as TResult[];
-    }
-
-    async lrem(key: string, count: number, value: string): Promise<number> {
-      const list = lists.get(key) ?? [];
-      const next: string[] = [];
-      let removed = 0;
-      for (const item of list) {
-        if (item === value && (count === 0 || removed < count)) {
-          removed++;
-          continue;
+    if (q.kind === 'insert') {
+      const row: Row = {
+        id: crypto.randomUUID(),
+        source: 'manual',
+        broker_trade_id: null,
+        user_id: null,
+        pnl_amount: null,
+        closed_at: null,
+        created_at: nextSeq(),
+        updated_at: new Date().toISOString(),
+        ...q.payload,
+      };
+      if (row.broker_trade_id !== null && row.broker_trade_id !== undefined) {
+        const duplicate = rows.some(
+          (r) => r.source === row.source && r.broker_trade_id === row.broker_trade_id
+        );
+        if (duplicate) {
+          return {
+            data: null,
+            error: {
+              code: '23505',
+              message:
+                'duplicate key value violates unique constraint "trades_source_broker_trade_id_key"',
+            },
+          };
         }
-        next.push(item);
       }
-      lists.set(key, next);
-      return removed;
+      rows.push(row);
+      return { data: null, error: null };
     }
-  },
-}));
+
+    const matches = (row: Row): boolean =>
+      q.filters.every(([col, val]) => row[col] === val);
+
+    if (q.kind === 'update') {
+      for (const row of rows) {
+        if (matches(row)) Object.assign(row, q.payload);
+      }
+      return { data: null, error: null };
+    }
+
+    if (q.kind === 'delete') {
+      const removed: Row[] = [];
+      for (let i = rows.length - 1; i >= 0; i--) {
+        if (matches(rows[i])) removed.unshift(...rows.splice(i, 1));
+      }
+      return { data: project(removed, q.projection), error: null };
+    }
+
+    let out = rows.filter(matches);
+    if (q.orders.length > 0) {
+      out = [...out].sort((a, b) => {
+        for (const [col, asc] of q.orders) {
+          const c = cmp(a[col], b[col]);
+          if (c !== 0) return asc ? c : -c;
+        }
+        return 0;
+      });
+    }
+    if (q.single) {
+      if (out.length > 1) {
+        return { data: null, error: { message: 'JSON object requested, multiple rows returned' } };
+      }
+      return { data: project(out, q.projection)[0] ?? null, error: null };
+    }
+    return { data: project(out, q.projection), error: null };
+  }
+
+  class Builder implements PromiseLike<QueryResult> {
+    private readonly q: QueryState;
+    private cached: QueryResult | null = null;
+
+    constructor(table: string) {
+      this.q = {
+        table,
+        kind: 'select',
+        payload: null,
+        filters: [],
+        orders: [],
+        single: false,
+        projection: null,
+      };
+    }
+
+    select(cols: string): this {
+      this.q.projection = cols;
+      return this;
+    }
+
+    insert(row: Row): this {
+      this.q.kind = 'insert';
+      this.q.payload = row;
+      return this;
+    }
+
+    update(row: Row): this {
+      this.q.kind = 'update';
+      this.q.payload = row;
+      return this;
+    }
+
+    delete(): this {
+      this.q.kind = 'delete';
+      return this;
+    }
+
+    eq(col: string, val: unknown): this {
+      this.q.filters.push([col, val]);
+      return this;
+    }
+
+    order(col: string, opts?: { ascending?: boolean }): this {
+      this.q.orders.push([col, opts?.ascending !== false]);
+      return this;
+    }
+
+    maybeSingle(): this {
+      this.q.single = true;
+      return this;
+    }
+
+    then<TResult1 = QueryResult, TResult2 = never>(
+      onfulfilled?: ((value: QueryResult) => TResult1 | PromiseLike<TResult1>) | null,
+      onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+    ): Promise<TResult1 | TResult2> {
+      if (!this.cached) this.cached = run(this.q);
+      return Promise.resolve(this.cached).then(onfulfilled, onrejected);
+    }
+  }
+
+  function createClient(...args: string[]): { from(table: string): Builder } {
+    void args;
+    return { from: (table: string) => new Builder(table) };
+  }
+
+  function reset(): void {
+    tables.clear();
+    seq = 0;
+  }
+
+  return { createClient, reset };
+});
+
+vi.mock('@supabase/supabase-js', () => ({ createClient: h.createClient }));
 
 async function loadJournal() {
-  process.env.UPSTASH_REDIS_REST_URL = 'https://example.com';
-  process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+  process.env.SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
   return import('../journal');
 }
 
 describe('journal', () => {
   beforeEach(() => {
-    kv.clear();
-    lists.clear();
+    h.reset();
   });
 
   it('createTrade returns a trade with open fields nulled out', async () => {
@@ -148,7 +301,7 @@ describe('journal', () => {
     await expect(updateTrade('missing-id', { notes: 'x' })).resolves.toBeNull();
   });
 
-  it('deleteTrade removes the trade key and its id from the list', async () => {
+  it('deleteTrade removes the trade row and reports deletion', async () => {
     const { createTrade, deleteTrade, listTrades } = await loadJournal();
 
     const keep = await createTrade({ symbol: 'DJ30', direction: 'long', entryPrice: 40000 });

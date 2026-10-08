@@ -1,28 +1,8 @@
-import { Redis } from '@upstash/redis';
+import { supabase } from './supabase';
 import { Trade, TradeDirection, TradePatch, TradeResult, TradeSymbol, TRADE_SYMBOLS } from './types';
-
-const TRADE_IDS_KEY = 'macroflow:journal:trade_ids';
-const TRADE_KEY_PREFIX = 'macroflow:journal:trade:';
 
 export class JournalValidationError extends Error {}
 export class JournalStorageError extends Error {}
-
-function createClient(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  return new Redis({ url, token });
-}
-
-function requireClient(): Redis {
-  const redis = createClient();
-  if (!redis) throw new JournalStorageError('Journal storage is not configured');
-  return redis;
-}
-
-function tradeKey(id: string): string {
-  return `${TRADE_KEY_PREFIX}${id}`;
-}
 
 export function computePnlPercent(
   entryPrice: number,
@@ -54,6 +34,53 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((v) => typeof v === 'string');
 }
 
+// ── Row mapping ───────────────────────────────────────────────────────
+
+interface TradeRow {
+  id: string;
+  user_id: string | null;
+  source: string;
+  broker_trade_id: string | null;
+  symbol: string;
+  direction: string;
+  entry_price: number | string;
+  exit_price: number | string | null;
+  result: string | null;
+  pnl_percent: number | string | null;
+  pnl_amount: number | string | null;
+  setup_tags: string[] | null;
+  notes: string | null;
+  logged_at: string;
+  closed_at: string | null;
+}
+
+function toNumber(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function rowToTrade(row: TradeRow): Trade {
+  return {
+    id: row.id,
+    timestamp: row.logged_at,
+    symbol: row.symbol as TradeSymbol,
+    direction: row.direction as TradeDirection,
+    entryPrice: Number(row.entry_price),
+    exitPrice: toNumber(row.exit_price),
+    result: (row.result as TradeResult | null) ?? null,
+    pnlPercent: toNumber(row.pnl_percent),
+    setupTags: row.setup_tags ?? [],
+    notes: row.notes ?? '',
+  };
+}
+
+function storageError(operation: string, message: string): JournalStorageError {
+  return new JournalStorageError(`Failed to ${operation} trade: ${message}`);
+}
+
+// ── Validation ────────────────────────────────────────────────────────
+
 interface CreateTradeInput {
   symbol?: unknown;
   direction?: unknown;
@@ -63,6 +90,8 @@ interface CreateTradeInput {
   setupTags?: unknown;
   notes?: unknown;
 }
+
+// ── Public API ────────────────────────────────────────────────────────
 
 export async function createTrade(input: CreateTradeInput): Promise<Trade> {
   if (!isTradeSymbol(input.symbol)) throw new JournalValidationError('Invalid symbol');
@@ -97,42 +126,48 @@ export async function createTrade(input: CreateTradeInput): Promise<Trade> {
     notes: input.notes ?? '',
   };
 
-  const redis = requireClient();
-  await redis.set(tradeKey(trade.id), trade);
-  await redis.lpush(TRADE_IDS_KEY, trade.id);
+  const { error } = await supabase.from('trades').insert({
+    id: trade.id,
+    symbol: trade.symbol,
+    direction: trade.direction,
+    entry_price: trade.entryPrice,
+    exit_price: trade.exitPrice,
+    result: trade.result,
+    pnl_percent: trade.pnlPercent,
+    setup_tags: trade.setupTags,
+    notes: trade.notes,
+    logged_at: trade.timestamp,
+  });
 
+  if (error) throw storageError('save', error.message);
   return trade;
 }
 
 export async function listTrades(): Promise<Trade[]> {
-  const redis = requireClient();
-  const ids = await redis.lrange<string>(TRADE_IDS_KEY, 0, -1);
-  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('trades')
+    .select('*')
+    .order('logged_at', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  const values = await redis.mget(...ids.map(tradeKey));
-
-  const trades: Trade[] = [];
-  for (const value of values) {
-    if (value == null) continue;
-    try {
-      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-      if (parsed && typeof parsed === 'object' && 'id' in parsed) {
-        trades.push(parsed as Trade);
-      }
-    } catch {
-      // skip corrupt entries rather than failing the whole list
-    }
-  }
-  return trades;
+  if (error) throw storageError('list', error.message);
+  const rows = (data ?? []) as TradeRow[];
+  return rows.map(rowToTrade);
 }
 
 export async function updateTrade(id: string, patch: TradePatch): Promise<Trade | null> {
   if (!id) throw new JournalValidationError('Missing trade id');
 
-  const redis = requireClient();
-  const existing = await redis.get<Trade>(tradeKey(id));
-  if (!existing) return null;
+  const { data: existingRow, error: readError } = await supabase
+    .from('trades')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
 
+  if (readError) throw storageError('read', readError.message);
+  if (!existingRow) return null;
+
+  const existing = rowToTrade(existingRow as TradeRow);
   const next: Trade = { ...existing };
 
   if (patch.entryPrice !== undefined) {
@@ -166,17 +201,32 @@ export async function updateTrade(id: string, patch: TradePatch): Promise<Trade 
     ? computePnlPercent(next.entryPrice, next.exitPrice, next.direction)
     : null;
 
-  await redis.set(tradeKey(id), next);
+  const { error: writeError } = await supabase
+    .from('trades')
+    .update({
+      entry_price: next.entryPrice,
+      exit_price: next.exitPrice,
+      result: next.result,
+      pnl_percent: next.pnlPercent,
+      setup_tags: next.setupTags,
+      notes: next.notes,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id);
+
+  if (writeError) throw storageError('update', writeError.message);
   return next;
 }
 
 export async function deleteTrade(id: string): Promise<boolean> {
   if (!id) throw new JournalValidationError('Missing trade id');
 
-  const redis = requireClient();
-  const existing = await redis.get<Trade>(tradeKey(id));
-  await redis.del(tradeKey(id));
-  await redis.lrem(TRADE_IDS_KEY, 0, id);
+  const { data, error } = await supabase
+    .from('trades')
+    .delete()
+    .eq('id', id)
+    .select('id');
 
-  return existing !== null;
+  if (error) throw storageError('delete', error.message);
+  return (data?.length ?? 0) > 0;
 }
