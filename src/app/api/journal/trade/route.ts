@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireJournalAccess } from '@/lib/auth';
 import { createTrade, listTrades, JournalStorageError, JournalValidationError } from '@/lib/journal';
 import { TradeApiResponse, TradesApiResponse } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requireJournalAccess(request);
+  if (!auth.ok) return auth.response;
+
   try {
-    const trades = await listTrades();
+    const trades = await listTrades(auth.userId);
     const response: TradesApiResponse = {
       trades,
       timestamp: new Date().toISOString(),
@@ -22,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireJournalAccess(request);
+  if (!auth.ok) return auth.response;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -34,7 +41,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const trade = await createTrade(body as Record<string, unknown>);
+    const trade = await createTrade(auth.userId, body as Record<string, unknown>);
     const response: TradeApiResponse = { trade };
     return NextResponse.json(response, { status: 201 });
   } catch (err) {

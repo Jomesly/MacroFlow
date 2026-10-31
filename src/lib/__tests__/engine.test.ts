@@ -282,4 +282,108 @@ describe('calculateBias', () => {
       expect(result.signal).toBe('neutral');
     });
   });
+
+  describe('regime-aware employment scoring', () => {
+    it('flips weak employment from bearish to bullish for US100 in cutting regime', () => {
+      // Without rate spread (neutral): weak employment for US100 = -10 (bearish)
+      const [neutralResult] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'US100');
+      expect(neutralResult.biasScore).toBe(-10);
+
+      // With spread < -0.50 (cutting regime): weak employment flips to bullish
+      const [cuttingResult] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'US100', -1.0);
+      expect(cuttingResult.biasScore).toBe(10);
+      expect(cuttingResult.direction).toBe('neutral'); // +10 is in neutral zone
+    });
+
+    it('flips strong employment from bullish to bearish for DJ30 in cutting regime', () => {
+      // Without rate spread: strong employment for DJ30 = +15 (weakly_bullish)
+      const [neutralResult] = calculateBias([
+        event({ category: 'employment', value: 'strong', title: 'Strong jobs' }),
+      ], 'DJ30');
+      expect(neutralResult.biasScore).toBe(15);
+      expect(neutralResult.direction).toBe('weakly_bullish');
+
+      // With spread < -0.50: strong employment flips to bearish
+      const [cuttingResult] = calculateBias([
+        event({ category: 'employment', value: 'strong', title: 'Strong jobs' }),
+      ], 'DJ30', -1.0);
+      expect(cuttingResult.biasScore).toBe(-15);
+      expect(cuttingResult.direction).toBe('weakly_bearish');
+    });
+
+    it('dampens employment by 50% for XAUUSD in cutting regime', () => {
+      // Without rate spread: weak employment for XAUUSD = +10
+      const [neutralResult] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'XAUUSD');
+      expect(neutralResult.biasScore).toBe(10);
+
+      // With spread < -0.50: dampened to +5
+      const [cuttingResult] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'XAUUSD', -1.0);
+      expect(cuttingResult.biasScore).toBe(5);
+    });
+
+    it('dampens employment by 50% for BTCUSD in cutting regime', () => {
+      // Without rate spread: weak employment for BTCUSD = -10
+      const [neutralResult] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'BTCUSD');
+      expect(neutralResult.biasScore).toBe(-10);
+
+      // With spread < -0.50: dampened to -5
+      const [cuttingResult] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'BTCUSD', -1.0);
+      expect(cuttingResult.biasScore).toBe(-5);
+    });
+
+    it('does NOT modulate when spread is near zero (neutral regime)', () => {
+      // Spread = -0.20 (above -0.50 threshold) → no modulation
+      const [result] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'US100', -0.20);
+      expect(result.biasScore).toBe(-10); // unchanged from default
+    });
+
+    it('does NOT modulate when spread is null', () => {
+      const [result] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'US100', null);
+      expect(result.biasScore).toBe(-10); // unchanged
+    });
+
+    it('does NOT modulate when rateSpread is omitted (live system default)', () => {
+      const [result] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs' }),
+      ], 'US100');
+      expect(result.biasScore).toBe(-10); // unchanged
+    });
+
+    it('does NOT modulate non-employment categories in cutting regime', () => {
+      // Fed dovish for US100 = +40 regardless of rate regime
+      const [neutralResult] = calculateBias([
+        event({ category: 'fed_tone', value: 'dovish', title: 'Fed dovish' }),
+      ], 'US100');
+      const [cuttingResult] = calculateBias([
+        event({ category: 'fed_tone', value: 'dovish', title: 'Fed dovish' }),
+      ], 'US100', -1.0);
+      expect(neutralResult.biasScore).toBe(cuttingResult.biasScore);
+    });
+
+    it('applies modulation at scoring time, not after capping', () => {
+      // Two weak employment events for US100 in cutting regime
+      // Each flips to +10, but employment cap is 20 → capped at +20
+      const [result] = calculateBias([
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs 1' }),
+        event({ category: 'employment', value: 'weak', title: 'Weak jobs 2' }),
+      ], 'US100', -1.0);
+      expect(result.biasScore).toBe(20); // capped at employment cap
+    });
+  });
 });

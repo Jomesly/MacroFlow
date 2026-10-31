@@ -1,4 +1,5 @@
 'use client';
+import { journalFetch } from '@/lib/journal-fetch';
 
 import { useCallback, useEffect, useState } from 'react';
 import { SETUP_TAGS, Trade, TradeApiResponse, TradeResult, TradesApiResponse } from '@/lib/types';
@@ -48,7 +49,7 @@ function formatPnl(trade: Trade): { text: string; color: string } {
 export default function TradeHistory() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -62,13 +63,14 @@ export default function TradeHistory() {
 
   const fetchTrades = useCallback(async () => {
     try {
-      const res = await fetch('/api/journal/trade');
+      const res = await journalFetch('/api/journal/trade');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: TradesApiResponse = await res.json();
       setTrades(json.trades);
-      setLoadError(false);
-    } catch {
-      setLoadError(true);
+      setLoadError('');
+    } catch (err) {
+      setTrades([]);
+      setLoadError(err instanceof Error ? err.message : 'Failed to load trades. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,7 @@ export default function TradeHistory() {
 
   const retry = () => {
     setLoading(true);
-    setLoadError(false);
+    setLoadError('');
     void fetchTrades();
   };
 
@@ -133,7 +135,7 @@ export default function TradeHistory() {
         notes: editNotes,
         setupTags: editTags,
       };
-      const res = await fetch(`/api/journal/trade/${id}`, {
+      const res = await journalFetch(`/api/journal/trade/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -156,7 +158,7 @@ export default function TradeHistory() {
     setSaving(true);
     setActionError('');
     try {
-      const res = await fetch(`/api/journal/trade/${id}`, { method: 'DELETE' });
+      const res = await journalFetch(`/api/journal/trade/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const err = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(err?.error ?? 'Failed to delete trade');
@@ -193,7 +195,7 @@ export default function TradeHistory() {
   if (loadError) {
     return (
       <div className="rounded-xl border border-red-800/30 bg-red-950/20 p-6 text-center">
-        <p className="text-red-400 text-sm">Failed to load trades</p>
+        <p role="alert" className="text-red-400 text-sm">{loadError}</p>
         <button
           type="button"
           onClick={retry}

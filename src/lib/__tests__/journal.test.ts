@@ -213,6 +213,9 @@ async function loadJournal() {
 }
 
 describe('journal', () => {
+  const USER_A = 'user-a-id';
+  const USER_B = 'user-b-id';
+
   beforeEach(() => {
     h.reset();
   });
@@ -220,7 +223,7 @@ describe('journal', () => {
   it('createTrade returns a trade with open fields nulled out', async () => {
     const { createTrade } = await loadJournal();
 
-    const trade = await createTrade({ symbol: 'US100', direction: 'long', entryPrice: 20350 });
+    const trade = await createTrade(USER_A, { symbol: 'US100', direction: 'long', entryPrice: 20350 });
 
     expect(trade.id).toBeTruthy();
     expect(trade.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
@@ -237,11 +240,11 @@ describe('journal', () => {
   it('listTrades returns trades newest first', async () => {
     const { createTrade, listTrades } = await loadJournal();
 
-    const first = await createTrade({ symbol: 'XAUUSD', direction: 'long', entryPrice: 2000 });
-    const second = await createTrade({ symbol: 'DJ30', direction: 'short', entryPrice: 40000 });
-    const third = await createTrade({ symbol: 'BTCUSD', direction: 'long', entryPrice: 60000 });
+    const first = await createTrade(USER_A, { symbol: 'XAUUSD', direction: 'long', entryPrice: 2000 });
+    const second = await createTrade(USER_A, { symbol: 'DJ30', direction: 'short', entryPrice: 40000 });
+    const third = await createTrade(USER_A, { symbol: 'BTCUSD', direction: 'long', entryPrice: 60000 });
 
-    const trades = await listTrades();
+    const trades = await listTrades(USER_A);
 
     expect(trades.map((t) => t.id)).toEqual([third.id, second.id, first.id]);
   });
@@ -249,23 +252,23 @@ describe('journal', () => {
   it('computes P&L correctly for long and short directions', async () => {
     const { createTrade, updateTrade } = await loadJournal();
 
-    const longWin = await createTrade({
+    const longWin = await createTrade(USER_A, {
       symbol: 'US100', direction: 'long', entryPrice: 100, exitPrice: 110, result: 'win',
     });
     expect(longWin.pnlPercent).toBe(10);
 
-    const shortWin = await createTrade({
+    const shortWin = await createTrade(USER_A, {
       symbol: 'US100', direction: 'short', entryPrice: 100, exitPrice: 90, result: 'win',
     });
     expect(shortWin.pnlPercent).toBe(10);
 
-    const longLoss = await createTrade({
+    const longLoss = await createTrade(USER_A, {
       symbol: 'US100', direction: 'long', entryPrice: 20350, exitPrice: 20300, result: 'loss',
     });
     expect(longLoss.pnlPercent).toBe(-0.25);
 
-    const open = await createTrade({ symbol: 'GBPUSD', direction: 'short', entryPrice: 1.3 });
-    const closed = await updateTrade(open.id, { exitPrice: 1.29, result: 'win' });
+    const open = await createTrade(USER_A, { symbol: 'GBPUSD', direction: 'short', entryPrice: 1.3 });
+    const closed = await updateTrade(USER_A, open.id, { exitPrice: 1.29, result: 'win' });
     expect(closed?.pnlPercent).toBe(0.77);
   });
 
@@ -273,21 +276,21 @@ describe('journal', () => {
     const journal = await loadJournal();
 
     await expect(
-      journal.createTrade({ symbol: 'US100', direction: 'long', entryPrice: 100, exitPrice: 105 })
+      journal.createTrade(USER_A, { symbol: 'US100', direction: 'long', entryPrice: 100, exitPrice: 105 })
     ).rejects.toThrow(journal.JournalValidationError);
 
-    const open = await journal.createTrade({ symbol: 'US100', direction: 'long', entryPrice: 100 });
+    const open = await journal.createTrade(USER_A, { symbol: 'US100', direction: 'long', entryPrice: 100 });
 
     await expect(
-      journal.updateTrade(open.id, { exitPrice: 105 })
+      journal.updateTrade(USER_A, open.id, { exitPrice: 105 })
     ).rejects.toThrow(journal.JournalValidationError);
   });
 
   it('allows notes-only updates without a result', async () => {
     const { createTrade, updateTrade } = await loadJournal();
 
-    const trade = await createTrade({ symbol: 'US100', direction: 'long', entryPrice: 100 });
-    const updated = await updateTrade(trade.id, { notes: 'sweep into IFVG' });
+    const trade = await createTrade(USER_A, { symbol: 'US100', direction: 'long', entryPrice: 100 });
+    const updated = await updateTrade(USER_A, trade.id, { notes: 'sweep into IFVG' });
 
     expect(updated?.notes).toBe('sweep into IFVG');
     expect(updated?.result).toBeNull();
@@ -298,21 +301,68 @@ describe('journal', () => {
   it('returns null when updating a missing trade', async () => {
     const { updateTrade } = await loadJournal();
 
-    await expect(updateTrade('missing-id', { notes: 'x' })).resolves.toBeNull();
+    await expect(updateTrade(USER_A, 'missing-id', { notes: 'x' })).resolves.toBeNull();
   });
 
   it('deleteTrade removes the trade row and reports deletion', async () => {
     const { createTrade, deleteTrade, listTrades } = await loadJournal();
 
-    const keep = await createTrade({ symbol: 'DJ30', direction: 'long', entryPrice: 40000 });
-    const remove = await createTrade({ symbol: 'US100', direction: 'short', entryPrice: 20350 });
+    const keep = await createTrade(USER_A, { symbol: 'DJ30', direction: 'long', entryPrice: 40000 });
+    const remove = await createTrade(USER_A, { symbol: 'US100', direction: 'short', entryPrice: 20350 });
 
-    await expect(deleteTrade(remove.id)).resolves.toBe(true);
+    await expect(deleteTrade(USER_A, remove.id)).resolves.toBe(true);
 
-    const trades = await listTrades();
+    const trades = await listTrades(USER_A);
     expect(trades.map((t) => t.id)).toEqual([keep.id]);
     expect(trades.find((t) => t.id === remove.id)).toBeUndefined();
 
-    await expect(deleteTrade(remove.id)).resolves.toBe(false);
+    await expect(deleteTrade(USER_A, remove.id)).resolves.toBe(false);
+  });
+
+  it('stores user_id on create', async () => {
+    const { createTrade, listTrades } = await loadJournal();
+
+    const trade = await createTrade(USER_A, { symbol: 'XAUUSD', direction: 'long', entryPrice: 2000 });
+
+    const own = await listTrades(USER_A);
+    expect(own.map((t) => t.id)).toEqual([trade.id]);
+  });
+
+  it('isolates trades between users on list', async () => {
+    const { createTrade, listTrades } = await loadJournal();
+
+    const aTrade = await createTrade(USER_A, { symbol: 'XAUUSD', direction: 'long', entryPrice: 2000 });
+    const bTrade = await createTrade(USER_B, { symbol: 'US100', direction: 'short', entryPrice: 20350 });
+
+    expect((await listTrades(USER_A)).map((t) => t.id)).toEqual([aTrade.id]);
+    expect((await listTrades(USER_B)).map((t) => t.id)).toEqual([bTrade.id]);
+  });
+
+  it('prevents cross-user update and delete', async () => {
+    const { createTrade, updateTrade, deleteTrade, listTrades } = await loadJournal();
+
+    const trade = await createTrade(USER_A, { symbol: 'XAUUSD', direction: 'long', entryPrice: 2000 });
+
+    await expect(updateTrade(USER_B, trade.id, { notes: 'hijack' })).resolves.toBeNull();
+    await expect(deleteTrade(USER_B, trade.id)).resolves.toBe(false);
+
+    const own = await listTrades(USER_A);
+    expect(own.map((t) => t.id)).toEqual([trade.id]);
+    expect(own[0].notes).toBe('');
+  });
+
+  it('rejects missing user id on every operation', async () => {
+    const journal = await loadJournal();
+
+    await expect(
+      journal.createTrade('', { symbol: 'US100', direction: 'long', entryPrice: 100 })
+    ).rejects.toThrow(journal.JournalValidationError);
+    await expect(journal.listTrades('')).rejects.toThrow(journal.JournalValidationError);
+    await expect(journal.updateTrade('', 'some-id', { notes: 'x' })).rejects.toThrow(
+      journal.JournalValidationError
+    );
+    await expect(journal.deleteTrade('', 'some-id')).rejects.toThrow(
+      journal.JournalValidationError
+    );
   });
 });

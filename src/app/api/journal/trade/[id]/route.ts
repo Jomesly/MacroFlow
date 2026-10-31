@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireJournalAccess } from '@/lib/auth';
 import { deleteTrade, updateTrade, JournalStorageError, JournalValidationError } from '@/lib/journal';
 import { TradeApiResponse } from '@/lib/types';
 
@@ -8,6 +9,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireJournalAccess(request);
+  if (!auth.ok) return auth.response;
+
   const { id } = await params;
 
   if (!id) {
@@ -26,7 +30,7 @@ export async function PUT(
   }
 
   try {
-    const trade = await updateTrade(id, body as Record<string, never>);
+    const trade = await updateTrade(auth.userId, id, body as Record<string, never>);
     if (!trade) {
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }
@@ -45,9 +49,12 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireJournalAccess(request);
+  if (!auth.ok) return auth.response;
+
   const { id } = await params;
 
   if (!id) {
@@ -55,7 +62,7 @@ export async function DELETE(
   }
 
   try {
-    const deleted = await deleteTrade(id);
+    const deleted = await deleteTrade(auth.userId, id);
     if (!deleted) {
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }

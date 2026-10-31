@@ -41,6 +41,7 @@ interface TradeRow {
   user_id: string | null;
   source: string;
   broker_trade_id: string | null;
+  broker_account_id: number | null;
   symbol: string;
   direction: string;
   entry_price: number | string;
@@ -48,6 +49,7 @@ interface TradeRow {
   result: string | null;
   pnl_percent: number | string | null;
   pnl_amount: number | string | null;
+  r_multiple: number | string | null;
   setup_tags: string[] | null;
   notes: string | null;
   logged_at: string;
@@ -64,12 +66,16 @@ function rowToTrade(row: TradeRow): Trade {
   return {
     id: row.id,
     timestamp: row.logged_at,
+    closedAt: row.closed_at,
     symbol: row.symbol as TradeSymbol,
     direction: row.direction as TradeDirection,
     entryPrice: Number(row.entry_price),
     exitPrice: toNumber(row.exit_price),
     result: (row.result as TradeResult | null) ?? null,
     pnlPercent: toNumber(row.pnl_percent),
+    pnlAmount: toNumber(row.pnl_amount),
+    rMultiple: toNumber(row.r_multiple),
+    brokerAccountId: row.broker_account_id,
     setupTags: row.setup_tags ?? [],
     notes: row.notes ?? '',
   };
@@ -93,7 +99,8 @@ interface CreateTradeInput {
 
 // ── Public API ────────────────────────────────────────────────────────
 
-export async function createTrade(input: CreateTradeInput): Promise<Trade> {
+export async function createTrade(userId: string, input: CreateTradeInput): Promise<Trade> {
+  if (!userId) throw new JournalValidationError('Missing user id');
   if (!isTradeSymbol(input.symbol)) throw new JournalValidationError('Invalid symbol');
   if (!isTradeDirection(input.direction)) throw new JournalValidationError('Invalid direction');
   if (!isPositiveNumber(input.entryPrice)) throw new JournalValidationError('Entry price must be a positive number');
@@ -114,6 +121,7 @@ export async function createTrade(input: CreateTradeInput): Promise<Trade> {
   const trade: Trade = {
     id: crypto.randomUUID(),
     timestamp: new Date().toISOString(),
+    closedAt: null,
     symbol: input.symbol,
     direction: input.direction,
     entryPrice: input.entryPrice,
@@ -122,12 +130,16 @@ export async function createTrade(input: CreateTradeInput): Promise<Trade> {
     pnlPercent: exitPrice !== null
       ? computePnlPercent(input.entryPrice, exitPrice, input.direction)
       : null,
+    pnlAmount: null,
+    rMultiple: null,
+    brokerAccountId: null,
     setupTags: input.setupTags ?? [],
     notes: input.notes ?? '',
   };
 
   const { error } = await supabase.from('trades').insert({
     id: trade.id,
+    user_id: userId,
     symbol: trade.symbol,
     direction: trade.direction,
     entry_price: trade.entryPrice,
@@ -143,10 +155,12 @@ export async function createTrade(input: CreateTradeInput): Promise<Trade> {
   return trade;
 }
 
-export async function listTrades(): Promise<Trade[]> {
+export async function listTrades(userId: string): Promise<Trade[]> {
+  if (!userId) throw new JournalValidationError('Missing user id');
   const { data, error } = await supabase
     .from('trades')
     .select('*')
+    .eq('user_id', userId)
     .order('logged_at', { ascending: false })
     .order('created_at', { ascending: false });
 
@@ -155,13 +169,15 @@ export async function listTrades(): Promise<Trade[]> {
   return rows.map(rowToTrade);
 }
 
-export async function updateTrade(id: string, patch: TradePatch): Promise<Trade | null> {
+export async function updateTrade(userId: string, id: string, patch: TradePatch): Promise<Trade | null> {
+  if (!userId) throw new JournalValidationError('Missing user id');
   if (!id) throw new JournalValidationError('Missing trade id');
 
   const { data: existingRow, error: readError } = await supabase
     .from('trades')
     .select('*')
     .eq('id', id)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (readError) throw storageError('read', readError.message);
@@ -212,19 +228,22 @@ export async function updateTrade(id: string, patch: TradePatch): Promise<Trade 
       notes: next.notes,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('user_id', userId);
 
   if (writeError) throw storageError('update', writeError.message);
   return next;
 }
 
-export async function deleteTrade(id: string): Promise<boolean> {
+export async function deleteTrade(userId: string, id: string): Promise<boolean> {
+  if (!userId) throw new JournalValidationError('Missing user id');
   if (!id) throw new JournalValidationError('Missing trade id');
 
   const { data, error } = await supabase
     .from('trades')
     .delete()
     .eq('id', id)
+    .eq('user_id', userId)
     .select('id');
 
   if (error) throw storageError('delete', error.message);

@@ -1,4 +1,5 @@
 'use client';
+import { journalFetch } from '@/lib/journal-fetch';
 
 import { useEffect, useState } from 'react';
 import { SETUP_TAGS, TradeDirection, TradeResult, TradeSymbol, TRADE_SYMBOLS } from '@/lib/types';
@@ -103,7 +104,7 @@ export default function LogTradeForm() {
       if (exitFilled) body.exitPrice = exitNum;
       if (result !== '') body.result = result;
 
-      const res = await fetch('/api/journal/trade', {
+      const res = await journalFetch('/api/journal/trade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

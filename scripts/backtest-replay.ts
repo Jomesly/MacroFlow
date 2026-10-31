@@ -120,7 +120,7 @@ function convertToMacroEvent(calEvent: CalendarEvent): MacroEvent {
   };
 }
 
-function loadHistoricalData(): { events: CalendarEvent[]; prices: Record<string, unknown[]> } {
+function loadHistoricalData(): { events: CalendarEvent[]; prices: Record<string, unknown[]>; rateSpreads: Record<string, number | null> } {
   // Load calendar events
   const calendarPath = path.join(process.cwd(), 'data', 'historical-calendar', 'events.json');
   const events: CalendarEvent[] = JSON.parse(fs.readFileSync(calendarPath, 'utf8'));
@@ -137,12 +137,23 @@ function loadHistoricalData(): { events: CalendarEvent[]; prices: Record<string,
     }
   }
 
-  return { events, prices };
+  // Load rate spreads (DGS2 - FEDFUNDS by date)
+  const spreadPath = path.join(process.cwd(), 'data', 'historical-calendar', 'rate-spreads.json');
+  let rateSpreads: Record<string, number | null> = {};
+  if (fs.existsSync(spreadPath)) {
+    rateSpreads = JSON.parse(fs.readFileSync(spreadPath, 'utf8'));
+    const validCount = Object.values(rateSpreads).filter(s => s !== null).length;
+    console.log(`  Rate spreads loaded: ${validCount} dates with data`);
+  } else {
+    console.warn('  Rate spreads file not found — regime modulation disabled');
+  }
+
+  return { events, prices, rateSpreads };
 }
 
 function runReplay(): void {
   console.log('Loading historical data...');
-  const { events, prices } = loadHistoricalData();
+  const { events, prices, rateSpreads } = loadHistoricalData();
 
   console.log(`Calendar events: ${events.length}`);
   console.log(`Symbols with prices: ${Object.keys(prices).join(', ')}`);
@@ -164,14 +175,18 @@ function runReplay(): void {
 
   for (const event of macroEvents) {
     const eventTime = new Date(event.timestamp);
+    const eventDate = event.timestamp.slice(0, 10);
+
+    // Look up the rate spread for this event date
+    const rateSpread = rateSpreads[eventDate] ?? null;
 
     // Only use events that occurred up to this point (no look-ahead)
     const knownEvents = macroEvents.filter(
       e => new Date(e.timestamp).getTime() <= eventTime.getTime()
     );
 
-    // Calculate bias for each symbol
-    const results = calculateBias(knownEvents);
+    // Calculate bias for each symbol, passing the rate spread for regime modulation
+    const results = calculateBias(knownEvents, undefined, rateSpread);
 
     for (const result of results) {
       // Build category breakdown

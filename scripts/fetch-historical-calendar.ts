@@ -97,6 +97,9 @@ const SERIES_CONFIG = [
   },
 ];
 
+// Rate-expectations series (used for regime-aware employment scoring)
+const RATE_SPREAD_SERIES = ['DGS2', 'FEDFUNDS'];
+
 async function fetchVintageDates(seriesId: string): Promise<string[]> {
   const url = `${FRED_BASE}/series/vintagedates?series_id=${seriesId}&api_key=${API_KEY}&file_type=json&sort_order=desc&limit=200`;
   const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
@@ -258,6 +261,81 @@ async function main() {
   fs.writeFileSync(outFile, JSON.stringify(uniqueEvents, null, 2));
 
   console.log(`\nSaved ${uniqueEvents.length} events to ${outFile}`);
+
+  // ── Fetch rate spread (DGS2 - FEDFUNDS) at each event date ──
+  // Uses the same vintage-aware ALFRED approach for point-in-time correctness.
+  console.log('\nFetching rate spread data (DGS2 - FEDFUNDS)...');
+
+  const rateSpreads: Record<string, number | null> = {};
+
+  for (const seriesId of RATE_SPREAD_SERIES) {
+    console.log(`  Fetching vintage dates for ${seriesId}...`);
+    const vintageDates = await fetchVintageDates(seriesId);
+    const relevantDates = vintageDates.filter(d => d >= cutoffStr);
+    console.log(`    Found ${relevantDates.length} vintage dates in range`);
+
+    // Store observations keyed by vintage date for this series
+    const seriesObs: Record<string, number> = {};
+
+    for (let i = 0; i < relevantDates.length; i++) {
+      const vintageDate = relevantDates[i];
+      if (i > 0) await new Promise(r => setTimeout(r, 200));
+
+      const observations = await fetchObservationsAsOf(seriesId, vintageDate);
+      if (observations.length < 1) continue;
+
+      const val = parseFloat(observations[0].value);
+      if (!isNaN(val)) {
+        seriesObs[vintageDate] = val;
+      }
+    }
+
+    // For each event date, find the closest available vintage date
+    for (const evt of uniqueEvents) {
+      const eventDate = evt.date.slice(0, 10);
+      const vintageDates_sorted = Object.keys(seriesObs).sort();
+
+      // Find the latest vintage date <= event date
+      let closestDate = '';
+      for (const vd of vintageDates_sorted) {
+        if (vd <= eventDate) closestDate = vd;
+      }
+
+      if (closestDate && seriesObs[closestDate] !== undefined) {
+        const key = `${seriesId}:${eventDate}`;
+        rateSpreads[key] = seriesObs[closestDate];
+      }
+    }
+  }
+
+  // Calculate spread (DGS2 - FEDFUNDS) for each unique event date
+  const eventDates = [...new Set(uniqueEvents.map(e => e.date.slice(0, 10)))].sort();
+  const spreadByDate: Record<string, number | null> = {};
+
+  for (const eventDate of eventDates) {
+    const dgs2 = rateSpreads[`DGS2:${eventDate}`];
+    const fedFunds = rateSpreads[`FEDFUNDS:${eventDate}`];
+
+    if (dgs2 != null && fedFunds != null) {
+      spreadByDate[eventDate] = Math.round((dgs2 - fedFunds) * 100) / 100;
+    } else {
+      spreadByDate[eventDate] = null;
+    }
+  }
+
+  const spreadFile = path.join(outDir, 'rate-spreads.json');
+  fs.writeFileSync(spreadFile, JSON.stringify(spreadByDate, null, 2));
+
+  const validSpreads = Object.values(spreadByDate).filter(s => s !== null) as number[];
+  console.log(`Saved rate spreads for ${Object.keys(spreadByDate).length} dates to ${spreadFile}`);
+  if (validSpreads.length > 0) {
+    const avg = validSpreads.reduce((a, b) => a + b, 0) / validSpreads.length;
+    const min = Math.min(...validSpreads);
+    const max = Math.max(...validSpreads);
+    console.log(`  Spread range: ${min.toFixed(2)} to ${max.toFixed(2)} (avg: ${avg.toFixed(2)})`);
+    const cuttingCount = validSpreads.filter(s => s < -0.50).length;
+    console.log(`  Dates in cutting regime (< -0.50): ${cuttingCount}/${validSpreads.length}`);
+  }
 
   // Print summary by series
   const bySeries: Record<string, number> = {};

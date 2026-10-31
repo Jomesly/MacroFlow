@@ -1,0 +1,4 @@
+<!-- Disposable local-test fixture: exercise both supported confirmation formats. -->
+<h2>Confirm your MacroFlow email</h2>
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email">Token-hash confirmation</a>
+<a href="{{ .ConfirmationURL }}">Standard Supabase confirmation</a>

@@ -9,6 +9,68 @@ import {
 } from './types';
 import { biasRules } from './rules';
 
+// ── Rate-regime types and helpers ──────────────────────────────────
+
+export type RateRegime = 'cutting' | 'neutral';
+
+/**
+ * Threshold below which the DGS2-FEDFUNDS spread signals "cuts priced in".
+ *
+ * Historical context:
+ *   - In cutting cycles (2001, 2007-2008, 2019-2020, 2024-2025), this spread
+ *     typically sits between -0.50 and -2.00.
+ *   - In hiking cycles (2004-2006, 2022-2023), it's near zero or positive.
+ *   - -0.50 is conservative — it captures clear-cutting expectations without
+ *     triggering on normal market noise.
+ */
+const CUTTING_REGIME_THRESHOLD = -0.50;
+
+/**
+ * Determine the rate-expectations regime from the DGS2-FEDFUNDS spread.
+ *
+ * @param spread DGS2 minus FEDFUNDS in percentage points, or null if unavailable.
+ *   When null, defaults to 'neutral' (no modulation).
+ */
+export function getRateRegime(spread: number | null): RateRegime {
+  if (spread === null) return 'neutral';
+  return spread < CUTTING_REGIME_THRESHOLD ? 'cutting' : 'neutral';
+}
+
+/**
+ * Employment modulation multiplier for equity-like assets in the cutting regime.
+ *
+ * In a "cuts priced in" environment:
+ *   - Weak employment → was bearish for equities, now bullish (reinforces cut hopes)
+ *   - Strong employment → was bullish for equities, now bearish (threatens cut narrative)
+ *   - For XAUUSD/BTCUSD: employment matters less — dampen by 50%
+ *
+ * Returns a multiplier to apply to the rule's scoreChange.
+ *   1.0  = no change (neutral regime or unrelated category)
+ *   -1.0 = flip direction (equity symbols in cutting regime)
+ *   0.5  = dampen by 50% (gold/crypto in cutting regime)
+ */
+function getEmploymentModulation(
+  symbol: AssetSymbol,
+  eventValue: string,
+  regime: RateRegime
+): number {
+  if (regime === 'neutral') return 1.0;
+
+  if (symbol === 'US100' || symbol === 'DJ30') {
+    // Flip: weak → bullish, strong → bearish
+    return (eventValue === 'weak' || eventValue === 'strong') ? -1.0 : 1.0;
+  }
+
+  if (symbol === 'XAUUSD' || symbol === 'BTCUSD') {
+    // Dampen: employment matters less when cuts are priced in
+    return 0.5;
+  }
+
+  return 1.0;
+}
+
+// ── Existing engine constants and functions ────────────────────────
+
 const CATEGORY_CAPS: Partial<Record<MacroEvent['category'], number>> = {
   fed_tone: 40,
   boe_tone: 40,
@@ -163,9 +225,11 @@ function getLabel(score: number, direction: Direction): string {
 
 export function calculateBias(
   events: MacroEvent[],
-  symbol?: AssetSymbol
+  symbol?: AssetSymbol,
+  rateSpread?: number | null
 ): BiasResult[] {
   const symbols = symbol ? [symbol] : ALL_SYMBOLS;
+  const regime = getRateRegime(rateSpread ?? null);
 
   return symbols.map((sym) => {
     let totalScore = 0;
@@ -182,9 +246,16 @@ export function calculateBias(
       );
 
       for (const rule of matchingRules) {
+        // Apply regime modulation to employment category only
+        const modulation = event.category === 'employment'
+          ? getEmploymentModulation(sym, event.value, regime)
+          : 1.0;
+
+        const modulatedScore = Math.round(rule.scoreChange * modulation);
+
         const current = categoryTotals[event.category] ?? 0;
         const cappedTotal = clamp(
-          current + rule.scoreChange,
+          current + modulatedScore,
           -categoryCap(event.category),
           categoryCap(event.category)
         );

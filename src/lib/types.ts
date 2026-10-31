@@ -138,12 +138,16 @@ export const SETUP_TAGS = ['Sweep', 'IFVG', 'Fib', 'Asian Range'];
 export interface Trade {
   id: string;
   timestamp: string;
+  closedAt: string | null;
   symbol: TradeSymbol;
   direction: TradeDirection;
   entryPrice: number;
   exitPrice: number | null;
   result: TradeResult | null;
   pnlPercent: number | null;
+  pnlAmount: number | null;
+  rMultiple: number | null;
+  brokerAccountId: number | null;
   setupTags: string[];
   notes: string;
 }

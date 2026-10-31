@@ -6,6 +6,9 @@ const CACHE_KEY = 'fred_events';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 const STALE_DAYS = 35;
 
+const RATE_SPREAD_CACHE_KEY = 'fred_rate_spread';
+const RATE_SPREAD_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
 interface FredObservation {
   date: string;
   value: string;
@@ -196,4 +199,45 @@ export async function fetchFredEvents(): Promise<MacroEvent[]> {
   }
 
   return events;
+}
+
+/**
+ * Fetch the 2-year Treasury yield minus the effective federal funds rate.
+ *
+ * This spread is a standard market-implied proxy for rate expectations:
+ *   - Significantly negative (< -0.50): market pricing in future rate cuts
+ *   - Near zero: no cuts expected, stable rates
+ *   - Positive: possible further hikes
+ *
+ * Returns null if either series is unavailable.
+ */
+export async function fetchRateSpread(): Promise<number | null> {
+  const apiKey = process.env.FRED_API_KEY;
+  if (!apiKey) return null;
+
+  const cached = await getCached<number>(RATE_SPREAD_CACHE_KEY);
+  if (cached !== null) return cached;
+
+  try {
+    const [dgs2Obs, fedFundsObs] = await Promise.all([
+      fetchFredSeries('DGS2', apiKey),
+      fetchFredSeries('FEDFUNDS', apiKey),
+    ]);
+
+    if (dgs2Obs.length < 1 || fedFundsObs.length < 1) return null;
+
+    const dgs2 = parseFloat(dgs2Obs[0].value);
+    const fedFunds = parseFloat(fedFundsObs[0].value);
+
+    if (isNaN(dgs2) || isNaN(fedFunds)) return null;
+
+    const spread = Math.round((dgs2 - fedFunds) * 100) / 100;
+
+    await setCache(RATE_SPREAD_CACHE_KEY, spread, RATE_SPREAD_CACHE_TTL_MS);
+
+    return spread;
+  } catch (err) {
+    console.error('[FRED] Failed to fetch rate spread:', err);
+    return null;
+  }
 }
