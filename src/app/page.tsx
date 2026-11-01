@@ -1,380 +1,524 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BiasApiResponse, BiasResult, DataSource, DxyContext, SourceHealth, UpcomingEvent } from '@/lib/types';
+import Link from 'next/link';
+import { AnimatePresence } from 'motion/react';
+import {
+  ArrowClockwise,
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  CalendarBlank,
+  CaretDown,
+  CheckCircle,
+  Clock,
+  Info,
+  WarningCircle,
+} from '@phosphor-icons/react';
+import type {
+  BiasApiResponse,
+  BiasResult,
+  DataSource,
+  SourceHealth,
+  UpcomingEvent,
+} from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
+import MarketBreadth from '@/components/MarketBreadth';
 import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
-import JournalToggle from '@/components/JournalToggle';
+import WorkspaceHeader from '@/components/WorkspaceHeader';
 
-function DxyBar({ dxy }: { dxy: DxyContext }) {
-  const isUp = dxy.status === 'strengthening';
-  return (
-    <div className={`rounded-lg border px-4 py-3 flex items-center justify-between ${
-      isUp ? 'border-red-800/30 bg-red-950/15' : 'border-emerald-800/30 bg-emerald-950/15'
-    }`}>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">DXY</span>
-          <span className="text-sm font-bold text-white">{dxy.price}</span>
-        </div>
-        <span className={`flex items-center gap-1 text-xs font-semibold ${
-          isUp ? 'text-red-400' : 'text-emerald-400'
-        }`}>
-          {isUp ? '↑' : '↓'} {Math.abs(dxy.percentChange).toFixed(2)}%
-          <span className="font-normal text-zinc-500 ml-0.5">
-            ({isUp ? 'STRENGTHENING' : 'WEAKENING'})
-          </span>
-        </span>
-      </div>
-      <p className={`text-[11px] ${isUp ? 'text-red-400/70' : 'text-emerald-400/70'}`}>
-        {dxy.summary}
-      </p>
-    </div>
-  );
-}
+type Filter = 'all' | 'bullish' | 'bearish' | 'neutral';
+const SOURCE_LABELS: Record<DataSource, string> = {
+  live: 'Live data',
+  hybrid: 'Live + baseline',
+  baseline: 'Baseline data',
+};
 
-function CountdownTimer({ target }: { target: string }) {
-  const [remaining, setRemaining] = useState('');
-
+function RefreshTime({ timestamp }: { timestamp: string | null }) {
+  const [time, setTime] = useState('');
   useEffect(() => {
-    function tick() {
-      const diff = new Date(target).getTime() - Date.now();
-      if (diff <= 0) { setRemaining('Starting soon'); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      setRemaining(`${h}h ${m}m`);
-    }
-    tick();
-    const id = setInterval(tick, 60000);
+    if (!timestamp) return;
+    const update = () => {
+      const seconds = Math.max(
+        0,
+        Math.ceil(
+          (15 * 60 * 1000 - (Date.now() - Date.parse(timestamp))) / 1000,
+        ),
+      );
+      setTime(
+        `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`,
+      );
+    };
+    update();
+    const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  }, [target]);
-
-  return <span className="tabular-nums">{remaining}</span>;
-}
-
-function NextEventBar({ nextEvent }: { nextEvent: UpcomingEvent }) {
-  const [expanded, setExpanded] = useState(false);
+  }, [timestamp]);
   return (
-    <div className="rounded-lg border border-blue-800/30 bg-blue-950/15 px-4 py-3">
-      <button onClick={() => setExpanded(!expanded)} className="flex items-center justify-between w-full text-left cursor-pointer">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-400 border border-blue-700/40 uppercase shrink-0">
-            Next Event
-          </span>
-          <span className="text-xs text-zinc-300 font-medium truncate">{nextEvent.country} {nextEvent.name}</span>
-          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
-            nextEvent.impact === 'high' ? 'bg-red-900/40 text-red-400' : 'bg-amber-900/40 text-amber-400'
-          }`}>
-            {nextEvent.impact.toUpperCase()}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-blue-300 font-mono">
-            In <CountdownTimer target={nextEvent.date} />
-          </span>
-          <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </button>
-      {expanded && (
-        <p className="text-[10px] text-zinc-500 mt-2 pt-2 border-t border-blue-800/20">
-          Affects: {nextEvent.affects.join(', ')}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function NextUpdateTimer({ lastUpdated }: { lastUpdated: string | null }) {
-  const [display, setDisplay] = useState('');
-
-  useEffect(() => {
-    function tick() {
-      if (!lastUpdated) { setDisplay(''); return; }
-      const elapsed = Date.now() - new Date(lastUpdated).getTime();
-      const remaining = Math.max(0, 15 * 60 * 1000 - elapsed);
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-      setDisplay(`${mins}:${secs.toString().padStart(2, '0')}`);
-    }
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [lastUpdated]);
-
-  if (!lastUpdated) return null;
-  return (
-    <span className="text-[11px] text-zinc-500 tabular-nums">
-      Next refresh in {display}
+    <span className="refresh-time">
+      <Clock size={14} aria-hidden="true" />
+      {timestamp ? `Next update ${time}` : 'Waiting for first update'}
     </span>
   );
 }
 
-function getStaleness(timestamp: string): { color: string; label: string } {
-  const age = Date.now() - new Date(timestamp).getTime();
-  if (age < 15 * 60 * 1000) return { color: 'text-emerald-400', label: 'Fresh' };
-  if (age < 60 * 60 * 1000) return { color: 'text-amber-400', label: 'Stale' };
-  return { color: 'text-red-400', label: 'Very stale' };
-}
-
-function getDailySummary(data: BiasResult[]): string {
-  if (data.length === 0) return '';
-  const bearishCount = data.filter(d => d.direction === 'bearish' || d.direction === 'weakly_bearish').length;
-  const bullishCount = data.filter(d => d.direction === 'bullish' || d.direction === 'weakly_bullish').length;
-  const allNeutral = data.every(d => d.direction === 'neutral');
-  if (allNeutral) return 'No significant macro events detected today';
-  if (bearishCount >= 3) return `${bearishCount} of ${data.length} markets leaning bearish — risk-off environment detected`;
-  if (bullishCount >= 3) return `${bullishCount} of ${data.length} markets leaning bullish — risk-on environment detected`;
-  return 'Markets mixed — no clear macro direction today';
-}
-
 function SourceStatus({ health }: { health: SourceHealth | null }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
-  if (!health) return null;
-
-  const statusLabels: Record<string, string> = {
-    ok: 'ok',
-    empty: 'no data',
-    failed: 'failed',
-  };
-
   return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        onClick={() => setOpen(!open)}
-        className="text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer"
-        title="Data Sources"
-      >
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 16v-4M12 8h.01" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-44 rounded-lg border border-zinc-800 bg-zinc-950 shadow-xl z-50 py-1">
-          {Object.entries(health).map(([sourceName, status]) => (
-            <div key={sourceName} className="flex items-center justify-between px-3 py-1 text-[10px]">
-              <span className="text-zinc-400">{sourceName}</span>
-              <span className={`${
-                status === 'ok' ? 'text-emerald-400' : status === 'empty' ? 'text-amber-400' : 'text-red-400'
-              }`}>
-                {statusLabels[status]}
+    <details className="source-details">
+      <summary>
+        <Info size={16} aria-hidden="true" />
+        Data sources
+        <CaretDown size={12} aria-hidden="true" />
+      </summary>
+      <div className="source-popover">
+        {health && Object.keys(health).length ? (
+          Object.entries(health).map(([name, status]) => (
+            <div key={name}>
+              <span className="capitalize">{name.replaceAll('_', ' ')}</span>
+              <span
+                className={
+                  status === 'ok'
+                    ? 'text-emerald-300'
+                    : status === 'empty'
+                      ? 'text-amber-300'
+                      : 'text-red-300'
+                }
+              >
+                {status === 'ok'
+                  ? 'Connected'
+                  : status === 'empty'
+                    ? 'No data'
+                    : 'Unavailable'}
               </span>
             </div>
-          ))}
+          ))
+        ) : (
+          <p>Source status is not available yet.</p>
+        )}
+      </div>
+    </details>
+  );
+}
+
+function UpcomingRelease({
+  event,
+}: {
+  event: UpcomingEvent | null | undefined;
+}) {
+  return (
+    <section className="context-panel" aria-labelledby="release-title">
+      <div className="context-heading">
+        <CalendarBlank size={20} aria-hidden="true" />
+        <h2 id="release-title">On the calendar</h2>
+        <span className="ml-auto text-xs text-zinc-400">Next release</span>
+      </div>
+      {event ? (
+        <>
+          <div className="release-content">
+            <div className="release-date" aria-hidden="true">
+              <span>
+                {new Date(event.date).toLocaleDateString(undefined, {
+                  month: 'short',
+                })}
+              </span>
+              <strong>{new Date(event.date).getDate()}</strong>
+            </div>
+            <div className="release-info">
+              <div className="release-meta">
+                <span>{event.country}</span>
+                <span className="impact-label">{event.impact} impact</span>
+              </div>
+              <h3>{event.name}</h3>
+              <p>
+                {new Date(event.date).toLocaleString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  timeZoneName: 'short',
+                })}
+              </p>
+            </div>
+          </div>
+          <p className="release-affects">
+            <span>Affected markets</span>
+            {event.affects.map((symbol) => (
+              <span key={symbol} className="release-market">
+                {symbol}
+              </span>
+            ))}
+          </p>
+        </>
+      ) : (
+        <div className="calendar-empty">
+          <span className="calendar-icon">
+            <CalendarBlank size={25} aria-hidden="true" />
+          </span>
+          <div>
+            <h3>No upcoming release available</h3>
+            <p>
+              The economic calendar hasn’t returned an upcoming event. Check
+              source status for availability.
+            </p>
+          </div>
         </div>
+      )}
+    </section>
+  );
+}
+
+export default function Home() {
+  const [response, setResponse] = useState<BiasApiResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<BiasResult | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+  const mounted = useRef(true);
+  const inFlight = useRef(false);
+
+  const fetchBias = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setLoading(true);
+    try {
+      const result = await fetch('/api/bias');
+      if (!result.ok)
+        throw new Error('Market data could not be loaded. Please try again.');
+      const json: BiasApiResponse = await result.json();
+      if (mounted.current) {
+        setResponse(json);
+        setError(null);
+      }
+    } catch (err) {
+      if (mounted.current)
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Market data is temporarily unavailable.',
+        );
+    } finally {
+      inFlight.current = false;
+      if (mounted.current) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    mounted.current = true;
+    const initial = setTimeout(() => void fetchBias(), 0);
+    const interval = setInterval(() => void fetchBias(), 900000);
+    return () => {
+      mounted.current = false;
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
+  }, [fetchBias]);
+
+  const data = response?.data ?? [];
+  const visible = data.filter(
+    (item) =>
+      filter === 'all' ||
+      (filter === 'neutral'
+        ? item.direction === 'neutral'
+        : item.direction.includes(filter)),
+  );
+  const bullish = data.filter((d) => d.direction.includes('bullish')).length;
+  const bearish = data.filter((d) => d.direction.includes('bearish')).length;
+  const summary =
+    data.length === 0
+      ? 'Waiting for the latest macro picture.'
+      : bullish === data.length
+        ? 'Bullish across the board.'
+        : bearish === data.length
+          ? 'A broad bearish lean.'
+          : bullish > bearish
+            ? 'Markets are leaning bullish.'
+            : bearish > bullish
+              ? 'Markets are leaning bearish.'
+              : 'A mixed macro picture.';
+  const source = response?.source ?? 'baseline';
+  const uniqueEvents = [
+    ...new Map(data.flatMap((d) => d.events).map((e) => [e.id, e])).values(),
+  ];
+  const drivers = [...uniqueEvents]
+    .sort((a, b) => Math.abs(b.scoreChange) - Math.abs(a.scoreChange))
+    .slice(0, 3);
+
+  return (
+    <div className="dashboard-page">
+      <WorkspaceHeader
+        active="overview"
+        status={
+          <span
+            className={`data-status ${source === 'baseline' ? 'is-baseline' : ''}`}
+          >
+            <span />
+            {loading && !response ? 'Connecting' : SOURCE_LABELS[source]}
+          </span>
+        }
+        meta={
+          <>
+            <p>
+              {response
+                ? `Updated ${new Date(response.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                : 'Connecting to market sources'}
+            </p>
+            <RefreshTime timestamp={response?.timestamp ?? null} />
+          </>
+        }
+      />
+      <main id="main-content" className="workspace-main">
+        <div className="overview-summary">
+          <div className="summary-reading">
+            <span className="summary-label">The current read</span>
+            <h2>{summary}</h2>
+            <div className="summary-facts">
+              <span>
+                <strong>
+                  {data.length
+                    ? `${data.filter((d) => d.conviction === 'high').length}/${data.length}`
+                    : '—'}
+                </strong>{' '}
+                high conviction
+              </span>
+              <span>
+                <strong>{response ? uniqueEvents.length : '—'}</strong> distinct
+                drivers
+              </span>
+            </div>
+          </div>
+          <MarketBreadth data={data} />
+        </div>
+
+        {response?.dxy && (
+          <div className="dxy-strip">
+            <span className="dxy-symbol">DXY</span>
+            <strong>{response.dxy.price}</strong>
+            <span
+              className={
+                response.dxy.percentChange >= 0
+                  ? 'text-emerald-300'
+                  : 'text-red-300'
+              }
+            >
+              {response.dxy.percentChange >= 0 ? '+' : ''}
+              {response.dxy.percentChange.toFixed(2)}%
+            </span>
+            <span className="capitalize text-zinc-300">
+              {response.dxy.status}
+            </span>
+            <span className="dxy-summary">{response.dxy.summary}</span>
+          </div>
+        )}
+        {(response?.stale || error) && (
+          <div role="alert" className="notice">
+            <WarningCircle size={19} aria-hidden="true" />
+            <p>
+              {error ??
+                'Some sources are unavailable. Showing the last known data; it may be outdated.'}
+            </p>
+            <button onClick={() => void fetchBias()} disabled={loading}>
+              Retry
+            </button>
+          </div>
+        )}
+        {response?.source === 'baseline' && (
+          <p className="baseline-note">
+            <Info size={16} aria-hidden="true" />
+            Showing baseline values. Live sources haven’t returned data yet.
+          </p>
+        )}
+
+        <section className="markets-section" aria-labelledby="markets-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="markets-title">
+                Market overview
+                <span className="section-count">{data.length || '—'}</span>
+              </h2>
+              <p>Fundamental bias, conviction, and the drivers behind it.</p>
+            </div>
+            <button
+              onClick={() => void fetchBias()}
+              disabled={loading}
+              className="refresh-button"
+            >
+              <ArrowClockwise
+                size={16}
+                className={loading ? 'refreshing' : ''}
+                aria-hidden="true"
+              />
+              {loading ? 'Updating' : 'Refresh'}
+            </button>
+          </div>
+          <div className="market-toolbar">
+            <div
+              className="market-filters"
+              role="group"
+              aria-label="Filter markets by direction"
+            >
+              {(['all', 'bullish', 'bearish', 'neutral'] as Filter[]).map(
+                (value) => (
+                  <button
+                    type="button"
+                    key={value}
+                    aria-label={
+                      value === 'all'
+                        ? 'All markets'
+                        : value.charAt(0).toUpperCase() + value.slice(1)
+                    }
+                    aria-pressed={filter === value}
+                    onClick={() => setFilter(value)}
+                  >
+                    {value === 'all'
+                      ? 'All markets'
+                      : value.charAt(0).toUpperCase() + value.slice(1)}
+                    {data.length > 0 && (
+                      <span aria-hidden="true">
+                        {value === 'all'
+                          ? data.length
+                          : data.filter((item) =>
+                              item.direction.includes(value),
+                            ).length}
+                      </span>
+                    )}
+                  </button>
+                ),
+              )}
+            </div>
+            <SourceStatus health={response?.sourceHealth ?? null} />
+          </div>
+          <p className="sr-only" role="status">
+            {loading
+              ? 'Updating markets'
+              : `Showing ${visible.length} ${filter === 'all' ? '' : filter + ' '}markets`}
+          </p>
+          <div className="market-grid" aria-busy={loading}>
+            {loading &&
+              !response &&
+              Array.from({ length: 5 }, (_, i) => (
+                <div key={i} className="market-skeleton" aria-hidden="true">
+                  <div />
+                  <div />
+                  <div />
+                  <div />
+                </div>
+              ))}
+            <AnimatePresence initial={false}>
+              {visible.map((item, index) => (
+                <MarketCard
+                  key={item.symbol}
+                  data={item}
+                  onClick={() => setSelected(item)}
+                  index={index}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+          {!loading && visible.length === 0 && (
+            <div className="market-empty">
+              <SquaresEmpty />
+              <h3>
+                {response
+                  ? `No ${filter === 'all' ? '' : filter + ' '}markets to show`
+                  : 'Market data is unavailable'}
+              </h3>
+              <p>
+                {response
+                  ? 'Choose another direction to see the rest of your watchlist.'
+                  : 'Check your connection and try refreshing.'}
+              </p>
+              {filter !== 'all' && (
+                <button className="text-link" onClick={() => setFilter('all')}>
+                  Show all markets <ArrowRight size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          )}
+          <p className="market-footnote">
+            <span className="legend-dot" />
+            Bias is a fundamental score, not a price forecast. Open a market to
+            explore its full analysis.
+          </p>
+        </section>
+
+        <div className="context-grid">
+          <UpcomingRelease event={response?.nextEvent} />
+          <section className="context-panel" aria-labelledby="drivers-title">
+            <div className="context-heading">
+              <span className="mini-bars" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <h2 id="drivers-title">Behind the bias</h2>
+              <span className="ml-auto text-xs text-zinc-400">Key drivers</span>
+            </div>
+            {drivers.length ? (
+              <ol className="driver-list">
+                {drivers.map((driver, i) => (
+                  <li key={driver.id}>
+                    <span className="driver-index">0{i + 1}</span>
+                    <div>
+                      <p>{driver.title}</p>
+                      <span>
+                        {driver.sourceName ??
+                          driver.category.replaceAll('_', ' ')}{' '}
+                        · {driver.impact} impact
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-zinc-400 mt-6">
+                Market drivers will appear when data sources return events.
+              </p>
+            )}
+          </section>
+        </div>
+
+        <section className="journal-invitation">
+          <div className="journal-invitation-icon">
+            <BookOpen size={24} aria-hidden="true" />
+          </div>
+          <div>
+            <h2>The context is here. Make the trade your own.</h2>
+            <p>
+              Log your decisions, connect MT5, and build a clearer picture of
+              your performance.
+            </p>
+          </div>
+          <Link href="/journal" className="primary-button">
+            Open your journal
+            <ArrowUpRight size={18} aria-hidden="true" />
+          </Link>
+        </section>
+        <div className="workspace-bottom">
+          <span>
+            <CheckCircle size={14} aria-hidden="true" />
+            Built for a more deliberate trading day.
+          </span>
+          <span>MacroFlow / Market intelligence</span>
+        </div>
+      </main>
+      <footer className="workspace-footer">
+        <div className="workspace-footer-inner">
+          <Disclaimer />
+        </div>
+      </footer>
+      {selected && (
+        <BiasDetail data={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );
 }
 
-export default function Home() {
-  const [data, setData] = useState<BiasResult[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [source, setSource] = useState<DataSource>('baseline');
-  const [selected, setSelected] = useState<BiasResult | null>(null);
-  const [dxy, setDxy] = useState<DxyContext | undefined>();
-  const [nextEvent, setNextEvent] = useState<UpcomingEvent | undefined | null>();
-  const [sourceHealth, setSourceHealth] = useState<SourceHealth | null>(null);
-  const [stale, setStale] = useState(false);
-  const mountedRef = useRef(true);
-
-  const fetchBias = useCallback(async () => {
-    try {
-      const res = await fetch('/api/bias');
-      if (!res.ok) throw new Error('Failed to fetch bias data');
-      const json: BiasApiResponse = await res.json();
-      if (mountedRef.current) {
-        setData(json.data);
-        setLastUpdated(json.timestamp);
-        setSource(json.source);
-        setDxy(json.dxy);
-        setNextEvent(json.nextEvent);
-        setSourceHealth(json.sourceHealth ?? null);
-        setStale(json.stale ?? false);
-        setError(null);
-      }
-    } catch (err) {
-      if (mountedRef.current) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      }
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    const id = setTimeout(() => { fetchBias(); }, 0);
-    const interval = setInterval(() => { fetchBias(); }, 900000);
-    return () => {
-      mountedRef.current = false;
-      clearTimeout(id);
-      clearInterval(interval);
-    };
-  }, [fetchBias]);
-
-  const sourceColors: Record<DataSource, string> = {
-    live: 'bg-emerald-500',
-    hybrid: 'bg-emerald-400',
-    baseline: 'bg-amber-500',
-  };
-  const sourceLabels: Record<DataSource, string> = {
-    live: 'Live Data',
-    hybrid: 'Live + Baseline',
-    baseline: 'Baseline Only',
-  };
-
+function SquaresEmpty() {
   return (
-    <div className="flex flex-col flex-1">
-      <header className="border-b border-zinc-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-white tracking-tight">MacroFlow</h1>
-              <span className="flex items-center gap-1.5 text-[10px] text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded-full border border-zinc-800">
-                <span className={`w-1.5 h-1.5 rounded-full ${sourceColors[source]}`} />
-                {sourceLabels[source]}
-              </span>
-            </div>
-            <p className="text-[11px] text-zinc-500 mt-0.5">
-              Fundamental Trading Bias Dashboard
-            </p>
-          </div>
-          <div className="text-right">
-            {lastUpdated && (
-              <>
-                <p className={`text-[11px] ${getStaleness(lastUpdated).color}`}>
-                  Updated: {new Date(lastUpdated).toLocaleTimeString()}
-                  {stale && <span className="ml-1.5 text-[10px] text-amber-400">(stale)</span>}
-                </p>
-                <NextUpdateTimer lastUpdated={lastUpdated} />
-                <SourceStatus health={sourceHealth} />
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
-        {dxy && (
-          <div className="mb-4">
-            <DxyBar dxy={dxy} />
-          </div>
-        )}
-
-        {nextEvent && (
-          <div className="mb-4">
-            <NextEventBar nextEvent={nextEvent} />
-          </div>
-        )}
-
-        {!nextEvent && data.length > 0 && (
-          <div className="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3">
-            <p className="text-[11px] text-zinc-500">No upcoming events — economic calendar data unavailable</p>
-          </div>
-        )}
-
-        {data.length > 0 && (
-          <p className="text-xs text-zinc-400 mb-4">
-            {getDailySummary(data)}
-          </p>
-        )}
-
-        {loading && data.length === 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 animate-pulse">
-                <div className="h-4 w-20 bg-zinc-800 rounded mb-3" />
-                <div className="h-3 w-32 bg-zinc-800 rounded mb-4" />
-                <div className="h-2 w-full bg-zinc-800 rounded mb-2" />
-                <div className="h-2 w-3/4 bg-zinc-800 rounded" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {error && data.length === 0 && (
-          <div className="rounded-xl border border-red-800/30 bg-red-950/20 p-6 text-center">
-            <p className="text-red-400 text-sm">{error}</p>
-            <button
-              onClick={() => {
-                setLoading(true);
-                fetchBias();
-              }}
-              className="mt-3 text-sm text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              Try again
-            </button>
-          </div>
-        )}
-
-        {stale && data.length > 0 && (
-          <div className="rounded-lg border border-amber-800/30 bg-amber-950/15 px-4 py-3 mb-4 flex items-center gap-2">
-            <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <p className="text-xs text-amber-400/80">
-              Some data sources failed — showing last known data. It may be outdated.
-            </p>
-            <button
-              onClick={() => { setLoading(true); fetchBias(); }}
-              className="ml-auto text-xs text-amber-400 hover:text-amber-300 transition-colors shrink-0"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {data.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {data.map((item) => (
-              <MarketCard key={item.symbol} data={item} onClick={() => setSelected(item)} />
-            ))}
-          </div>
-        )}
-
-        {data.length > 0 && source === 'baseline' && (
-          <div className="mt-4 rounded-lg border border-amber-800/30 bg-amber-950/10 px-4 py-3">
-            <p className="text-xs text-amber-400/80 text-center">
-              Showing baseline data — no live RSS feeds or APIs returned data. Bias values will update once
-              market data sources respond.
-            </p>
-          </div>
-        )}
-
-        <p className="text-[10px] text-zinc-700 text-center mt-6">
-          Click any card for full analysis: trading signal, conviction, sentiment, and event details.
-        </p>
-      </main>
-
-      <footer className="border-t border-zinc-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto">
-          <Disclaimer />
-        </div>
-      </footer>
-
-      {selected && (
-        <BiasDetail data={selected} onClose={() => setSelected(null)} />
-      )}
-
-      <JournalToggle />
-    </div>
+    <CalendarBlank
+      size={28}
+      className="text-zinc-400 mx-auto mb-4"
+      aria-hidden="true"
+    />
   );
 }

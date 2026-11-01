@@ -46,7 +46,7 @@ Copy `supabase/templates/confirmation.html` into the Confirm signup email templa
 
 The app also supports standard Supabase email templates that redirect to `/auth/confirm?code=...`: it exchanges the one-time PKCE code for a cookie session. Open these links in the same browser/device where signup or recovery was requested. Recovery uses the SDK's stored recovery marker to reach the password-reset page. A missing verifier shows same-browser/sign-in guidance rather than granting access. PKCE codes expire after five minutes and can be exchanged only once. [Supabase PKCE flow](https://supabase.com/docs/guides/auth/sessions/pkce-flow).
 
-Configure custom SMTP before public use. Supabase's default sender is limited to preauthorized team addresses and is unsuitable for public verification/recovery. Configure provider email limits and verify inbox/spam delivery. The app honors provider throttling and shows a resend delay; it does not claim a client timer prevents abuse. [Supabase SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp).
+Configure custom SMTP before public use. Supabase's default sender is limited to preauthorized team addresses and is unsuitable for public verification/recovery. Follow the [production email walkthrough](production-email-setup.md) for Resend SMTP, DNS, provider quotas, production URLs/templates, optional Turnstile and launch checks. Email quota errors do not include a reliable reset time, so the app shows retry-later guidance without a countdown. Successful resend/recovery requests retain a local 60-second pause (keep Supabase's per-user email interval at 60 seconds); this does not indicate an hourly quota reset or prevent abuse. [Supabase SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp).
 
 Check email links, expired/reused links and password recovery end to end. Public reset acknowledgement is identical for unknown/known addresses. An authenticated user may also use the reset page to change their own password. After updating, this browser signs out; the app does not promise other devices' sessions were revoked.
 
@@ -64,6 +64,8 @@ This creates an **unlinked disposable Supabase project** under `%TEMP%/macroflow
 The script stops its app and Supabase services afterward, preserving test volumes/logs; `-KeepServices` leaves only the local Supabase stack available for inspection. It never edits `.env.local` or links/resets a hosted project. Unit tests run separately with `npm test`.
 
 Use `-TestPattern 'standard|verified signup|email recovery|open journal'` for focused confirmation/recovery checks. The test app uses `.next-auth-tests` so it can run beside your normal development server. Local-only `confirmation-test.html` and `recovery-test.html` fixtures exercise both token-hash and standard Supabase links; use the normal templates above for your hosted project.
+
+Run `powershell -ExecutionPolicy Bypass -File scripts/test-auth-local.ps1 -WithTurnstile -TestPattern Turnstile` for widget expiry, retry, navigation and script-failure checks. This uses a public test site key and a browser-stubbed Turnstile API against the disposable local Auth project; it does not validate a production CAPTCHA secret or send real email. The default runner clears the public site key so normal local tests stay independent of CAPTCHA.
 
 ## Rollout and troubleshooting
 

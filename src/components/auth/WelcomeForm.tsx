@@ -23,7 +23,7 @@ export default function WelcomeForm({ profile }: { profile: JournalProfile }) {
       {state.error && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
       <div className="grid gap-3">
         <button name="destination" value="log" disabled={pending} className={AUTH_BUTTON}>Log my first trade</button>
-        <button name="destination" value="accounts" disabled={pending} className={AUTH_BUTTON + ' bg-zinc-800 hover:bg-zinc-700'}>Connect MT5 (beta)</button>
+        <button name="destination" value="accounts" disabled={pending} className="secondary-button w-full">Connect MT5 (beta)</button>
         <button name="destination" value="skip" disabled={pending} className="py-2 text-sm text-zinc-400 hover:text-white disabled:opacity-50">Save and explore journal</button>
       </div>
       {pending && <p role="status" className="text-sm text-zinc-400">Saving preferences…</p>}

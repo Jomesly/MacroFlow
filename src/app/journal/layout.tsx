@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { requireJournalPageAccess } from '@/lib/auth-navigation';
 import SignOutForm from '@/components/auth/SignOutForm';
 import JournalSessionBoundary from '@/components/auth/JournalSessionBoundary';
+import WorkspaceHeader from '@/components/WorkspaceHeader';
+import { SlidersHorizontal } from '@phosphor-icons/react/ssr';
 
 export const metadata: Metadata = {
   title: 'MacroFlow — Trading Journal',
@@ -15,13 +17,10 @@ export default async function JournalLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const { userId } = await requireJournalPageAccess();
   return <JournalSessionBoundary key={userId} userId={userId}>
-    <div className="border-b border-zinc-800 px-6 py-2">
-      <div className="mx-auto max-w-6xl flex flex-wrap justify-end items-center gap-4 text-xs">
-        <span className="text-emerald-400">Free beta</span>
-        <Link href="/journal/welcome" className="text-zinc-400 hover:text-white">Journal preferences</Link>
+    <WorkspaceHeader active="journal">
+        <Link href="/journal/welcome" className="journal-preferences text-zinc-400 hover:text-white" aria-label="Journal preferences"><SlidersHorizontal size={15} className="mr-2" aria-hidden="true" />Preferences</Link>
         <SignOutForm />
-      </div>
-    </div>
+    </WorkspaceHeader>
     {children}
   </JournalSessionBoundary>;
 }

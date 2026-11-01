@@ -4,10 +4,10 @@ import { journalFetch } from '@/lib/journal-fetch';
 import { useEffect, useState } from 'react';
 import { SETUP_TAGS, TradeDirection, TradeResult, TradeSymbol, TRADE_SYMBOLS } from '@/lib/types';
 
-const LABEL_CLS = 'block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1.5';
+const LABEL_CLS = 'block text-xs font-medium text-zinc-400 mb-2';
 
 const FIELD_CLS =
-  'w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors';
+  'w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-400 transition-colors';
 
 const DIRECTION_CLS = (active: boolean, tone: 'emerald' | 'red'): string =>
   `flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors cursor-pointer ${
@@ -272,7 +272,7 @@ export default function LogTradeForm() {
                 onClick={() => toggleTag(tag)}
                 className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
                   active
-                    ? 'bg-blue-600 border-blue-500 text-white'
+                    ? 'bg-zinc-100 border-zinc-100 text-zinc-950'
                     : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
                 }`}
               >
@@ -306,7 +306,7 @@ export default function LogTradeForm() {
           type="button"
           onClick={submit}
           disabled={!canSubmit}
-          className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+          className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-colors ${
             canSubmit
               ? 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer'
               : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'

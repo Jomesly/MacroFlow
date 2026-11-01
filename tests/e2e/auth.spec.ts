@@ -1,6 +1,9 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'node:fs';
+import AxeBuilder from '@axe-core/playwright';
+import { mkdirSync } from 'node:fs';
+import path from 'node:path';
 
 // Deliberately no .env.local fallback: these tests must never mutate a hosted project.
 const statusFile = process.env.MACROFLOW_AUTH_TEST_STATUS;
@@ -10,6 +13,77 @@ if (!/^http:\/\/(127\.0\.0\.1|localhost):55321$/.test(local.API_URL)) throw new 
 const admin = createClient(local.API_URL, local.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const password = 'MacroFlow-Test-2026!';
 const uniqueEmail = () => 'journal-' + crypto.randomUUID() + '@example.test';
+
+// Run these widget lifecycle checks with test-auth-local.ps1 -WithTurnstile
+// -TestPattern Turnstile. The browser API is stubbed; no external challenges or
+// hosted Auth credentials are used. Supabase token forwarding is unit-tested.
+test.describe('Turnstile', () => {
+  test.skip(!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY, 'Use the isolated runner with -WithTurnstile.');
+
+  test('gates submission, expires tokens, refreshes after failed login and remounts on navigation', async ({ page }) => {
+    await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js*', (route) => route.fulfill({
+      contentType: 'application/javascript',
+      body: `
+        window.__captchaCount = 0;
+        window.turnstile = {
+          render(container, options) {
+            window.__captchaCount += 1;
+            window.__captchaOptions = options;
+            container.textContent = 'Security check fixture';
+            return String(window.__captchaCount);
+          },
+          remove() {}
+        };
+      `,
+    }));
+    const solve = () => page.evaluate(() => {
+      const fixture = window as unknown as { __captchaOptions: { callback: (token: string) => void } };
+      fixture.__captchaOptions.callback('test-token');
+    });
+    const renderCount = () => page.evaluate(() => (window as unknown as { __captchaCount: number }).__captchaCount);
+    await page.goto('/login');
+    await expect(page.getByText('Security check fixture')).toBeVisible();
+    const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
+    await expect(signIn).toBeDisabled();
+    await solve();
+    await expect(signIn).toBeEnabled();
+    await page.evaluate(() => {
+      const fixture = window as unknown as { __captchaOptions: { 'expired-callback': () => void } };
+      fixture.__captchaOptions['expired-callback']();
+    });
+    await expect(signIn).toBeDisabled();
+    await expect(page.locator('input[name="cf-turnstile-response"]')).toHaveValue('');
+    await solve();
+    await page.getByLabel('Email', { exact: true }).fill(uniqueEmail());
+    await page.getByLabel('Password', { exact: true }).fill('incorrect-password');
+    await signIn.click();
+    await expect(page.locator('form').getByRole('alert')).toContainText('Sign-in failed');
+    await expect.poll(renderCount).toBe(2);
+    await expect(signIn).toBeDisabled();
+    await expect(page.locator('input[name="cf-turnstile-response"]')).toHaveValue('');
+    await solve();
+    // React resets form fields after a completed action, including errors.
+    await page.getByLabel('Email', { exact: true }).fill(uniqueEmail());
+    await page.getByLabel('Password', { exact: true }).fill('incorrect-password');
+    await signIn.click();
+    await expect.poll(renderCount).toBe(3);
+    await expect(signIn).toBeDisabled();
+
+    await page.getByRole('link', { name: 'Forgot password?' }).click();
+    await expect(page).toHaveURL(/\/forgot-password$/);
+    await expect(page.getByText('Security check fixture')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send reset link' })).toBeDisabled();
+    await solve();
+    await expect(page.getByRole('button', { name: 'Send reset link' })).toBeEnabled();
+  });
+
+  test('keeps auth forms blocked and explains a script loading failure', async ({ page }) => {
+    await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js*', (route) => route.abort());
+    await page.goto('/signup');
+    await expect(page.locator('form').getByRole('alert')).toContainText('security check could not load');
+    await expect(page.getByRole('button', { name: 'Create free account' })).toBeDisabled();
+  });
+});
 
 async function signup(page: Page, email: string) {
   await page.goto('/signup');
@@ -73,9 +147,9 @@ test('verified signup isolates journals and enforces beta access for APIs and MT
   const ownTrades = await (await a.request.get('/api/journal/trade')).json();
   expect(ownTrades.trades).toHaveLength(1);
   const tradeId = ownTrades.trades[0].id;
-  await a.getByRole('button', { name: 'History', exact: true }).click();
+  await a.getByRole('tab', { name: 'History', exact: true }).click();
   await expect(a.getByText('XAUUSD', { exact: true })).toBeVisible();
-  await a.getByRole('button', { name: 'Analytics', exact: true }).click();
+  await a.getByRole('tab', { name: 'Analytics', exact: true }).click();
   await expect(a.getByText('Net P&L', { exact: true })).toBeVisible();
 
   const emailB = uniqueEmail();
@@ -178,6 +252,7 @@ test('open journal tabs discard drafts during logout and account switching', asy
   expect((await admin.auth.admin.createUser({ email: emailB, password, email_confirm: true })).error).toBeNull();
   await login(page, emailA);
   await page.getByRole('button', { name: 'Save and explore journal' }).click();
+  await expect(page).toHaveURL(/\/journal\?tab=log$/);
   const retained = await context.newPage();
   await retained.goto('/journal');
   await retained.getByLabel('Entry Price', { exact: true }).fill('987654');
@@ -185,6 +260,7 @@ test('open journal tabs discard drafts during logout and account switching', asy
   await expect(retained).toHaveURL(/\/login$/);
   await login(page, emailB);
   await page.getByRole('button', { name: 'Save and explore journal' }).click();
+  await expect(page).toHaveURL(/\/journal\?tab=log$/);
   await retained.goto('/journal');
   await expect(retained.getByLabel('Entry Price', { exact: true })).toHaveValue('');
   await retained.getByLabel('Entry Price', { exact: true }).fill('123456');
@@ -203,6 +279,65 @@ test('open journal tabs discard drafts during logout and account switching', asy
   expect(staleMutation.status()).toBe(409);
   await retained.bringToFront();
   await expect(retained).toHaveURL(/\/login$/);
+});
+
+test('journal workspace supports responsive layouts, accessible tabs, and trade review', async ({ page }) => {
+  const email = uniqueEmail();
+  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  expect(error).toBeNull();
+  const owner = data.user!.id;
+  const seeded = await admin.from('trades').insert([
+    { user_id: owner, symbol: 'XAUUSD', direction: 'long', entry_price: 2700, exit_price: 2727, result: 'win', pnl_percent: 1, pnl_amount: 120, setup_tags: ['Breakout'], notes: 'Waited for the planned entry.', closed_at: new Date().toISOString() },
+    { user_id: owner, symbol: 'GBPUSD', direction: 'short', entry_price: 1.295, exit_price: 1.3, result: 'loss', pnl_percent: -0.386, pnl_amount: -50, setup_tags: [], notes: 'Review the entry timing.', closed_at: new Date().toISOString() },
+  ]);
+  expect(seeded.error).toBeNull();
+  const artifacts = path.resolve('.artifacts/ui-review');
+  mkdirSync(artifacts, { recursive: true });
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await login(page, email);
+  await expect(page.getByRole('heading', { name: 'Welcome to your journal' })).toBeVisible();
+  async function audit() {
+    await page.evaluate(async () => {
+      await Promise.all(document.getAnimations().filter(a => a.effect?.getComputedTiming().iterations !== Infinity).map(a => a.finished.catch(() => {})));
+    });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+    expect(result.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
+  }
+  await audit();
+  await page.getByRole('button', { name: 'Save and explore journal' }).click();
+  await expect(page.getByRole('heading', { name: 'Capture the trade' })).toBeVisible();
+  await audit();
+  await page.screenshot({ path: path.join(artifacts, 'journal-desktop.png'), fullPage: true, animations: 'disabled', style: 'nextjs-portal { display: none !important; }' });
+  for (const width of [1440, 768, 375]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.getByRole('tab', { name: 'Log Trade', exact: true }).click();
+    await expect(page.getByLabel('Entry Price', { exact: true })).toBeVisible();
+    await audit();
+    if (width === 375) await page.screenshot({ path: path.join(artifacts, 'journal-mobile.png'), fullPage: true, animations: 'disabled', style: 'nextjs-portal { display: none !important; }' });
+    await page.getByRole('tab', { name: 'Log Trade', exact: true }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: 'History', exact: true })).toBeFocused();
+    const trade = page.getByRole('button').filter({ hasText: 'XAUUSD' });
+    await expect(trade).toBeVisible();
+    await audit();
+    await trade.click();
+    await expect(page.getByText('Waited for the planned entry.')).toBeVisible();
+    await audit();
+    await page.screenshot({ path: path.join(artifacts, `history-${width}.png`), fullPage: true, animations: 'disabled', style: 'nextjs-portal { display: none !important; }' });
+    await page.getByRole('tab', { name: 'Analytics', exact: true }).click();
+    await expect(page.getByRole('paragraph').filter({ hasText: /^Net P&L$/ })).toBeVisible();
+    await audit();
+    await page.screenshot({ path: path.join(artifacts, `analytics-${width}.png`), fullPage: true, animations: 'disabled', style: 'nextjs-portal { display: none !important; }' });
+    await page.getByRole('tab', { name: 'Connect Account', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Bring your trades together' })).toBeVisible();
+    await expect(page.getByText('Loading accounts…')).toHaveCount(0);
+    await audit();
+    if (width === 1440) await page.screenshot({ path: path.join(artifacts, 'mt5-connection.png'), fullPage: true, animations: 'disabled', style: 'nextjs-portal { display: none !important; }' });
+  }
+  expect(errors).toEqual([]);
 });
 
 test('concurrent SSR refresh preserves isolated users past their original token expiry', async ({ browser }) => {

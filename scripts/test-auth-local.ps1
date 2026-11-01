@@ -1,4 +1,4 @@
-param([switch]$KeepServices, [string]$TestPattern)
+param([switch]$KeepServices, [string]$TestPattern, [switch]$WithTurnstile)
 
 $ErrorActionPreference = 'Stop'
 $taskRepo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -6,7 +6,7 @@ $taskWorkspace = Join-Path $env:TEMP 'macroflow-auth-tests'
 $taskProjectId = 'macroflow-auth-tests'
 $taskServer = $null
 $taskStarted = $false
-$taskEnvNames = @('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_APP_URL', 'AUTH_SIGNUP_ENABLED', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'MACROFLOW_AUTH_TEST_STATUS', 'MACROFLOW_AUTH_TEST_MODE')
+$taskEnvNames = @('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_APP_URL', 'AUTH_SIGNUP_ENABLED', 'NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'MACROFLOW_AUTH_TEST_STATUS', 'MACROFLOW_AUTH_TEST_MODE')
 $taskPreviousEnv = @{}
 foreach ($taskName in $taskEnvNames) { $taskPreviousEnv[$taskName] = [Environment]::GetEnvironmentVariable($taskName, 'Process') }
 
@@ -58,6 +58,8 @@ try {
   $env:NEXT_PUBLIC_SUPABASE_ANON_KEY = $taskStatus.ANON_KEY
   $env:NEXT_PUBLIC_APP_URL = 'http://localhost:3137'
   $env:AUTH_SIGNUP_ENABLED = 'true'
+  # The disposable Auth project has CAPTCHA disabled; override .env.local too.
+  $env:NEXT_PUBLIC_TURNSTILE_SITE_KEY = if ($WithTurnstile) { '1x00000000000000000000AA' } else { '' }
   $env:UPSTASH_REDIS_REST_URL = ''
   $env:UPSTASH_REDIS_REST_TOKEN = ''
   $env:MACROFLOW_AUTH_TEST_STATUS = $taskStatusPath

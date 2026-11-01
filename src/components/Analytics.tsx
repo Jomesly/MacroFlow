@@ -5,9 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { AnalyticsResult, BucketStats } from '@/lib/analytics';
 
 const CARD = 'rounded-xl border border-zinc-800 bg-zinc-900/50 p-5';
-const LABEL = 'block text-[10px] font-medium uppercase tracking-wider text-zinc-500 mb-1.5';
+const LABEL = 'block text-xs font-medium text-zinc-400 mb-2';
 const FIELD =
-  'w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors';
+  'w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 transition-colors';
 
 function fmtMoney(n: number | null): string {
   if (n === null) return '—';

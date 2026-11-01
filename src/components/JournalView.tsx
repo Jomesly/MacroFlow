@@ -1,90 +1,196 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import {
+  ArrowUpRight,
+  ChartBar,
+  CheckCircle,
+  ClockCounterClockwise,
+  PencilSimpleLine,
+  PlugsConnected,
+} from '@phosphor-icons/react';
 import LogTradeForm from '@/components/LogTradeForm';
 import TradeHistory from '@/components/TradeHistory';
 import Analytics from '@/components/Analytics';
 import ConnectAccount from '@/components/ConnectAccount';
+import BetaNotice from '@/components/BetaNotice';
 
 export type JournalTab = 'log' | 'history' | 'analytics' | 'accounts';
+const tabs = [
+  { value: 'log', label: 'Log Trade', icon: PencilSimpleLine },
+  { value: 'history', label: 'History', icon: ClockCounterClockwise },
+  { value: 'analytics', label: 'Analytics', icon: ChartBar },
+  { value: 'accounts', label: 'Connect Account', icon: PlugsConnected },
+] as const;
+const headings = {
+  history: {
+    title: 'Your trading history',
+    description:
+      'Every decision, recorded. Revisit the setups and outcomes behind your results.',
+  },
+  analytics: {
+    title: 'See the patterns in your performance',
+    description: 'Review results across markets, setups, and sessions.',
+  },
+  accounts: {
+    title: 'Bring your trades together',
+    description:
+      'Connect MT5 with a journal API key. Your broker password stays with you.',
+  },
+};
 
-const TAB_STYLES = (active: boolean): string =>
-  `px-4 py-3 text-sm font-medium transition-colors cursor-pointer border-b-2 -mb-px ${
-    active
-      ? 'border-blue-500 text-white'
-      : 'border-transparent text-zinc-500 hover:text-zinc-300'
-  }`;
-
-export default function JournalView({ initialTab }: { initialTab: JournalTab }) {
+export default function JournalView({
+  initialTab,
+}: {
+  initialTab: JournalTab;
+}) {
   const [tab, setTab] = useState<JournalTab>(initialTab);
-
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const reduce = useReducedMotion();
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="border-b border-zinc-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="text-xl font-bold text-white tracking-tight hover:text-zinc-200 transition-colors"
-            >
-              MacroFlow
-            </Link>
-            <span className="text-[10px] font-medium text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded-full border border-zinc-800 uppercase tracking-wider">
-              Trading Journal
-            </span>
+    <div className="journal-page">
+      <main id="main-content" className="workspace-main journal-main">
+        <div className="journal-heading">
+          <div>
+            <div className="page-kicker">
+              <span className="accent-line" />A record of your process
+            </div>
+            <h1>
+              Your trading journal<span className="text-accent">.</span>
+            </h1>
+            <p>
+              Better decisions start with understanding the ones you’ve already
+              made.
+            </p>
           </div>
-          <Link
-            href="/"
-            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            ← Dashboard
-          </Link>
+          <span className="journal-access-label">
+            <CheckCircle size={16} aria-hidden="true" />
+            Free beta
+          </span>
         </div>
-      </header>
-
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
-        <div className="flex gap-1 border-b border-zinc-800 mb-6">
-          <button
-            type="button"
-            onClick={() => setTab('log')}
-            className={TAB_STYLES(tab === 'log')}
-          >
-            Log Trade
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('history')}
-            className={TAB_STYLES(tab === 'history')}
-          >
-            History
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('analytics')}
-            className={TAB_STYLES(tab === 'analytics')}
-          >
-            Analytics
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('accounts')}
-            className={TAB_STYLES(tab === 'accounts')}
-          >
-            Connect Account
-          </button>
+        <BetaNotice context="journal" />
+        <div
+          className="journal-tabs"
+          role="tablist"
+          aria-label="Journal sections"
+        >
+          {tabs.map((item, index) => (
+            <button
+              key={item.value}
+              ref={(node) => {
+                tabRefs.current[index] = node;
+              }}
+              type="button"
+              role="tab"
+              id={`tab-${item.value}`}
+              aria-selected={tab === item.value}
+              aria-controls="journal-panel"
+              tabIndex={tab === item.value ? 0 : -1}
+              onClick={() => setTab(item.value)}
+              onKeyDown={(event) => {
+                let next = index;
+                if (event.key === 'ArrowRight')
+                  next = (index + 1) % tabs.length;
+                else if (event.key === 'ArrowLeft')
+                  next = (index - 1 + tabs.length) % tabs.length;
+                else if (event.key === 'Home') next = 0;
+                else if (event.key === 'End') next = tabs.length - 1;
+                else return;
+                event.preventDefault();
+                setTab(tabs[next].value);
+                tabRefs.current[next]?.focus();
+              }}
+            >
+              <item.icon size={18} aria-hidden="true" />
+              <span>{item.label}</span>
+              {tab === item.value && (
+                <motion.span
+                  layoutId="journal-tab-indicator"
+                  className="tab-indicator"
+                  transition={{ duration: reduce ? 0 : 0.18 }}
+                />
+              )}
+            </button>
+          ))}
         </div>
-
-        {tab === 'log' && <LogTradeForm />}
-        {tab === 'history' && <TradeHistory />}
-        {tab === 'analytics' && <Analytics />}
-        {tab === 'accounts' && <ConnectAccount />}
+        <div
+          role="tabpanel"
+          id="journal-panel"
+          aria-labelledby={`tab-${tab}`}
+          tabIndex={0}
+          className="journal-data-panel"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={tab}
+              initial={reduce ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduce ? 0 : 0.14 }}
+            >
+              {tab === 'log' ? (
+                <div className="journal-content-grid">
+                  <section className="journal-form-panel">
+                    <h2>Capture the trade</h2>
+                    <p>The setup, the execution, and what you learned.</p>
+                    <LogTradeForm />
+                  </section>
+                  <aside className="journal-aside">
+                    <span className="mini-bars mb-5" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <h2>A good journal captures more than the outcome.</h2>
+                    <ol>
+                      <li>
+                        <span>01</span>What was the context?
+                      </li>
+                      <li>
+                        <span>02</span>Why did you take the setup?
+                      </li>
+                      <li>
+                        <span>03</span>Did you follow your plan?
+                      </li>
+                    </ol>
+                    <p>
+                      Consistency comes from reviewing the process, one trade at
+                      a time.
+                    </p>
+                    <Link href="/" className="text-link">
+                      Check the market context
+                      <ArrowUpRight size={16} aria-hidden="true" />
+                    </Link>
+                  </aside>
+                </div>
+              ) : (
+                <>
+                  <div className="journal-tab-heading">
+                    <h2>{headings[tab].title}</h2>
+                    <p>{headings[tab].description}</p>
+                  </div>
+                  {tab === 'history' && (
+                    <div className="journal-history-content">
+                      <TradeHistory />
+                    </div>
+                  )}
+                  {tab === 'analytics' && <Analytics />}
+                  {tab === 'accounts' && <ConnectAccount />}
+                </>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
-
-      <footer className="border-t border-zinc-800 px-6 py-4">
-        <p className="max-w-6xl mx-auto text-[10px] text-zinc-700">
-          Trading journal for personal record-keeping. This is not financial advice.
-        </p>
+      <footer className="workspace-footer">
+        <div className="workspace-footer-inner">
+          <p className="disclaimer">
+            Your journal, your process. For personal record-keeping; this is not
+            financial advice.
+          </p>
+        </div>
       </footer>
     </div>
   );

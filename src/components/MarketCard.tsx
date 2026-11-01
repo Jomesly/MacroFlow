@@ -1,254 +1,313 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { BiasResult, Direction, Conviction } from '@/lib/types';
-import { marketIsOpen } from '@/lib/marketIsOpen';
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import {
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
+  CaretDown,
+  Minus,
+  TrendUp,
+} from "@phosphor-icons/react";
+import type { BiasResult } from "@/lib/types";
+import { marketIsOpen } from "@/lib/marketIsOpen";
 
-const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string; borderAccent: string }> = {
-  bullish: { text: 'text-emerald-400', bg: 'bg-emerald-950/40', border: 'border-emerald-800/40', borderAccent: 'border-t-emerald-500' },
-  weakly_bullish: { text: 'text-emerald-300', bg: 'bg-emerald-950/20', border: 'border-emerald-800/25', borderAccent: 'border-t-emerald-500' },
-  neutral: { text: 'text-zinc-400', bg: 'bg-zinc-900/50', border: 'border-zinc-800', borderAccent: 'border-t-zinc-700' },
-  weakly_bearish: { text: 'text-red-300', bg: 'bg-red-950/20', border: 'border-red-800/25', borderAccent: 'border-t-red-500' },
-  bearish: { text: 'text-red-400', bg: 'bg-red-950/40', border: 'border-red-800/40', borderAccent: 'border-t-red-500' },
+const ASSET_MARK: Record<string, { mark: string; name: string }> = {
+  XAUUSD: { mark: "Au", name: "Commodity" },
+  GBPUSD: { mark: "£", name: "Forex" },
+  US100: { mark: "N", name: "US index" },
+  DJ30: { mark: "D", name: "US index" },
+  BTCUSD: { mark: "₿", name: "Crypto" },
 };
 
-const SIGNAL_COLORS: Record<string, string> = {
-  strong_buy: 'bg-emerald-500',
-  buy: 'bg-emerald-600',
-  neutral: 'bg-zinc-600',
-  sell: 'bg-red-600',
-  strong_sell: 'bg-red-500',
-};
-
-const SIGNAL_TEXT_COLORS: Record<string, string> = {
-  strong_buy: 'text-emerald-400',
-  buy: 'text-emerald-400',
-  neutral: 'text-zinc-500',
-  sell: 'text-red-400',
-  strong_sell: 'text-red-400',
-};
-
-function MiniBar({ score }: { score: number }) {
-  const barWidth = Math.min(Math.abs(score), 100);
-  const isPositive = score >= 0;
+function BiasHistory({ data }: { data: BiasResult }) {
+  const scores = data.history.slice(-7).map((item) => item.biasScore);
+  const positive = data.direction.includes("bullish");
+  const negative = data.direction.includes("bearish");
+  if (scores.length < 2)
+    return (
+      <div className="bias-history-empty">
+        Bias history builds with daily snapshots.
+      </div>
+    );
+  const points = scores.map((score, i) => [
+    8 + i * (224 / (scores.length - 1)),
+    32 - Math.max(-100, Math.min(100, score)) * 0.25,
+  ]);
+  const line = points
+    .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x} ${y}`)
+    .join(" ");
   return (
-    <div className="relative h-2.5 w-full rounded-full bg-zinc-800/80 overflow-hidden">
-      <div className={`absolute top-0 h-full rounded-full transition-all duration-500 ${isPositive ? 'bg-emerald-500' : 'bg-red-500'}`}
-        style={{ width: `${barWidth}%`, left: isPositive ? '50%' : `${50 - barWidth}%` }}
+    <svg
+      className={`bias-history ${positive ? "is-positive" : negative ? "is-negative" : ""}`}
+      viewBox="0 0 240 66"
+      role="img"
+      aria-label={`${data.symbol} historical bias scores: ${scores.join(", ")}`}
+    >
+      <defs>
+        <linearGradient id={`area-${data.symbol}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.32" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d="M0 32H240" className="chart-zero" />
+      <path
+        d={`${line} L232 66 L8 66 Z`}
+        className="chart-area"
+        fill={`url(#area-${data.symbol})`}
       />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-full w-px bg-zinc-600" />
+      <path d={line} className="chart-line" />
+      <circle
+        cx={points.at(-1)![0]}
+        cy={points.at(-1)![1]}
+        r="7"
+        className="chart-endpoint-halo"
+      />
+      <circle
+        cx={points.at(-1)![0]}
+        cy={points.at(-1)![1]}
+        r="3"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+const METER_SEGMENTS = 10;
+
+/** Bipolar -100..+100 meter: segments light up outward from the centre. */
+function BiasMeter({ score }: { score: number }) {
+  const clamped = Math.max(-100, Math.min(100, score));
+  const lit = Math.round((Math.abs(clamped) / 100) * METER_SEGMENTS);
+  const side = (dir: "bear" | "bull") =>
+    Array.from({ length: METER_SEGMENTS }, (_, i) => {
+      // i counts outward from the centre line.
+      const on =
+        i < lit &&
+        ((dir === "bull" && clamped > 0) || (dir === "bear" && clamped < 0));
+      return (
+        <i
+          key={i}
+          className={on ? "is-lit" : undefined}
+          style={
+            on
+              ? { opacity: 0.45 + (0.55 * (i + 1)) / METER_SEGMENTS }
+              : undefined
+          }
+        />
+      );
+    });
+  return (
+    <div className="bias-meter">
+      <div
+        className="bias-meter-track"
+        role="img"
+        aria-label={`Bias score ${score}, from minus 100 to plus 100`}
+      >
+        <span className="bias-meter-side is-bear">{side("bear")}</span>
+        <span className="bias-meter-center" />
+        <span className="bias-meter-side">{side("bull")}</span>
+      </div>
+      <div className="bias-meter-scale" aria-hidden="true">
+        <span>-100</span>
+        <span>0</span>
+        <span>+100</span>
       </div>
     </div>
   );
 }
 
-const CONVICTION_STYLES: Record<string, string> = {
-  high: 'bg-emerald-600 text-white',
-  medium: 'bg-amber-600 text-white',
-  low: 'bg-zinc-600 text-zinc-300',
-};
-
-function getScoreTooltip(score: number, direction: Direction): string {
-  const abs = Math.abs(score);
-  if (abs > 50) return `Full ${direction === 'bullish' ? 'bullish' : 'bearish'} — past strong threshold`;
-  if (abs > 25) return `${50 - abs} points from strong threshold`;
-  if (abs >= 15) return `${25 - abs} points from moderate threshold`;
-  return `${15 - abs} points from leaning ${score >= 0 ? 'bearish' : 'bullish'} threshold`;
-}
-
-function getSignalDisplay(direction: Direction, conviction: Conviction): { label: string; showWarning: boolean } {
-  if ((direction === 'weakly_bullish' || direction === 'weakly_bearish') && conviction === 'low') {
-    return { label: `Leaning ${direction === 'weakly_bullish' ? 'Bullish' : 'Bearish'}`, showWarning: true };
-  }
-  return { label: '', showWarning: false };
-}
-
-interface MarketCardProps {
+export default function MarketCard({
+  data,
+  onClick,
+  index = 0,
+}: {
   data: BiasResult;
   onClick: () => void;
-}
-
-export default function MarketCard({ data, onClick }: MarketCardProps) {
-  const colors = DIRECTION_COLORS[data.direction] || DIRECTION_COLORS.neutral;
-  const open = marketIsOpen(data.symbol);
-  const [flipInfo, setFlipInfo] = useState<{ from: string; to: string; trigger: string } | null>(null);
+  index?: number;
+}) {
   const [historyOpen, setHistoryOpen] = useState(false);
-  const signalDisplay = getSignalDisplay(data.direction, data.conviction);
+  const [flip, setFlip] = useState<string | null>(null);
+  const reduce = useReducedMotion();
+  const positive = data.direction.includes("bullish");
+  const negative = data.direction.includes("bearish");
+  const tone = positive ? "positive" : negative ? "negative" : "neutral";
+  const open = marketIsOpen(data.symbol);
+  const asset = ASSET_MARK[data.symbol];
+  const direction = data.direction.startsWith("weakly_")
+    ? `Leaning ${positive ? "bullish" : "bearish"}`
+    : data.direction.charAt(0).toUpperCase() + data.direction.slice(1);
+  const DirectionIcon = positive
+    ? ArrowUpRight
+    : negative
+      ? ArrowDownRight
+      : Minus;
 
   useEffect(() => {
-    const key = `mf-direction-${data.symbol}`;
-    const prev = sessionStorage.getItem(key);
-    const cur = data.direction;
-
-    if (prev && prev !== cur) {
-      const sorted = [...data.events].sort((a, b) => Math.abs(b.scoreChange) - Math.abs(a.scoreChange));
-      const trigger = sorted.length > 0 ? sorted[0].title : '';
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFlipInfo({ from: prev, to: cur, trigger });
+    try {
+      const key = `mf-direction-${data.symbol}`;
+      const previous = sessionStorage.getItem(key);
+      if (previous && previous !== data.direction) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- compare the previous session snapshot after hydration
+        setFlip(previous.replaceAll("_", " "));
+      }
+      sessionStorage.setItem(key, data.direction);
+    } catch {
+      /* The card remains usable when browser storage is unavailable. */
     }
-
-    sessionStorage.setItem(key, cur);
-  }, [data.symbol, data.direction, data.events]);
-
-  const dismissFlip = () => setFlipInfo(null);
-  const handleFlipClick = () => { onClick(); dismissFlip(); };
-
-  const isFlipBullish = flipInfo?.to === 'bullish' || flipInfo?.to === 'weakly_bullish';
+  }, [data.symbol, data.direction]);
 
   return (
-    <div className="relative flex flex-col gap-1.5 h-full">
-      <div className={`rounded-xl border ${colors.border} ${colors.borderAccent} border-t-4 ${colors.bg} flex flex-col flex-1`}>
-        <button
-          onClick={onClick}
-          className={`w-full p-4 flex-1 transition-all text-left cursor-pointer
-            hover:scale-[1.03] hover:shadow-[0_0_20px_-5px] hover:shadow-${data.direction.includes('bullish') ? 'emerald' : data.direction.includes('bearish') ? 'red' : 'white'}-500/20
-            hover:border-white/20 active:scale-[0.98] group outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
-        >
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold leading-none text-white group-hover:text-white transition-colors">
-                  {data.symbol}
-                </h3>
-              </div>
-              <p className="text-xs text-zinc-500 mt-1 leading-none">{data.name}</p>
-            </div>
-            <div className="text-right">
-              <div className="relative group/tooltip">
-                <span className={`text-2xl font-bold leading-none ${colors.text} tabular-nums`}>
-                  {data.biasPercent > 0 ? '+' : ''}{data.biasPercent}%
-                </span>
-                <div className="absolute right-0 top-full mt-1.5 opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
-                  <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
-                    <p className="text-[10px] text-zinc-300 font-mono">Score: {data.biasScore} / ±100</p>
-                    <p className="text-[10px] text-zinc-400 mt-0.5">{getScoreTooltip(data.biasScore, data.direction)}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 justify-end mt-1">
-                <div className={`w-2 h-2 rounded-full ${SIGNAL_COLORS[data.signal]}`} />
-                {signalDisplay.showWarning ? (
-                  <span className="flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-400">
-                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2L1 21h22L12 2zm0 4l7.53 13H4.47L12 6zm-1 5v4h2v-4h-2zm0 6v2h2v-2h-2z" />
-                    </svg>
-                    {signalDisplay.label}
-                  </span>
-                ) : (
-                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${SIGNAL_TEXT_COLORS[data.signal]}`}>{data.signal.replace('_', ' ')}</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-2">
-            <span className="text-[11px] text-zinc-500 block mb-1.5">Bias</span>
-            <div className="relative group/bar">
-              <MiniBar score={data.biasScore} />
-              <div className="absolute right-0 top-full mt-1.5 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-50">
-                <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
-                  <p className="text-[10px] text-zinc-300 font-mono">Score: {data.biasScore} / ±100</p>
-                  <p className="text-[10px] text-zinc-400 mt-0.5">{getScoreTooltip(data.biasScore, data.direction)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-2 flex items-center gap-2 min-h-[20px]">
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${CONVICTION_STYLES[data.conviction]}`}>
-              {data.conviction.toUpperCase()} CONVICTION
-            </span>
-            <span className="text-[10px] text-zinc-600">
-              {data.eventCount} events · {data.confirmationRatio}% agree
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between pt-2.5 border-t border-zinc-800/50 mt-2.5">
-            <span className="text-[10px] text-zinc-600">
-              {new Date(data.lastUpdated).toLocaleTimeString()} · {open ? 'Market Open' : 'Market Closed'}
-            </span>
-            <span className="text-[10px] text-blue-400 transition-all duration-200 group-hover:text-blue-300 group-hover:translate-x-0.5">
-              Click for details →
-            </span>
-          </div>
-        </button>
-
-        {data.history.length > 0 && (
-          <div className="border-t border-zinc-800/50">
-            <button
-              onClick={(e) => { e.stopPropagation(); setHistoryOpen(!historyOpen); }}
-              className="w-full flex items-center justify-between px-4 py-2 text-left cursor-pointer hover:bg-zinc-800/30 transition-colors"
-            >
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">7-Day History</span>
-              <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${historyOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {historyOpen && (
-              <div className="px-4 pb-3">
-                <table className="w-full text-[10px]">
-                  <thead>
-                    <tr className="text-zinc-600 border-b border-zinc-800/50">
-                      <th className="text-left py-1 font-medium">Date</th>
-                      <th className="text-left py-1 font-medium">Direction</th>
-                      <th className="text-right py-1 font-medium">Bias</th>
+    <motion.article
+      layout={reduce ? false : "position"}
+      initial={reduce ? false : { opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{
+        duration: reduce ? 0 : 0.3,
+        delay: reduce ? 0 : index * 0.045,
+      }}
+      className={`market-card tone-${tone}`}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className="market-card-main"
+        aria-label={`View ${data.symbol} analysis`}
+      >
+        <div className="market-card-top">
+          <span
+            className={`asset-mark asset-${data.symbol.toLowerCase()}`}
+            aria-hidden="true"
+          >
+            {asset.mark}
+          </span>
+          <span className="asset-identity">
+            <h3>{data.symbol}</h3>
+            <span>{data.name}</span>
+          </span>
+          <ArrowUpRight
+            size={17}
+            className="card-open-icon"
+            aria-hidden="true"
+          />
+        </div>
+        <div className="market-score-label">Fundamental bias</div>
+        <div className="market-score">
+          <span>
+            {data.biasPercent > 0 ? "+" : ""}
+            {data.biasPercent}
+            <small>%</small>
+          </span>
+          <span className="market-direction">
+            <DirectionIcon
+              size={13}
+              weight="bold"
+              className="score-direction-icon"
+              aria-hidden="true"
+            />
+            {direction}
+          </span>
+        </div>
+        <BiasMeter score={data.biasScore} />
+        <div className="market-stats">
+          <span>
+            Conviction
+            <strong className={`conviction-${data.conviction}`}>
+              <i />
+              <i />
+              <i />
+              {data.conviction}
+            </strong>
+          </span>
+          <span>
+            Agreement
+            <strong>
+              {data.confirmationRatio}
+              <small>%</small>
+            </strong>
+          </span>
+        </div>
+        <div className="market-history-heading">
+          <span>Bias history</span>
+          <span>Last 7 snapshots</span>
+        </div>
+        <BiasHistory data={data} />
+        <div className="market-card-meta">
+          <span className={`market-session ${open ? "is-open" : ""}`}>
+            <i />
+            {open ? "Market open" : "Market closed"}
+          </span>
+          <span>
+            {data.eventCount} drivers{" "}
+            <ArrowRight size={13} aria-hidden="true" />
+          </span>
+        </div>
+      </button>
+      {data.history.length > 0 && (
+        <div className="market-history-section">
+          <button
+            type="button"
+            className="history-toggle"
+            aria-expanded={historyOpen}
+            aria-controls={`history-${data.symbol}`}
+            onClick={() => setHistoryOpen(!historyOpen)}
+          >
+            <span>7-day history</span>
+            <CaretDown
+              size={13}
+              className={historyOpen ? "rotate-180" : ""}
+              aria-hidden="true"
+            />
+          </button>
+          {historyOpen && (
+            <div className="history-table-wrap" id={`history-${data.symbol}`}>
+              <table>
+                <caption className="sr-only">
+                  Daily bias history for {data.symbol}
+                </caption>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Direction</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.history.map((entry) => (
+                    <tr key={entry.date}>
+                      <td>{entry.date.slice(5)}</td>
+                      <td>
+                        {entry.direction
+                          .replace("weakly_", "Leaning ")
+                          .replaceAll("_", " ")}
+                      </td>
+                      <td>
+                        {entry.biasScore > 0 ? "+" : ""}
+                        {entry.biasScore}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {data.history.map((entry) => (
-                      <tr key={entry.date} className="border-b border-zinc-800/30 last:border-0">
-                        <td className="py-1 text-zinc-400">{entry.date.slice(5)}</td>
-                        <td className={`py-1 font-medium ${
-                          entry.direction === 'bullish' || entry.direction === 'weakly_bullish' ? 'text-emerald-400'
-                            : entry.direction === 'bearish' || entry.direction === 'weakly_bearish' ? 'text-red-400'
-                              : 'text-zinc-500'
-                        }`}>
-                          {entry.direction === 'weakly_bullish' ? 'Leaning Bullish'
-                            : entry.direction === 'weakly_bearish' ? 'Leaning Bearish'
-                              : entry.direction.charAt(0).toUpperCase() + entry.direction.slice(1)}
-                        </td>
-                        <td className={`py-1 text-right font-mono tabular-nums ${
-                          entry.biasScore > 0 ? 'text-emerald-400' : entry.biasScore < 0 ? 'text-red-400' : 'text-zinc-500'
-                        }`}>
-                          {entry.biasScore > 0 ? '+' : ''}{entry.biasScore}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {flipInfo && (
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+      {flip && (
         <button
-          onClick={handleFlipClick}
-          className={`rounded-xl border-2 text-left cursor-pointer px-4 py-2.5 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-            isFlipBullish
-              ? 'border-emerald-500/60 bg-emerald-950/80 hover:shadow-[0_0_15px_-3px] hover:shadow-emerald-500/30'
-              : 'border-red-500/60 bg-red-950/80 hover:shadow-[0_0_15px_-3px] hover:shadow-red-500/30'
-          }`}
+          type="button"
+          className="flip-notice"
+          onClick={() => {
+            setFlip(null);
+            onClick();
+          }}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M13 2L4 14h6v8l7-12h-6z" />
-            </svg>
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isFlipBullish ? 'text-emerald-300' : 'text-red-300'}`}>
-              Bias Flipped
-            </span>
-            <span className="text-[9px] text-zinc-500">
-              {flipInfo.from.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())} → {flipInfo.to.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
-            </span>
-            <span className="text-[9px] text-blue-400 ml-auto">Click to view details →</span>
-          </div>
-          <p className="text-[9px] text-zinc-600 leading-tight line-clamp-2">
-            {flipInfo.trigger}
-          </p>
+          <TrendUp size={15} aria-hidden="true" />
+          <span>Bias changed from {flip}. View analysis.</span>
         </button>
       )}
-    </div>
+    </motion.article>
   );
 }

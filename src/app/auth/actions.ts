@@ -15,11 +15,37 @@ import {
 const acknowledgement = 'If this email can receive the requested link, it will arrive shortly. Check your inbox and spam folder.';
 
 function authError(error: { status?: number; code?: string }, fallback: string): AuthFormState {
-  if (error.status === 429 || error.code?.includes('rate_limit')) {
-    return { error: 'Too many attempts. Please wait before trying again.', retryAfter: 60 };
+  if (error.code === 'over_email_send_rate_limit') {
+    // Log only provider metadata: never email addresses, credentials or tokens.
+    console.warn('[auth] Email sending rate limit reached.', { code: error.code, status: error.status });
+    return { error: 'Email sending is temporarily limited. Please try again later. If this continues, contact support.' };
   }
+  if (error.status === 429 || error.code?.includes('rate_limit')) {
+    // Auth errors do not supply a reset time. A 60-second timer would imply one.
+    return { error: 'Too many attempts. Please wait a few minutes before trying again.' };
+  }
+  if (error.code === 'captcha_failed') return { error: 'Verification failed or expired. Please complete the security check and try again.' };
   if (error.code === 'weak_password') return { error: 'Choose a stronger password that meets the journal password requirements.' };
   return { error: fallback };
+}
+
+function captchaOptions(data: FormData): { captchaToken?: string } | null {
+  if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) return {};
+  const token = data.get('cf-turnstile-response');
+  // Supabase validates the token with the Turnstile secret configured in its dashboard.
+  return typeof token === 'string' && token.trim() && token.length <= 2048
+    ? { captchaToken: token } : null;
+}
+
+const captchaRequired: AuthFormState = { error: 'Please complete the security check and try again.' };
+
+function isPublicAuthError(error: { status?: number; code?: string }): boolean {
+  return error.status === 429 || !!error.code?.includes('rate_limit') || error.code === 'captcha_failed';
+}
+
+function emailDeliveryError(error?: { status?: number; code?: string }): AuthFormState {
+  console.error('[auth] Email delivery unavailable.', { code: error?.code, status: error?.status });
+  return { error: 'Email delivery is temporarily unavailable. Please try again later.' };
 }
 
 async function clearAuthCookies() {
@@ -35,11 +61,13 @@ export async function signup(_previous: AuthFormState, data: FormData): Promise<
   if (process.env.AUTH_SIGNUP_ENABLED !== 'true') return { error: 'New registrations are not open yet. Please try again later.' };
   const input = signupSchema.safeParse(Object.fromEntries(['email', 'password', 'confirmPassword'].map((name) => [name, data.get(name)])));
   if (!input.success) return { error: input.error.issues[0].message };
+  const captcha = captchaOptions(data);
+  if (!captcha) return captchaRequired;
   try {
     const auth = await createServerAuthClient();
     const { data: result, error } = await auth.auth.signUp({
       email: input.data.email, password: input.data.password,
-      options: { emailRedirectTo: applicationOrigin() + '/auth/confirm' },
+      options: { emailRedirectTo: applicationOrigin() + '/auth/confirm', ...captcha },
     });
     if (error && error.code !== 'user_already_exists') return authError(error, 'Registration could not be completed. Please retry shortly.');
     if (result?.session) {
@@ -57,10 +85,12 @@ export async function signup(_previous: AuthFormState, data: FormData): Promise<
 export async function login(_previous: AuthFormState, data: FormData): Promise<AuthFormState> {
   const input = loginSchema.safeParse({ email: data.get('email'), password: data.get('password') });
   if (!input.success) return { error: input.error.issues[0].message };
+  const captcha = captchaOptions(data);
+  if (!captcha) return captchaRequired;
   let unverified = false;
   try {
     const auth = await createServerAuthClient();
-    const { error } = await auth.auth.signInWithPassword(input.data);
+    const { error } = await auth.auth.signInWithPassword({ ...input.data, options: captcha });
     if (error?.code === 'email_not_confirmed') unverified = true;
     else if (error) return authError(error, 'Sign-in failed. Check your email and password, then try again.');
     (await cookies()).delete('sb-access-token');
@@ -84,29 +114,33 @@ export async function login(_previous: AuthFormState, data: FormData): Promise<A
 export async function resendConfirmation(_previous: AuthFormState, data: FormData): Promise<AuthFormState> {
   const input = emailSchema.safeParse({ email: data.get('email') });
   if (!input.success) return { error: input.error.issues[0].message };
+  const captcha = captchaOptions(data);
+  if (!captcha) return captchaRequired;
   try {
     const auth = await createServerAuthClient();
-    const { error } = await auth.auth.resend({ type: 'signup', email: input.data.email, options: { emailRedirectTo: applicationOrigin() + '/auth/confirm' } });
-    if (error && error.status === 429) return authError(error, '');
+    const { error } = await auth.auth.resend({ type: 'signup', email: input.data.email, options: { emailRedirectTo: applicationOrigin() + '/auth/confirm', ...captcha } });
+    if (error && isPublicAuthError(error)) return authError(error, 'Email delivery is temporarily unavailable. Please try again later.');
     // Some provider versions identify already-confirmed/absent users; conceal those states.
-    if (error && (error.status ?? 500) >= 500) return { error: 'Email delivery is temporarily unavailable. Please retry.', retryAfter: 60 };
+    if (error && (error.status ?? 500) >= 500) return emailDeliveryError(error);
     return { message: acknowledgement, retryAfter: 60 };
   } catch {
-    return { error: 'Email delivery is temporarily unavailable. Please retry.', retryAfter: 60 };
+    return emailDeliveryError();
   }
 }
 
 export async function forgotPassword(_previous: AuthFormState, data: FormData): Promise<AuthFormState> {
   const input = emailSchema.safeParse({ email: data.get('email') });
   if (!input.success) return { error: input.error.issues[0].message };
+  const captcha = captchaOptions(data);
+  if (!captcha) return captchaRequired;
   try {
     const auth = await createServerAuthClient();
-    const { error } = await auth.auth.resetPasswordForEmail(input.data.email, { redirectTo: applicationOrigin() + '/auth/confirm' });
-    if (error?.status === 429) return authError(error, '');
-    if (error && (error.status ?? 500) >= 500) return { error: 'Email delivery is temporarily unavailable. Please retry.', retryAfter: 60 };
+    const { error } = await auth.auth.resetPasswordForEmail(input.data.email, { redirectTo: applicationOrigin() + '/auth/confirm', ...captcha });
+    if (error && isPublicAuthError(error)) return authError(error, 'Email delivery is temporarily unavailable. Please try again later.');
+    if (error && (error.status ?? 500) >= 500) return emailDeliveryError(error);
     return { message: acknowledgement, retryAfter: 60 };
   } catch {
-    return { error: 'Email delivery is temporarily unavailable. Please retry.', retryAfter: 60 };
+    return emailDeliveryError();
   }
 }
 

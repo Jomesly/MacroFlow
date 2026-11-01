@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { X } from '@phosphor-icons/react';
 import { BiasResult, TradeSignal } from '@/lib/types';
 
 const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string }> = {
@@ -20,7 +21,7 @@ const SIGNAL_CONFIG: Record<TradeSignal, { label: string; color: string; bg: str
 };
 
 function ScoreBar({ score }: { score: number }) {
-  const barWidth = Math.min(Math.abs(score), 100);
+  const barWidth = Math.min(Math.abs(score), 100) / 2;
   const isPositive = score >= 0;
 
   return (
@@ -65,6 +66,14 @@ interface BiasDetailProps {
 
 export default function BiasDetail({ data, onClose }: BiasDetailProps) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    const previousOverflow = document.body.style.overflow;
+    dialog?.showModal();
+    document.body.style.overflow = 'hidden';
+    return () => { dialog?.close(); document.body.style.overflow = previousOverflow; };
+  }, []);
 
   const colors = DIRECTION_COLORS[data.direction] || DIRECTION_COLORS.neutral;
   const signal = SIGNAL_CONFIG[data.signal];
@@ -89,16 +98,15 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
         : { label: 'Low conviction — wait for clearer signal', color: 'text-zinc-500' };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 pt-8 px-4 pb-4 overflow-y-auto" onClick={onClose}>
+    <dialog ref={dialogRef} className="bias-dialog" aria-labelledby="bias-detail-title" onClose={() => { if (!dialogRef.current?.open) onClose(); }} onClick={event => { if (event.target === event.currentTarget) dialogRef.current?.close(); }}>
       <div
-        className="relative w-full max-w-5xl rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="bias-dialog-panel"
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300 transition-colors text-lg leading-none">✕</button>
+        <button onClick={() => dialogRef.current?.close()} className="dialog-close" aria-label="Close market analysis"><X size={20} aria-hidden="true" /></button>
 
         <div className="flex items-start justify-between mb-5 pr-6">
           <div>
-            <h2 className="text-xl font-bold text-white">{data.symbol}</h2>
+            <h2 id="bias-detail-title" className="text-xl font-bold text-white">{data.symbol}</h2>
             <p className="text-sm text-zinc-500 mt-0.5">{data.name}</p>
           </div>
           <div className="text-right">
@@ -109,8 +117,8 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-5 gap-5 mb-5">
-          <div className="col-span-3 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-5">
+          <div className="lg:col-span-3 space-y-4">
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-zinc-500">Trading Signal</span>
@@ -210,7 +218,7 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
             </div>
           </div>
 
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             {data.events.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
@@ -282,6 +290,6 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
           <p className="text-[10px] text-zinc-600">This is not financial advice. Always do your own research.</p>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

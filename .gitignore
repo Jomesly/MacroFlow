@@ -35,6 +35,34 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Local assistant instructions, prompts, session data and editor credentials.
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+PROMPTS.md
+**/SKILL.md
+.agents/
+.claude/
+.codex/
+.cursor/
+.superpowers/
+.playwright-mcp/
+.artifacts/
+.aider*
+.mcp.json
+/settings.json
+/docs/superpowers/
+/docs/project-review-2026-10-31.md
+/docs/signup-login-plan.md
+/docs/journal-autosync-plan.md
+*.code-workspace
+*.key
+*.p12
+*.pfx
+*.log
+credentials*.json
+service-account*.json
+
 # Auth browser test artifacts
 /test-results/
 /playwright-report/
