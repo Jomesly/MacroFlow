@@ -1086,6 +1086,51 @@ button:active:not(:disabled),
   text-transform: uppercase;
   letter-spacing: -0.01em;
 }
+
+/* Independent market context panels share the overview's existing surfaces. */
+.market-context-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+.market-context-grid > * { min-width: 0; }
+.market-context-grid .context-heading { flex-wrap: wrap; }
+.market-panel-retry {
+  margin-left: auto;
+  color: var(--frost);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.market-panel-note { margin-top: 16px; color: #a1a1aa; font-size: 12px; line-height: 1.7; }
+.calendar-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.calendar-filters > div { display: grid; gap: 6px; flex: 1 1 90px; }
+.calendar-filters label { color: #a1a1aa; font-size: 12px; }
+.calendar-filters select { min-height: 36px; width: 100%; padding: 7px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--frost); }
+.calendar-table-wrap { overflow: auto; max-height: 440px; margin-top: 20px; }
+.economic-table { width: 100%; min-width: 460px; border-collapse: collapse; text-align: left; font-size: 12px; }
+.economic-table th, .economic-table td { padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.economic-table thead th { font-weight: 500; color: #a1a1aa; }
+.economic-table th:first-child { padding-left: 0; }
+.economic-table tbody th { min-width: 180px; font-weight: 400; }
+.economic-table strong { font-weight: 500; color: var(--frost); }
+.economic-table time, .calendar-affects { display: block; margin-top: 5px; color: #a1a1aa; font-size: 11px; }
+.calendar-impact { text-transform: capitalize; color: #c4c4cc; }
+.calendar-impact.impact-high { color: #fda4af; }
+.calendar-impact.impact-medium { color: #fcd34d; }
+.market-source-meta { margin-top: 12px; color: #a1a1aa; font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; }
+.market-source-meta a { text-decoration: underline; text-underline-offset: 3px; }
+.market-source-fetch { display: block; }
+.macro-readings { margin-top: 12px; }
+.macro-reading { border-bottom: 1px solid var(--line); padding: 18px 0; }
+.macro-reading:last-child { border-bottom: 0; padding-bottom: 0; }
+.macro-reading dt { color: #d4d4d8; font-size: 13px; }
+.macro-value { font-size: 25px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 6px; }
+.macro-value span { display: block; font-size: 12px; font-weight: 400; color: #d4d4d8; }
+.macro-description { font-size: 11px; color: #a1a1aa; margin-top: 4px; }
+@media (max-width: 1000px) { .market-context-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .market-context-grid .context-panel { padding: 20px; } }
 .release-content {
   display: flex;
   align-items: flex-start;
@@ -2134,14 +2179,14 @@ button:active:not(:disabled),
   .journal-tabs {
     gap: 0;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
   .journal-tabs button {
     flex-direction: column;
     gap: 7px;
     padding: 11px 3px;
     font-size: 10px;
-    white-space: nowrap;
+    white-space: normal;
   }
   .tab-indicator {
     left: 5px;
@@ -2276,3 +2321,11 @@ button:active:not(:disabled),
     transform: none;
   }
 }
+.journal-review-field { display: block; width: 100%; margin-top: .5rem; padding: .65rem .8rem; background: var(--color-surface, #14161a); color: inherit; border: 1px solid #3f3f46; border-radius: .5rem; }
+.review-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.review-stats > div { padding: 1rem; border: 1px solid #3f3f46; border-radius: .75rem; }
+.review-stats dt { font-size: .8rem; color: #a1a1aa; }
+.review-stats dd { margin-top: .5rem; font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.trade-screenshots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.trade-screenshots img { width: 100%; height: 8rem; object-fit: contain; border: 1px solid #3f3f46; border-radius: .5rem; }
+@media (max-width: 640px) { .review-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .trade-screenshots { grid-template-columns: 1fr; } }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from '@phosphor-icons/react';
 import { BiasResult, TradeSignal } from '@/lib/types';
+import { referenceCharts } from '@/lib/market/instruments';
 
 const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string }> = {
   bullish: { text: 'text-emerald-400', bg: 'bg-emerald-950/20', border: 'border-emerald-800/30' },
@@ -117,6 +118,10 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
           </div>
         </div>
 
+        <div className="mb-5 rounded-lg border border-zinc-800 p-4">
+          <a className="text-link" href={referenceCharts[data.symbol].url} target="_blank" rel="noopener noreferrer">Open {referenceCharts[data.symbol].name} chart on TradingView ↗</a>
+          <p className="mt-2 text-xs text-zinc-400">{referenceCharts[data.symbol].note}</p>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-5">
           <div className="lg:col-span-3 space-y-4">
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">

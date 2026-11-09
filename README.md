@@ -16,6 +16,8 @@ MacroFlow brings macroeconomic signals, economic releases, and market sentiment 
 | --- | --- |
 | **Market overview** | Compare bias, conviction, agreement, and recent history across gold, GBP/USD, Nasdaq 100, Dow Jones, and Bitcoin. |
 | **Market analysis** | Inspect the signals behind a score, economic-event context, sentiment, and data availability. |
+| **Economic calendar** | Filter selected official BLS/BEA/ONS releases by date, currency and MacroFlow priority; inspect source links and the next relevant release. |
+| **Macro context** | Review direct US Treasury 2Y/10Y daily yields and their matched-date spread, with observation dates and cache status. |
 | **Trade journal** | Record entries, exits, direction, results, setup tags, and notes. Retain market-bias context when available. |
 | **History** | Search and review trades, filter the record, and expand individual decisions. |
 | **Analytics** | Review performance totals, a P&L calendar, and breakdowns by market, setup, session, and weekday. Monetary metrics show their data coverage. |
@@ -102,6 +104,8 @@ The same workspace adapts to a phone, including market cards, journal navigation
 ## Architecture
 
 Next.js App Router provides pages and server routes. Market data is aggregated and scored on the server, with Redis supporting shared cache and bias history. Supabase Auth handles identities; server-side access checks scope journal operations to the verified user. PostgreSQL stores journal records and access grants.
+
+Calendar and macro-context panels load independently through `/api/calendar` and `/api/macro-context`. They provide informational context and do not introduce new bias-scoring inputs. Provider validation, cache limits, build-time feature switches, and remaining release prerequisites are documented in [market context provider validation](docs/market-context-provider-validation.md).
 
 ```mermaid
 flowchart LR
@@ -246,3 +250,14 @@ docs/            Setup guides, screenshots, and backtesting documentation
 Further reading: [Authentication setup](docs/auth-setup.md) · [Production email setup](docs/production-email-setup.md) · [Glossary](GLOSSARY.md) · [Backtesting methodology](docs/backtesting-plan.md)
 
 MacroFlow provides informational market context and personal record-keeping tools. Bias scores and sample screenshots are not trading recommendations or guarantees of performance.
+
+
+### Official market context and journal reviews
+
+The economic calendar now uses selected BLS/BEA/ONS releases, with source links and MacroFlow editorial priorities. It does not supply consensus forecasts, previous values or actuals. Macro context uses direct Treasury 2Y/10Y daily yields and matching-date spreads; new DXY/VIX feeds are disabled. Analysis dialogs link to external reference charts while embedding and custom history remain pending provider approval.
+
+The journal includes a weekly performance review by closing week, account filters and setup/session breakdowns. Money totals are not combined across accounts. Trade history reads all pages, rather than silently stopping at the database response cap.
+
+Screenshot uploads are off by default. Apply [the private-bucket migration](supabase/journal-screenshots.sql) in a preview database, validate owner isolation, then set `NEXT_PUBLIC_JOURNAL_SCREENSHOTS_ENABLED=true` and rebuild. Limits: three PNG/JPEG/WebP images per trade, 3 MB each. The server streams private images after permission/ownership checks; there are no public image URLs.
+
+Run `node scripts/validate-market-context.mjs <preview-url>` for hosted source checks. Run `powershell -NoProfile -File scripts/test-auth-local.ps1` for the disposable Supabase/Auth/Storage integration suite. See [provider validation](docs/market-context-provider-validation.md) and [the revised integration plan](docs/openterminal-integration-plan.md) for release gates and deferred scope.

@@ -21,6 +21,7 @@ const h = vi.hoisted(() => {
     orders: Array<[string, boolean]>;
     single: boolean;
     projection: string | null;
+    range?: [number, number];
   }
 
   const tables = new Map<string, Row[]>();
@@ -126,7 +127,7 @@ const h = vi.hoisted(() => {
       }
       return { data: project(out, q.projection)[0] ?? null, error: null };
     }
-    return { data: project(out, q.projection), error: null };
+    return { data: project(q.range ? out.slice(q.range[0], q.range[1] + 1) : out, q.projection), error: null };
   }
 
   class Builder implements PromiseLike<QueryResult> {
@@ -149,6 +150,8 @@ const h = vi.hoisted(() => {
       this.q.projection = cols;
       return this;
     }
+
+    range(from: number, to: number): this { this.q.range = [from, to]; return this; }
 
     insert(row: Row): this {
       this.q.kind = 'insert';
@@ -218,6 +221,15 @@ describe('journal', () => {
 
   beforeEach(() => {
     h.reset();
+  });
+
+  it('paginates beyond the API row cap without including another owner', async () => {
+    const { createTrade, listTrades } = await loadJournal();
+    for (let i = 0; i < 505; i++) await createTrade(USER_A, { symbol: 'US100', direction: 'long', entryPrice: 100 });
+    await createTrade(USER_B, { symbol: 'US100', direction: 'long', entryPrice: 100 });
+    const rows = await listTrades(USER_A);
+    expect(rows).toHaveLength(505);
+    expect(new Set(rows.map((r) => r.id)).size).toBe(505);
   });
 
   it('createTrade returns a trade with open fields nulled out', async () => {

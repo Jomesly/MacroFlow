@@ -79,6 +79,62 @@ const fixture: BiasApiResponse = {
 const artifactDir = path.resolve('.artifacts/ui-review');
 mkdirSync(artifactDir, { recursive: true });
 
+const contextMeta = {
+  provider: 'Fixture source', instrumentId: 'fixture', sourceUrl: 'https://example.com',
+  observedAt: '2026-11-05T00:00:00.000Z', fetchedAt: new Date().toISOString(),
+  freshUntil: new Date(Date.now() + 3_600_000).toISOString(),
+  staleUntil: new Date(Date.now() + 86_400_000).toISOString(), status: 'fresh', delayed: true,
+};
+const calendarFixture = {
+  meta: { ...contextMeta, observedAt: null, delayed: false },
+  data: {
+    windowStart: '2026-11-08T00:00:00.000Z', windowEnd: '2026-11-14T23:00:00.000Z',
+    events: [
+      { id: 'cpi', title: 'US CPI fixture', currency: 'USD', date: '2026-11-10T13:30:00.000Z', impact: 'high', forecast: '2.4%', previous: '2.5%', actual: null, affects: ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD'] },
+      { id: 'gdp', title: 'UK GDP fixture', currency: 'GBP', date: '2026-11-11T07:00:00.000Z', impact: 'medium', forecast: null, previous: '0.1%', actual: null, affects: ['GBPUSD'] },
+    ],
+  },
+};
+const macroFixture = Object.fromEntries([
+  ['dxy', 103.42, 'index'], ['treasury2y', 4.46, 'percent'], ['treasury10y', 4.84, 'percent'],
+  ['spread', 38, 'basis-points'], ['vix', 28.18, 'index'],
+].map(([key, value, unit]) => [key, { meta: contextMeta, data: { value, unit } }]));
+
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/calendar', (route) => route.fulfill({ json: calendarFixture }));
+  await page.route('**/api/macro-context', (route) => route.fulfill({ json: macroFixture }));
+});
+
+test('calendar filters, source dates and independent panel recovery work', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await prepare(page);
+  const calendar = page.getByRole('region', { name: 'Economic calendar', exact: true });
+  await expect(calendar.getByText('USD · US CPI fixture', { exact: true })).toBeVisible();
+  await calendar.getByLabel('Currency', { exact: true }).selectOption('GBP');
+  await expect(calendar.getByText('GBP · UK GDP fixture', { exact: true })).toBeVisible();
+  await expect(calendar.getByText('USD · US CPI fixture', { exact: true })).toHaveCount(0);
+  await calendar.getByLabel('Impact', { exact: true }).selectOption('high');
+  await expect(calendar.getByText('No releases match these filters in the available schedule.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Macro context', exact: true }).getByText('4.46%', { exact: true })).toBeVisible();
+  await expect(page.getByText('Observation 2026-11-05', { exact: false }).first()).toBeVisible();
+  await assertFits(page);
+  await page.route('**/api/calendar', (route) => route.fulfill({ status: 503, json: { error: 'Unavailable' } }));
+  await calendar.getByRole('button', { name: 'Refresh calendar', exact: true }).click();
+  await expect(calendar.getByRole('alert')).toContainText('Calendar refresh failed');
+  await expect(page.getByRole('button', { name: 'View XAUUSD analysis' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Macro context', exact: true }).getByText('4.46%', { exact: true })).toBeVisible();
+});
+
+test('stale calendar and partial macro data are labelled without hiding healthy readings', async ({ page }) => {
+  await page.route('**/api/calendar', (route) => route.fulfill({ json: { ...calendarFixture, meta: { ...calendarFixture.meta, status: 'stale' } } }));
+  await page.route('**/api/macro-context', (route) => route.fulfill({ json: { ...macroFixture, treasury10y: { data: null, meta: { ...contextMeta, status: 'unavailable' } } } }));
+  await prepare(page);
+  await expect(page.getByText('Showing the last-known schedule while the source is unavailable.')).toBeVisible();
+  const context = page.getByRole('region', { name: 'Macro context', exact: true });
+  await expect(context.getByText('4.46%', { exact: true })).toBeVisible();
+  await expect(context.getByText('Unavailable', { exact: true })).toBeVisible();
+});
+
 async function prepare(page: Page, body = fixture, status = 200) {
   await page.route('**/api/bias', (route) =>
     route.fulfill({ status, json: body }),

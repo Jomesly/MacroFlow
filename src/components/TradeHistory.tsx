@@ -2,6 +2,8 @@
 import { journalFetch } from '@/lib/journal-fetch';
 
 import { useCallback, useEffect, useState } from 'react';
+import TradeScreenshots from './TradeScreenshots';
+import { journalFeatures } from '@/lib/journal-features';
 import { SETUP_TAGS, Trade, TradeApiResponse, TradeResult, TradesApiResponse } from '@/lib/types';
 
 const RESULT_BADGES: Record<string, { label: string; classes: string }> = {
@@ -368,6 +370,7 @@ export default function TradeHistory() {
                       </p>
                     </div>
 
+                    {journalFeatures.screenshots && <TradeScreenshots tradeId={trade.id} />}
                     {actionError && <p className="text-xs text-red-400">{actionError}</p>}
 
                     <div className="flex items-center gap-2 pt-1">

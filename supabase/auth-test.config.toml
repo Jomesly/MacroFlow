@@ -24,7 +24,7 @@ enabled = true
 port = 55324
 
 [storage]
-enabled = false
+enabled = true
 
 [realtime]
 enabled = false

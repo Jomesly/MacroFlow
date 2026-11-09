@@ -113,6 +113,7 @@ export interface BiasApiResponse {
   disclaimer: string;
   dxy?: DxyContext;
   nextEvent?: UpcomingEvent | null;
+  calendarStatus?: import('./market/types').ResourceStatus;
   sourceHealth?: SourceHealth;
   stale?: boolean;
 }

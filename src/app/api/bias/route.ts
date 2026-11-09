@@ -3,6 +3,8 @@ import { getEvents } from '@/lib/events';
 import { calculateBias, ALL_SYMBOLS } from '@/lib/engine';
 import { AssetSymbol, BiasApiResponse, DxyContext } from '@/lib/types';
 import { getHistory, recordDailySnapshot } from '@/lib/redis';
+import { fetchCalendar, nextCalendarEvent } from '@/lib/api/calendar';
+import { marketFeatures } from '@/lib/market/features';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +30,9 @@ export async function GET(request: NextRequest) {
 
   const symbol = symbolParam && ALL_SYMBOLS.includes(symbolParam) ? symbolParam : undefined;
 
-  const { events, source, cachedAt, sourceHealth, stale } = await getEvents();
+  const [{ events, source, cachedAt, sourceHealth, stale }, calendar] = await Promise.all([
+    getEvents(), marketFeatures.calendar ? fetchCalendar() : Promise.resolve(null),
+  ]);
   const results = calculateBias(events, symbol);
 
   const dxy = getDxyContext(events);
@@ -48,7 +52,8 @@ export async function GET(request: NextRequest) {
     sourceHealth,
     stale,
     dxy,
-    nextEvent: null,
+    nextEvent: calendar ? nextCalendarEvent(calendar) : null,
+    calendarStatus: calendar?.meta.status,
     disclaimer:
       'This is not financial advice. Use this dashboard for informational purposes only. Always conduct your own research before trading.',
   };

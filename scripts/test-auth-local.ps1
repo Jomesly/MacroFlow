@@ -6,7 +6,7 @@ $taskWorkspace = Join-Path $env:TEMP 'macroflow-auth-tests'
 $taskProjectId = 'macroflow-auth-tests'
 $taskServer = $null
 $taskStarted = $false
-$taskEnvNames = @('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_APP_URL', 'AUTH_SIGNUP_ENABLED', 'NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'MACROFLOW_AUTH_TEST_STATUS', 'MACROFLOW_AUTH_TEST_MODE')
+$taskEnvNames = @('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_APP_URL', 'AUTH_SIGNUP_ENABLED', 'NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'NEXT_PUBLIC_JOURNAL_SCREENSHOTS_ENABLED', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'MACROFLOW_AUTH_TEST_STATUS', 'MACROFLOW_AUTH_TEST_MODE')
 $taskPreviousEnv = @{}
 foreach ($taskName in $taskEnvNames) { $taskPreviousEnv[$taskName] = [Environment]::GetEnvironmentVariable($taskName, 'Process') }
 
@@ -26,7 +26,7 @@ try {
   Copy-Item -LiteralPath (Join-Path $taskRepo 'supabase/auth-test.config.toml') -Destination (Join-Path $taskWorkspace 'supabase/config.toml')
   Copy-Item -Path (Join-Path $taskRepo 'supabase/templates/*.html') -Destination (Join-Path $taskWorkspace 'supabase/templates')
   $ErrorActionPreference = 'Continue' # Windows PowerShell treats native stderr warnings as errors.
-  npx --yes supabase start --workdir $taskWorkspace --exclude storage-api,imgproxy,studio,postgres-meta,realtime,edge-runtime,logflare,vector,supavisor *> (Join-Path $taskWorkspace 'supabase-start.log')
+  npx --yes supabase start --workdir $taskWorkspace --exclude imgproxy,studio,postgres-meta,realtime,edge-runtime,logflare,vector,supavisor *> (Join-Path $taskWorkspace 'supabase-start.log')
   $ErrorActionPreference = 'Stop'
   if ($LASTEXITCODE -ne 0) { throw "Local Supabase startup failed. See $taskWorkspace/supabase-start.log." }
   $taskStarted = $true
@@ -43,6 +43,11 @@ try {
   docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/schema.sql -f /tmp/macroflow-sql/subscribers.sql -f /tmp/macroflow-sql/journal-autosync.sql -f /tmp/macroflow-sql/tests/signup-login.sql *> (Join-Path $taskWorkspace 'migration-tests.log')
   $ErrorActionPreference = 'Stop'
   if ($LASTEXITCODE -ne 0) { throw "Migration assertions failed. See $taskWorkspace/migration-tests.log." }
+  # DROP POLICY IF EXISTS emits a harmless stderr NOTICE on a fresh database.
+  $ErrorActionPreference = 'Continue'
+  docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/journal-screenshots.sql *> (Join-Path $taskWorkspace 'screenshot-migration.log')
+  $ErrorActionPreference = 'Stop'
+  if ($LASTEXITCODE -ne 0) { throw 'Screenshot bucket migration failed in the disposable database.' }
   Write-Host 'Migration, backfill, rerun and trigger rollback assertions passed.'
   $ErrorActionPreference = 'Continue'
   $taskStatusText = npx --yes supabase status --workdir $taskWorkspace -o json 2> (Join-Path $taskWorkspace 'supabase-status.log')
@@ -64,6 +69,7 @@ try {
   $env:UPSTASH_REDIS_REST_TOKEN = ''
   $env:MACROFLOW_AUTH_TEST_STATUS = $taskStatusPath
   $env:MACROFLOW_AUTH_TEST_MODE = 'true'
+  $env:NEXT_PUBLIC_JOURNAL_SCREENSHOTS_ENABLED = 'true'
   npx playwright install chromium
   if ($LASTEXITCODE -ne 0) { throw 'Chromium installation failed.' }
   $taskNext = Join-Path $taskRepo 'node_modules/next/dist/bin/next'

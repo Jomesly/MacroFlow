@@ -14,17 +14,20 @@ import {
 import LogTradeForm from '@/components/LogTradeForm';
 import TradeHistory from '@/components/TradeHistory';
 import Analytics from '@/components/Analytics';
+import WeeklyReview from '@/components/WeeklyReview';
 import ConnectAccount from '@/components/ConnectAccount';
 import BetaNotice from '@/components/BetaNotice';
 
-export type JournalTab = 'log' | 'history' | 'analytics' | 'accounts';
+export type JournalTab = 'log' | 'history' | 'analytics' | 'accounts' | 'review';
 const tabs = [
   { value: 'log', label: 'Log Trade', icon: PencilSimpleLine },
   { value: 'history', label: 'History', icon: ClockCounterClockwise },
   { value: 'analytics', label: 'Analytics', icon: ChartBar },
+  { value: 'review', label: 'Weekly Review', icon: CheckCircle },
   { value: 'accounts', label: 'Connect Account', icon: PlugsConnected },
 ] as const;
 const headings = {
+  review: { title: 'Review the week', description: 'Connect your results to the decisions behind them.' },
   history: {
     title: 'Your trading history',
     description:
@@ -177,6 +180,7 @@ export default function JournalView({
                     </div>
                   )}
                   {tab === 'analytics' && <Analytics />}
+                  {tab === 'review' && <WeeklyReview />}
                   {tab === 'accounts' && <ConnectAccount />}
                 </>
               )}

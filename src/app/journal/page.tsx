@@ -9,6 +9,6 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
   try { profile = await getOrCreateProfile(userId); } catch { redirect('/journal-access?reason=profile'); }
   if (!profile.onboarding_completed_at) redirect('/journal/welcome');
   const params = await searchParams;
-  const tab: JournalTab = params.tab === 'history' || params.tab === 'analytics' || params.tab === 'accounts' ? params.tab : 'log';
+  const tab: JournalTab = params.tab === 'history' || params.tab === 'analytics' || params.tab === 'accounts' || params.tab === 'review' ? params.tab : 'log';
   return <JournalView initialTab={tab} />;
 }

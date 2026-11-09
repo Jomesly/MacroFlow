@@ -1,7 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getCacheEntry } from '../api/cache';
+import { fetchMarketData } from '../api/twelvedata';
 
 vi.mock('../api/cache', () => ({
-  getCached: vi.fn(async () => null),
+  getCacheEntry: vi.fn(async () => null),
+  coalesce: vi.fn(async (_key: string, load: () => Promise<unknown>) => load()),
   setCache: vi.fn(async () => undefined),
 }));
 
@@ -31,6 +34,7 @@ vi.mock('../api/fred', () => ({
 }));
 
 describe('fetchAllEvents source health', () => {
+  beforeEach(() => vi.clearAllMocks());
   it('reports ok and empty sources', async () => {
     const { fetchAllEvents } = await import('../api');
     const result = await fetchAllEvents();
@@ -40,5 +44,26 @@ describe('fetchAllEvents source health', () => {
     expect(result.sourceHealth.rss).toBe('empty');
     expect(result.sourceHealth.fred).toBe('empty');
     expect(result.events).toHaveLength(1);
+  });
+
+  it('recovers an expired snapshot without changing its original timestamp', async () => {
+    const { fetchAllEvents } = await import('../api');
+    const prior = await fetchAllEvents();
+    const entry = { data: prior, fetchedAt: Date.now() - 1000, freshUntil: Date.now() - 1, staleUntil: Date.now() + 60_000 };
+    vi.mocked(getCacheEntry).mockResolvedValueOnce(entry);
+    vi.mocked(fetchMarketData).mockResolvedValueOnce([]);
+    const result = await fetchAllEvents();
+    expect(result.stale).toBe(true);
+    expect(result.events).toEqual(prior.events);
+    expect(result.cachedAt).toBe(prior.cachedAt);
+    expect(result.sourceHealth.market_data).toBe('empty');
+  });
+
+  it('rejects malformed source rows and preserves healthy providers', async () => {
+    const { fetchAllEvents } = await import('../api');
+    vi.mocked(fetchMarketData).mockResolvedValueOnce([{ id: 'invalid' }] as never);
+    const result = await fetchAllEvents();
+    expect(result.sourceHealth.market_data).toBe('failed');
+    expect(result.events).toEqual([]);
   });
 });

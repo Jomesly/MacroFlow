@@ -376,3 +376,56 @@ test('concurrent SSR refresh preserves isolated users past their original token 
     await owner.context.close();
   }
 });
+
+
+test('weekly review and private screenshots preserve owner isolation and cleanup', async ({ page, browser }) => {
+  const email = uniqueEmail();
+  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  expect(error).toBeNull();
+  const userId = data.user!.id;
+  await admin.from('profiles').update({ onboarding_completed_at: new Date().toISOString() }).eq('id', userId);
+  await login(page, email);
+  await expect(page).toHaveURL(/\/journal$/);
+  const created = await page.request.post('/api/journal/trade', { data: { symbol: 'XAUUSD', direction: 'long', entryPrice: 100, exitPrice: 110, result: 'win', notes: 'Waited for the planned entry.', setupTags: ['Sweep'] } });
+  expect(created.status()).toBe(201);
+  const tradeId = (await created.json()).trade.id;
+  const endpoint = '/api/journal/trade/' + tradeId + '/screenshots';
+  const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aV7sAAAAASUVORK5CYII=', 'base64');
+  const upload = () => page.request.post(endpoint, { multipart: { image: { name: 'entry.png', mimeType: 'image/png', buffer: image } } });
+  expect((await upload()).status()).toBe(201);
+  const imageResponse = await page.request.get(endpoint + '?slot=0');
+  expect(imageResponse.status()).toBe(200); expect(imageResponse.headers()['cache-control']).toContain('no-store');
+  expect(await imageResponse.body()).toEqual(image);
+  const anon = createClient(local.API_URL, local.ANON_KEY, { auth: { persistSession: false } });
+  expect((await anon.storage.from('journal-screenshots').download(userId + '/' + tradeId + '/0')).error).toBeTruthy();
+  const signed = createClient(local.API_URL, local.ANON_KEY, { auth: { persistSession: false } });
+  expect((await signed.auth.signInWithPassword({ email, password })).error).toBeNull();
+  expect((await signed.storage.from('journal-screenshots').download(userId + '/' + tradeId + '/0')).error).toBeTruthy();
+  const otherContext = await browser.newContext({ baseURL: 'http://localhost:3137' });
+  const other = await otherContext.newPage();
+  const emailB = uniqueEmail(); await admin.auth.admin.createUser({ email: emailB, password, email_confirm: true });
+  await login(other, emailB);
+  await expect(other).toHaveURL(/\/journal\/welcome$/);
+  expect((await other.request.get(endpoint)).status()).toBe(404);
+  expect((await other.request.get(endpoint + '?slot=0')).status()).toBe(404);
+  expect((await other.request.delete(endpoint + '?slot=0')).status()).toBe(404);
+  const foreignReview = await (await other.request.get('/api/journal/review')).json(); expect(foreignReview.review.trades).toEqual([]);
+  const concurrent = await Promise.all([upload(), upload(), upload(), upload()]);
+  expect(concurrent.map((r) => r.status()).sort()).toEqual([201, 201, 409, 409]);
+  await page.getByRole('tab', { name: 'History', exact: true }).click();
+  await page.getByRole('button').filter({ hasText: 'XAUUSD' }).click();
+  await expect(page.getByRole('img', { name: 'Trade screenshot 1', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Weekly Review', exact: true }).click();
+  await expect(page.getByText('Waited for the planned entry.', { exact: true })).toBeVisible();
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 1000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.evaluate(async () => { await Promise.all(document.getAnimations().filter(a => a.effect?.getComputedTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))); });
+    const audit = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+    expect(audit.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
+    await page.screenshot({ path: path.resolve('.artifacts/ui-review/weekly-review-' + width + '.png'), fullPage: true, animations: 'disabled', style: 'nextjs-portal { display: none !important; }' });
+  }
+  expect((await page.request.delete('/api/journal/trade/' + tradeId)).status()).toBe(204);
+  expect((await admin.storage.from('journal-screenshots').list(userId + '/' + tradeId)).data).toEqual([]);
+  await otherContext.close();
+});

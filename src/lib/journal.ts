@@ -157,15 +157,17 @@ export async function createTrade(userId: string, input: CreateTradeInput): Prom
 
 export async function listTrades(userId: string): Promise<Trade[]> {
   if (!userId) throw new JournalValidationError('Missing user id');
-  const { data, error } = await supabase
-    .from('trades')
-    .select('*')
-    .eq('user_id', userId)
-    .order('logged_at', { ascending: false })
-    .order('created_at', { ascending: false });
-
-  if (error) throw storageError('list', error.message);
-  const rows = (data ?? []) as TradeRow[];
+  const rows: TradeRow[] = [];
+  // PostgREST caps each response. Fetch every page before reporting performance.
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await supabase.from('trades').select('*').eq('user_id', userId)
+      .order('logged_at', { ascending: false }).order('created_at', { ascending: false })
+      .order('id', { ascending: false }).range(offset, offset + 499);
+    if (error) throw storageError('list', error.message);
+    const page = (data ?? []) as TradeRow[];
+    rows.push(...page);
+    if (page.length < 500) break;
+  }
   return rows.map(rowToTrade);
 }
 

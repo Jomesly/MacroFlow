@@ -27,6 +27,11 @@ import MarketBreadth from '@/components/MarketBreadth';
 import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
+import EconomicCalendar from '@/components/market/EconomicCalendar';
+import MacroContext from '@/components/market/MacroContext';
+import PanelErrorBoundary from '@/components/market/PanelErrorBoundary';
+import { marketFeatures } from '@/lib/market/features';
+import { useMarketClock } from '@/components/market/useMarketClock';
 
 type Filter = 'all' | 'bullish' | 'bearish' | 'neutral';
 const SOURCE_LABELS: Record<DataSource, string> = {
@@ -101,10 +106,12 @@ function SourceStatus({ health }: { health: SourceHealth | null }) {
 }
 
 function UpcomingRelease({
-  event,
+  event: candidate,
 }: {
   event: UpcomingEvent | null | undefined;
 }) {
+  const now = useMarketClock();
+  const event = candidate && Date.parse(candidate.date) > now ? candidate : null;
   return (
     <section className="context-panel" aria-labelledby="release-title">
       <div className="context-heading">
@@ -205,7 +212,8 @@ export default function Home() {
   useEffect(() => {
     mounted.current = true;
     const initial = setTimeout(() => void fetchBias(), 0);
-    const interval = setInterval(() => void fetchBias(), 900000);
+    const refreshVisible = () => { if (!document.hidden) void fetchBias(); };
+    const interval = setInterval(refreshVisible, 900000);
     return () => {
       mounted.current = false;
       clearTimeout(initial);
@@ -289,7 +297,7 @@ export default function Home() {
           <MarketBreadth data={data} />
         </div>
 
-        {response?.dxy && (
+        {!marketFeatures.macro && response?.dxy && (
           <div className="dxy-strip">
             <span className="dxy-symbol">DXY</span>
             <strong>{response.dxy.price}</strong>
@@ -442,7 +450,10 @@ export default function Home() {
         </section>
 
         <div className="context-grid">
-          <UpcomingRelease event={response?.nextEvent} />
+          <div>
+            <UpcomingRelease event={response?.nextEvent} />
+            {response?.calendarStatus === 'stale' && <p className="market-panel-note">Next release uses a last-known schedule. Check the calendar source status below.</p>}
+          </div>
           <section className="context-panel" aria-labelledby="drivers-title">
             <div className="context-heading">
               <span className="mini-bars" aria-hidden="true">
@@ -476,6 +487,11 @@ export default function Home() {
             )}
           </section>
         </div>
+
+        {(marketFeatures.calendar || marketFeatures.macro) && <div className="market-context-grid">
+          {marketFeatures.calendar && <PanelErrorBoundary name="Economic calendar"><EconomicCalendar /></PanelErrorBoundary>}
+          {marketFeatures.macro && <PanelErrorBoundary name="Macro context"><MacroContext /></PanelErrorBoundary>}
+        </div>}
 
         <section className="journal-invitation">
           <div className="journal-invitation-icon">
