@@ -96,6 +96,7 @@ export default function MarketCard({
         delay: reduce ? 0 : index * 0.045,
       }}
       className={`market-card tone-${tone}`}
+      data-conviction={data.conviction}
     >
       <button
         type="button"

@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { fixture, calendarFixture, macroFixture } from './fixtures/market';
 import type { BiasApiResponse, BiasResult } from '../../src/lib/types';
 import { mkdirSync } from 'node:fs';
+import { contrast, readColor } from './helpers/colors';
 
 const artifacts = '.artifacts/market-detail';
 mkdirSync(artifacts, { recursive: true });
@@ -22,6 +23,103 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/calendar', (route) => route.fulfill({ json: calendarFixture }));
   await page.route('**/api/macro-context', (route) => route.fulfill({ json: macroFixture }));
   await mockBias(page);
+});
+
+for (const width of [1440, 375]) {
+  test(`conviction changes fill intensity without dimming content at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    let conviction: BiasResult['conviction'] = 'low';
+    await page.route('**/api/bias*', (route) => {
+      const symbol = new URL(route.request().url()).searchParams.get('symbol');
+      return route.fulfill({ json: { ...detailFixture, data: detailFixture.data.filter((entry) => !symbol || entry.symbol === symbol).map((entry) => ({ ...entry, conviction })) } });
+    });
+    const paints: Record<string, Record<string, number[]>> = {};
+    for (const level of ['low', 'medium', 'high'] as const) {
+      conviction = level;
+      await page.goto('/');
+      await expect(page.locator('.market-card')).toHaveCount(5);
+      await page.mouse.move(0, 0);
+      paints[level] = {};
+      for (const symbol of ['XAUUSD', 'BTCUSD', 'DJ30']) {
+        const row = page.locator('.market-card').filter({ has: page.getByRole('heading', { name: symbol, exact: true }) });
+        await expect(row).toHaveAttribute('data-conviction', level);
+        paints[level][symbol] = await readColor(row);
+        expect(contrast(await readColor(row.locator('.market-score'), 'color'), paints[level][symbol])).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(await readColor(row.locator('.market-conviction'), 'color'), paints[level][symbol])).toBeGreaterThanOrEqual(4.5);
+        await row.getByRole('button', { name: `View ${symbol} analysis` }).focus();
+        expect(contrast(await readColor(row.locator('.market-score'), 'color'), await readColor(row))).toBeGreaterThanOrEqual(4.5);
+        paints[`${level}-interactive`] ??= {};
+        paints[`${level}-interactive`][symbol] = await readColor(row);
+        await expect(row.getByRole('button', { name: `View ${symbol} analysis` })).toHaveCSS('outline-style', 'solid');
+      }
+      // Remove keyboard focus so the hover/normal comparisons are independent.
+      await page.getByRole('button', { name: 'Refresh', exact: true }).focus();
+      await page.locator('.market-grid').screenshot({ path: `${artifacts}/conviction-${level}-${width}-ladder.png`, animations: 'disabled' });
+      if (level === 'low') {
+        const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+        expect(result.violations.map((violation) => violation.id)).toEqual([]);
+      }
+      for (const symbol of ['XAUUSD', 'BTCUSD', 'DJ30']) {
+        await page.goto(`/markets/${symbol}`);
+        await expect(page.locator('.market-research')).toHaveAttribute('data-conviction', level);
+        const hero = page.locator('.research-hero');
+        expect(await readColor(hero)).toEqual(paints[level][symbol]);
+        expect(contrast(await readColor(page.locator('.research-bias strong'), 'color'), await readColor(hero))).toBeGreaterThanOrEqual(4.5);
+        if (symbol !== 'DJ30') await hero.screenshot({ path: `${artifacts}/conviction-${level}-${width}-${symbol}.png`, animations: 'disabled' });
+        if (level === 'low' && symbol !== 'DJ30') {
+          const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+          expect(result.violations.map((violation) => violation.id)).toEqual([]);
+        }
+      }
+    }
+    const neutral = paints.high.DJ30;
+    const distance = (color: number[]) => color.reduce((sum, channel, index) => sum + Math.abs(channel - neutral[index]), 0);
+    for (const symbol of ['XAUUSD', 'BTCUSD']) {
+      expect(distance(paints.low[symbol]), JSON.stringify(paints)).toBeLessThan(distance(paints.medium[symbol]));
+      expect(distance(paints.medium[symbol])).toBeLessThan(distance(paints.high[symbol]));
+    }
+    expect(paints.high.XAUUSD).toEqual([30, 59, 47]);
+    expect(paints.high.BTCUSD).toEqual([131, 22, 19]);
+    expect(paints.low.DJ30).toEqual(neutral);
+    expect(paints.medium.DJ30).toEqual(neutral);
+    const interactiveNeutral = paints['high-interactive'].DJ30;
+    const interactiveDistance = (color: number[]) => color.reduce((sum, channel, index) => sum + Math.abs(channel - interactiveNeutral[index]), 0);
+    for (const symbol of ['XAUUSD', 'BTCUSD']) {
+      expect(interactiveDistance(paints['low-interactive'][symbol])).toBeLessThan(interactiveDistance(paints['medium-interactive'][symbol]));
+      expect(interactiveDistance(paints['medium-interactive'][symbol])).toBeLessThan(interactiveDistance(paints['high-interactive'][symbol]));
+    }
+  });
+}
+
+test('refresh changes conviction colors while the score and direction stay the same', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  let conviction: BiasResult['conviction'] = 'low';
+  await page.route('**/api/bias*', (route) => route.fulfill({
+    json: { ...detailFixture, data: detailFixture.data.map((entry) => ({ ...entry, conviction })) },
+  }));
+  for (const url of ['/', '/markets/XAUUSD']) {
+    conviction = 'low';
+    await page.goto(url);
+    const dashboard = url === '/';
+    const surface = dashboard
+      ? page.locator('.market-card').filter({ has: page.getByRole('heading', { name: 'XAUUSD', exact: true }) })
+      : page.locator('.market-research');
+    const fill = dashboard ? surface : page.locator('.research-hero');
+    await expect(surface).toHaveAttribute('data-conviction', 'low');
+    const lowColor = await readColor(fill);
+    const score = dashboard ? surface.locator('.market-score') : page.locator('.research-bias strong');
+    const scoreText = await score.textContent();
+    conviction = 'high';
+    await page.getByRole('button', { name: dashboard ? 'Refresh' : 'Refresh analysis', exact: true }).click();
+    await expect(surface).toHaveAttribute('data-conviction', 'high');
+    expect(await readColor(fill)).toEqual([30, 59, 47]);
+    await expect(score).toHaveText(scoreText!);
+    conviction = 'low';
+    await page.getByRole('button', { name: dashboard ? 'Refresh' : 'Refresh analysis', exact: true }).click();
+    await expect(surface).toHaveAttribute('data-conviction', 'low');
+    expect(await readColor(fill)).toEqual(lowColor);
+  }
 });
 
 for (const [label, width, height] of [['desktop', 1440, 1000], ['tablet', 768, 1024], ['phone', 375, 812]] as const) {

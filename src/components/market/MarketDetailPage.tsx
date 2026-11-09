@@ -23,7 +23,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
   const tone = data?.direction.includes('bullish') ? 'positive' : data?.direction.includes('bearish') ? 'negative' : 'neutral';
   const DirectionIcon = tone === 'positive' ? ArrowUpRight : tone === 'negative' ? ArrowDownRight : Minus;
   return (
-    <div className={`market-research research-tone-${tone}`}>
+    <div className={`market-research research-tone-${tone}`} data-conviction={data?.conviction}>
       <header className="research-navigation">
         <Link href="/" className="research-back">Back to markets</Link>
         <span>MacroFlow</span>

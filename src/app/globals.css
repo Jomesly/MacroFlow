@@ -35,6 +35,9 @@
   --flat-fill: #1c1c21;
   --flat-fill-hover: #27272d;
   --flat-soft: #a9a9b1;
+  --conviction-low: 25%;
+  --conviction-medium: 60%;
+  --conviction-fill: 100%;
   --research-track: rgb(255 255 255 / 0.18);
   --radius-panel: 2px;
   --radius-pill: 9999px;
@@ -658,6 +661,8 @@ button:active:not(:disabled),
 }
 /* One row per market, ranked by bias. The fill carries direction; the arrow,
    word and sign repeat it because the two fills are nearly equal in brightness. */
+[data-conviction='low'] { --conviction-fill: var(--conviction-low); }
+[data-conviction='medium'] { --conviction-fill: var(--conviction-medium); }
 .market-card {
   --card-fill: var(--flat-fill);
   --card-fill-hover: var(--flat-fill-hover);
@@ -670,13 +675,13 @@ button:active:not(:disabled),
   transition: background-color 180ms;
 }
 .market-card.tone-positive {
-  --card-fill: var(--bull-fill);
-  --card-fill-hover: var(--bull-fill-hover);
+  --card-fill: color-mix(in srgb, var(--bull-fill) var(--conviction-fill), var(--flat-fill));
+  --card-fill-hover: color-mix(in srgb, var(--bull-fill-hover) var(--conviction-fill), var(--flat-fill-hover));
   --card-soft: var(--bull-soft);
 }
 .market-card.tone-negative {
-  --card-fill: var(--bear-fill);
-  --card-fill-hover: var(--bear-fill-hover);
+  --card-fill: color-mix(in srgb, var(--bear-fill) var(--conviction-fill), var(--flat-fill));
+  --card-fill-hover: color-mix(in srgb, var(--bear-fill-hover) var(--conviction-fill), var(--flat-fill-hover));
   --card-soft: var(--bear-soft);
 }
 .market-card:hover,
@@ -2090,8 +2095,8 @@ button:active:not(:disabled),
 /* Market research: the page takes the market's own fill, and every figure is
    drawn from zero so the evidence reads as a pull in one direction. */
 .market-research { --page-fill: var(--flat-fill); --page-soft: var(--flat-soft); width: 100%; max-width: 78rem; margin: 0 auto; padding: 1.25rem 2rem 4rem; font-size: 1rem; line-height: 1.65; }
-.research-tone-positive { --page-fill: var(--bull-fill); --page-soft: var(--bull-soft); }
-.research-tone-negative { --page-fill: var(--bear-fill); --page-soft: var(--bear-soft); }
+.research-tone-positive { --page-fill: color-mix(in srgb, var(--bull-fill) var(--conviction-fill), var(--flat-fill)); --page-soft: var(--bull-soft); }
+.research-tone-negative { --page-fill: color-mix(in srgb, var(--bear-fill) var(--conviction-fill), var(--flat-fill)); --page-soft: var(--bear-soft); }
 .market-research h1, .market-research h2, .market-research h3 { min-width: 0; overflow-wrap: break-word; }
 .market-research h2 { font-size: 1.75rem; font-weight: 500; letter-spacing: -.025em; line-height: 1.25; }
 .market-research a { text-underline-offset: .25em; }

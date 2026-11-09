@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fixture, calendarFixture, macroFixture, contextMeta } from './fixtures/market';
+import { readColor } from './helpers/colors';
 
 const artifactDir = path.resolve('.artifacts/ui-review');
 mkdirSync(artifactDir, { recursive: true });
@@ -167,10 +168,7 @@ test('card surfaces distinguish bullish, bearish and neutral markets and update 
     page.locator('.market-card').filter({
       has: page.getByRole('heading', { name: symbol, exact: true }),
     });
-  const channels = async (symbol: string) =>
-    surface(symbol).evaluate((el) =>
-      getComputedStyle(el).backgroundColor.match(/\d+/g)!.map(Number),
-    );
+  const channels = (symbol: string) => readColor(surface(symbol));
   for (const symbol of ['XAUUSD', 'US100']) {
     const [r, g] = await channels(symbol);
     expect(g).toBeGreaterThan(r);
