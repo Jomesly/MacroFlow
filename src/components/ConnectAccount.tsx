@@ -23,7 +23,7 @@ interface ApiKeyInfo {
 const CARD = 'rounded-xl border border-zinc-800 bg-zinc-900/50 p-5';
 const LABEL = 'block text-xs font-medium text-zinc-400 mb-2';
 const BTN =
-  'rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60';
+  'rounded-full bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-zinc-300 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60';
 
 function statusOf(lastSeen: string | null): { label: string; classes: string } {
   if (!lastSeen) return { label: 'Waiting for EA', classes: 'text-amber-400' };

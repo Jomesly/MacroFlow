@@ -1,19 +1,21 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.MACROFLOW_UI_BASE_URL || 'http://localhost:3000';
+
 export default defineConfig({
   testDir: './tests/e2e',
-  testMatch: 'ui.spec.ts',
+  testMatch: ['ui.spec.ts', 'market-detail.spec.ts'],
   workers: 1,
   timeout: 60_000,
   expect: { timeout: 15_000 },
   reporter: 'list',
   use: {
     ...devices['Desktop Chrome'],
-    baseURL: 'http://localhost:3000',
+    baseURL,
     screenshot: 'only-on-failure',
     trace: 'off',
   },
-  webServer: {
+  webServer: process.env.MACROFLOW_UI_BASE_URL ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,

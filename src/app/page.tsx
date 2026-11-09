@@ -180,8 +180,33 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<BiasResult | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
+  const returnPosition = useRef<number | null>(null);
   const mounted = useRef(true);
   const inFlight = useRef(false);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('mf-market-return');
+      if (!saved) return;
+      sessionStorage.removeItem('mf-market-return');
+      const state = JSON.parse(saved);
+      if (['all', 'bullish', 'bearish', 'neutral'].includes(state.filter)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- restore saved navigation state after hydration
+        setFilter(state.filter);
+      }
+      if (Number.isFinite(state.scrollY)) returnPosition.current = Math.max(0, state.scrollY);
+    } catch { /* Dashboard navigation also works without browser storage. */ }
+  }, []);
+
+  useEffect(() => {
+    if (loading || returnPosition.current === null) return;
+    const position = returnPosition.current;
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: position, behavior: 'instant' });
+      returnPosition.current = null;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [loading]);
 
   const fetchBias = useCallback(async () => {
     if (inFlight.current) return;
@@ -222,12 +247,20 @@ export default function Home() {
   }, [fetchBias]);
 
   const data = response?.data ?? [];
-  const visible = data.filter(
-    (item) =>
-      filter === 'all' ||
-      (filter === 'neutral'
-        ? item.direction === 'neutral'
-        : item.direction.includes(filter)),
+  const visible = data
+    .filter(
+      (item) =>
+        filter === 'all' ||
+        (filter === 'neutral'
+          ? item.direction === 'neutral'
+          : item.direction.includes(filter)),
+    )
+    .sort((a, b) => b.biasScore - a.biasScore);
+  const historyScale = Math.max(
+    20,
+    ...data.flatMap((item) =>
+      item.history.slice(-7).map((entry) => Math.abs(entry.biasScore)),
+    ),
   );
   const bullish = data.filter((d) => d.direction.includes('bullish')).length;
   const bearish = data.filter((d) => d.direction.includes('bearish')).length;
@@ -418,6 +451,7 @@ export default function Home() {
                   data={item}
                   onClick={() => setSelected(item)}
                   index={index}
+                  historyScale={historyScale}
                 />
               ))}
             </AnimatePresence>
@@ -523,7 +557,9 @@ export default function Home() {
         </div>
       </footer>
       {selected && (
-        <BiasDetail data={selected} onClose={() => setSelected(null)} />
+        <BiasDetail data={selected} onClose={() => setSelected(null)} onOpenFull={() => {
+          try { sessionStorage.setItem('mf-market-return', JSON.stringify({ filter, scrollY: window.scrollY })); } catch { /* Optional return-state storage. */ }
+        }} />
       )}
     </div>
   );

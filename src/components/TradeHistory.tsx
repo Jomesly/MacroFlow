@@ -501,7 +501,7 @@ export default function TradeHistory() {
                         type="button"
                         onClick={() => void saveEdit(trade.id)}
                         disabled={saving}
-                        className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full bg-zinc-100 px-4 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-zinc-300 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {saving ? 'Saving...' : 'Save'}
                       </button>

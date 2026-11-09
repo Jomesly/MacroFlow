@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X } from '@phosphor-icons/react';
+import Link from 'next/link';
 import { BiasResult, TradeSignal } from '@/lib/types';
 import { referenceCharts } from '@/lib/market/instruments';
+import { marketIsOpen } from '@/lib/marketIsOpen';
+import { directionLabel, signed } from '@/lib/market/symbols';
 
 const DIRECTION_COLORS: Record<string, { text: string; bg: string; border: string }> = {
   bullish: { text: 'text-emerald-400', bg: 'bg-emerald-950/20', border: 'border-emerald-800/30' },
@@ -28,7 +31,7 @@ function ScoreBar({ score }: { score: number }) {
   return (
     <div className="relative h-3 w-full rounded-full bg-zinc-800 overflow-hidden">
       <div
-        className={`absolute top-0 h-full rounded-full transition-all duration-500 ${isPositive ? 'bg-emerald-500' : 'bg-red-500'}`}
+        className={`absolute top-0 h-full rounded-full ${isPositive ? 'bg-emerald-500' : 'bg-red-500'}`}
         style={{ width: `${barWidth}%`, left: isPositive ? '50%' : `${50 - barWidth}%` }}
       />
       <div className="absolute inset-0 flex items-center justify-center">
@@ -52,7 +55,7 @@ function SentimentGauge({ sentiment }: { sentiment: string }) {
       </div>
       <div className="relative h-2 w-full rounded-full bg-zinc-800 overflow-hidden">
         <div
-          className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${isFear ? 'bg-red-500' : isGreed ? 'bg-emerald-500' : 'bg-zinc-500'}`}
+          className={`absolute top-0 left-0 h-full rounded-full ${isFear ? 'bg-red-500' : isGreed ? 'bg-emerald-500' : 'bg-zinc-500'}`}
           style={{ width: `${fill}%` }}
         />
       </div>
@@ -63,9 +66,10 @@ function SentimentGauge({ sentiment }: { sentiment: string }) {
 interface BiasDetailProps {
   data: BiasResult;
   onClose: () => void;
+  onOpenFull?: () => void;
 }
 
-export default function BiasDetail({ data, onClose }: BiasDetailProps) {
+export default function BiasDetail({ data, onClose, onOpenFull }: BiasDetailProps) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -105,21 +109,23 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
       >
         <button onClick={() => dialogRef.current?.close()} className="dialog-close" aria-label="Close market analysis"><X size={20} aria-hidden="true" /></button>
 
-        <div className="flex items-start justify-between mb-5 pr-6">
+        <div className="flex items-start justify-between mb-5 pr-12">
           <div>
             <h2 id="bias-detail-title" className="text-xl font-bold text-white">{data.symbol}</h2>
             <p className="text-sm text-zinc-500 mt-0.5">{data.name}</p>
+            <p className="text-xs text-zinc-400 mt-1">{marketIsOpen(data.symbol) ? 'Market open' : 'Market closed'}</p>
+            <Link href={`/markets/${data.symbol}`} className="research-popup-link" onClick={onOpenFull}>Open full analysis</Link>
           </div>
           <div className="text-right">
             <span className={`text-3xl font-bold leading-none tabular-nums ${colors.text}`}>
-              {data.biasPercent > 0 ? '+' : ''}{data.biasPercent}%
+              {signed(data.biasPercent)}%
             </span>
             <p className={`text-xs font-semibold mt-1 ${colors.text}`}>{data.dailyLabel}</p>
           </div>
         </div>
 
         <div className="mb-5 rounded-lg border border-zinc-800 p-4">
-          <a className="text-link" href={referenceCharts[data.symbol].url} target="_blank" rel="noopener noreferrer">Open {referenceCharts[data.symbol].name} chart on TradingView ↗</a>
+          <a className="text-link" href={referenceCharts[data.symbol].url} target="_blank" rel="noopener noreferrer">Open {referenceCharts[data.symbol].name} chart on TradingView</a>
           <p className="mt-2 text-xs text-zinc-400">{referenceCharts[data.symbol].note}</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-5">
@@ -160,58 +166,56 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Direction</p>
+                <p className="text-xs text-zinc-400 mb-1">Direction</p>
                 <p className={`text-sm font-semibold ${colors.text}`}>
-                  {data.direction === 'weakly_bullish' ? 'Leaning Bullish'
-                    : data.direction === 'weakly_bearish' ? 'Leaning Bearish'
-                      : data.direction.charAt(0).toUpperCase() + data.direction.slice(1)}
+                  {directionLabel(data.direction)}
                 </p>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Events</p>
+                <p className="text-xs text-zinc-400 mb-1">Events</p>
                 <p className="text-sm font-semibold text-zinc-200">{data.eventCount}</p>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Agreement</p>
+                <p className="text-xs text-zinc-400 mb-1">Agreement</p>
                 <p className="text-sm font-semibold text-zinc-200">{data.confirmationRatio}%</p>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Bullish</p>
+                <p className="text-xs text-zinc-400 mb-1">Bullish</p>
                 <p className="text-sm font-semibold text-emerald-400">{bullishCount}</p>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Bearish</p>
+                <p className="text-xs text-zinc-400 mb-1">Bearish</p>
                 <p className="text-sm font-semibold text-red-400">{bearishCount}</p>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">High Impact</p>
+                <p className="text-xs text-zinc-400 mb-1">High Impact</p>
                 <p className="text-sm font-semibold text-zinc-200">{highImpactCount}</p>
               </div>
             </div>
 
             <div>
-              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Market Sentiment</p>
+              <p className="text-xs font-medium text-zinc-400 mb-2">Market Sentiment</p>
               <SentimentGauge sentiment={sentiment} />
             </div>
 
             <div>
-              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Assessment</p>
+              <p className="text-xs font-medium text-zinc-400 mb-2">Assessment</p>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
                 {isBullish ? (
                   <p className="text-xs text-zinc-300 leading-relaxed">
                     Fundamental bias is <span className="text-emerald-400 font-medium">{data.direction === 'weakly_bullish' ? 'leaning bullish' : 'bullish'}</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
-                    {bullishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
-                    {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
+                    {' '}{bullishCount} of {data.eventCount} events support this direction. Overall directional agreement is {data.confirmationRatio}%.
+                    {highImpactCount >= 1 ? ' The read includes high-impact events.' : ' Most signals are medium/low impact — monitor closely.'}
                     {data.direction === 'weakly_bullish' ? ' This is a weak lean — wait for stronger confirmation before acting.' : ''}
-                    {data.conviction === 'high' ? ' This is a strong alignment between technical and fundamental drivers.' : ''}
+                    {data.conviction === 'high' ? ' Conviction reflects fundamental evidence; technical confirmation is not measured.' : ''}
                   </p>
                 ) : isBearish ? (
                   <p className="text-xs text-zinc-300 leading-relaxed">
                     Fundamental bias is <span className="text-red-400 font-medium">{data.direction === 'weakly_bearish' ? 'leaning bearish' : 'bearish'}</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
-                    {bearishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
-                    {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
+                    {' '}{bearishCount} of {data.eventCount} events support this direction. Overall directional agreement is {data.confirmationRatio}%.
+                    {highImpactCount >= 1 ? ' The read includes high-impact events.' : ' Most signals are medium/low impact — monitor closely.'}
                     {data.direction === 'weakly_bearish' ? ' This is a weak lean — wait for stronger confirmation before acting.' : ''}
-                    {data.conviction === 'high' ? ' This is a strong alignment between technical and fundamental drivers.' : ''}
+                    {data.conviction === 'high' ? ' Conviction reflects fundamental evidence; technical confirmation is not measured.' : ''}
                   </p>
                 ) : (
                   <p className="text-xs text-zinc-400 leading-relaxed">
@@ -221,12 +225,39 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                 )}
               </div>
             </div>
+
+            {data.history.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-zinc-400 mb-2">7-day history</p>
+                <div className="history-table-wrap rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                  <table>
+                    <caption className="sr-only">Daily bias history for {data.symbol}</caption>
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Direction</th>
+                        <th>Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.history.map((entry) => (
+                        <tr key={entry.date}>
+                          <td>{entry.date.slice(5)}</td>
+                          <td>{entry.direction.replace('weakly_', 'Leaning ').replaceAll('_', ' ')}</td>
+                          <td>{entry.biasScore > 0 ? '+' : ''}{entry.biasScore}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-2">
             {data.events.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-medium text-zinc-400 mb-2">
                   All Drivers ({data.events.length})
                 </p>
                 <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1">
@@ -263,7 +294,7 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                               <p className="text-xs text-zinc-100 leading-relaxed">{e.description}</p>
                               <div className="flex items-center gap-2 flex-wrap">
                                 {e.sourceName && (
-                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/40 uppercase tracking-wider">
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/40">
                                     {e.sourceName}
                                   </span>
                                 )}
@@ -274,7 +305,7 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                                     rel="noopener noreferrer"
                                     className="text-[10px] text-blue-400 hover:text-blue-300 hover:underline transition-colors inline-flex items-center gap-1"
                                   >
-                                    Open article →
+                                    Open article
                                   </a>
                                 )}
                               </div>

@@ -308,7 +308,7 @@ export default function LogTradeForm() {
           disabled={!canSubmit}
           className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-colors ${
             canSubmit
-              ? 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer'
+              ? 'bg-zinc-100 hover:bg-zinc-300 text-zinc-950 cursor-pointer'
               : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
           }`}
         >
