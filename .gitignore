@@ -48,6 +48,7 @@ PROMPTS.md
 .superpowers/
 .playwright-mcp/
 .artifacts/
+.hallmark/
 .aider*
 .mcp.json
 /settings.json
@@ -55,6 +56,8 @@ PROMPTS.md
 /docs/project-review-2026-10-31.md
 /docs/signup-login-plan.md
 /docs/journal-autosync-plan.md
+/docs/market-detail-page-plan.md
+/docs/openterminal-integration-plan.md
 *.code-workspace
 *.key
 *.p12
