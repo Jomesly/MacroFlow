@@ -25,28 +25,24 @@ export async function getHistory(symbol: string): Promise<HistoryEntry[]> {
   }
 }
 
+/** Today's entry tracks the latest read, so history always ends on the current score. */
+export function upsertDailySnapshot(history: HistoryEntry[], entry: HistoryEntry, limit: number): HistoryEntry[] {
+  const earlier = history.at(-1)?.date === entry.date ? history.slice(0, -1) : history;
+  return [...earlier, entry].slice(-limit);
+}
+
 export async function recordDailySnapshot(symbol: string, direction: HistoryEntry['direction'], biasScore: number): Promise<void> {
   const redis = createClient();
   if (!redis) return;
 
   const key = `macroflow:history:${symbol}`;
-  const today = todayKey();
 
   try {
     const existing = await redis.get<HistoryEntry[]>(key);
-    const history = existing ?? [];
-
-    if (history.length > 0 && history[history.length - 1].date === today) {
-      return;
-    }
-
-    history.push({ date: today, direction, biasScore });
-
-    while (history.length > MAX_HISTORY) {
-      history.shift();
-    }
-
-    await redis.set(key, history);
+    const latest = existing?.at(-1);
+    const today = todayKey();
+    if (latest?.date === today && latest.biasScore === biasScore && latest.direction === direction) return;
+    await redis.set(key, upsertDailySnapshot(existing ?? [], { date: today, direction, biasScore }, MAX_HISTORY));
   } catch {
     // non-critical
   }

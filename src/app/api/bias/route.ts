@@ -4,6 +4,7 @@ import { calculateBias, ALL_SYMBOLS } from '@/lib/engine';
 import { AssetSymbol, BiasApiResponse, DxyContext } from '@/lib/types';
 import { getHistory, recordDailySnapshot } from '@/lib/redis';
 import { fetchCalendar, nextCalendarEvent } from '@/lib/api/calendar';
+import { fetchRateSpread } from '@/lib/api/fred';
 import { marketFeatures } from '@/lib/market/features';
 
 export const dynamic = 'force-dynamic';
@@ -30,16 +31,18 @@ export async function GET(request: NextRequest) {
 
   const symbol = symbolParam && ALL_SYMBOLS.includes(symbolParam) ? symbolParam : undefined;
 
-  const [{ events, source, cachedAt, sourceHealth, stale }, calendar] = await Promise.all([
-    getEvents(), marketFeatures.calendar ? fetchCalendar() : Promise.resolve(null),
+  const [{ events, source, cachedAt, sourceHealth, stale }, calendar, rateSpread] = await Promise.all([
+    getEvents(), marketFeatures.calendar ? fetchCalendar() : Promise.resolve(null), fetchRateSpread(),
   ]);
-  const results = calculateBias(events, symbol);
+  const results = calculateBias(events, symbol, rateSpread);
+  // Fallback or outdated reads must not overwrite the recorded history.
+  const recordable = source === 'live' && !stale;
 
   const dxy = getDxyContext(events);
 
   const data = await Promise.all(
     results.map(async (r) => {
-      await recordDailySnapshot(r.symbol, r.direction, r.biasScore);
+      if (recordable) await recordDailySnapshot(r.symbol, r.direction, r.biasScore);
       const history = await getHistory(r.symbol);
       return { ...r, history };
     })

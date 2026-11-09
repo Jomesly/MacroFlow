@@ -4,10 +4,19 @@ import { getCached, setCache } from './cache';
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred';
 const CACHE_KEY = 'fred_events';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
-const STALE_DAYS = 35;
+
+// FRED dates a reading by the start of its period, weeks before it is published.
+export const FRED_MAX_AGE_DAYS = { monthly: 75, quarterly: 200 };
 
 const RATE_SPREAD_CACHE_KEY = 'fred_rate_spread';
 const RATE_SPREAD_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+const OBSERVATION_LIMIT = 14;
+const CPI_ACCELERATION_MARGIN_PP = 0.05;
+const PAYROLL_PACE_MARGIN_THOUSANDS = 25;
+const GDP_PACE_MARGIN_PP = 0.25;
+const RETAIL_PACE_MARGIN_PP = 0.1;
+const RECENT_PACE_MONTHS = 6;
 
 interface FredObservation {
   date: string;
@@ -20,6 +29,8 @@ interface FredSeriesResponse {
   realtime_end: string;
 }
 
+type FredKey = 'CPI' | 'UNEMPLOYMENT' | 'NFP' | 'GDP' | 'RETAIL_SALES';
+
 const FRED_SERIES = [
   {
     key: 'CPI',
@@ -27,6 +38,7 @@ const FRED_SERIES = [
     category: 'inflation' as const,
     title: 'US Consumer Price Index',
     impact: 'high' as const,
+    maxAgeDays: FRED_MAX_AGE_DAYS.monthly,
   },
   {
     key: 'UNEMPLOYMENT',
@@ -34,6 +46,7 @@ const FRED_SERIES = [
     category: 'employment' as const,
     title: 'US Unemployment Rate',
     impact: 'medium' as const,
+    maxAgeDays: FRED_MAX_AGE_DAYS.monthly,
   },
   {
     key: 'NFP',
@@ -41,13 +54,15 @@ const FRED_SERIES = [
     category: 'employment' as const,
     title: 'US Nonfarm Payrolls',
     impact: 'high' as const,
+    maxAgeDays: FRED_MAX_AGE_DAYS.monthly,
   },
   {
     key: 'GDP',
-    seriesId: 'GDP',
+    seriesId: 'GDPC1',
     category: 'gdp' as const,
-    title: 'US Gross Domestic Product',
+    title: 'US Real GDP',
     impact: 'high' as const,
+    maxAgeDays: FRED_MAX_AGE_DAYS.quarterly,
   },
   {
     key: 'RETAIL_SALES',
@@ -55,15 +70,12 @@ const FRED_SERIES = [
     category: 'retail_sales' as const,
     title: 'US Retail Sales',
     impact: 'medium' as const,
+    maxAgeDays: FRED_MAX_AGE_DAYS.monthly,
   },
-];
+] satisfies { key: FredKey; seriesId: string; category: MacroEvent['category']; title: string; impact: MacroEvent['impact']; maxAgeDays: number }[];
 
-function isStale(dateStr: string): boolean {
-  const obsDate = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - obsDate.getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  return diffDays > STALE_DAYS;
+function isStale(dateStr: string, maxAgeDays: number): boolean {
+  return (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24) > maxAgeDays;
 }
 
 async function fetchFredSeries(seriesId: string, apiKey: string): Promise<FredObservation[]> {
@@ -72,95 +84,97 @@ async function fetchFredSeries(seriesId: string, apiKey: string): Promise<FredOb
   url.searchParams.set('api_key', apiKey);
   url.searchParams.set('file_type', 'json');
   url.searchParams.set('sort_order', 'desc');
-  url.searchParams.set('limit', '2');
+  url.searchParams.set('limit', String(OBSERVATION_LIMIT));
 
   const response = await fetch(url.toString());
   if (!response.ok) {
     throw new Error(`FRED API error: ${response.status} ${response.statusText}`);
   }
   const data: FredSeriesResponse = await response.json();
-  return data.observations;
+  // FRED reports missing days (holidays, shutdowns) as "."
+  return data.observations.filter((observation) => Number.isFinite(parseFloat(observation.value)));
 }
 
-function mapToMacroEvent(
-  series: typeof FRED_SERIES[number],
-  latest: FredObservation,
-  previous: FredObservation,
-): MacroEvent | null {
-  const latestVal = parseFloat(latest.value);
-  const prevVal = parseFloat(previous.value);
-  if (isNaN(latestVal) || isNaN(prevVal)) return null;
+const fixed = (value: number, digits = 2) => value.toFixed(digits);
+const percentChange = (latest: number, base: number) => (latest / base - 1) * 100;
+const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
 
-  let value: string;
-  let description: string;
+function byPace(latest: number, pace: number, margin: number, above: string, below: string): string {
+  if (latest > pace + margin) return above;
+  if (latest < pace - margin) return below;
+  return 'neutral';
+}
 
-  if (series.key === 'CPI') {
-    if (latestVal > prevVal) {
-      value = 'high';
-      description = `US CPI rose to ${latestVal} from ${prevVal} (inflationary)`;
-    } else if (latestVal < prevVal) {
-      value = 'low';
-      description = `US CPI fell to ${latestVal} from ${prevVal} (disinflationary)`;
-    } else {
-      value = 'neutral';
-      description = `US CPI unchanged at ${latestVal}`;
-    }
-  } else if (series.key === 'UNEMPLOYMENT') {
-    if (latestVal > prevVal) {
-      value = 'weak';
-      description = `US Unemployment rose to ${latestVal}% from ${prevVal}% (weakening labor)`;
-    } else if (latestVal < prevVal) {
-      value = 'strong';
-      description = `US Unemployment fell to ${latestVal}% from ${prevVal}% (strengthening labor)`;
-    } else {
-      value = 'neutral';
-      description = `US Unemployment unchanged at ${latestVal}%`;
-    }
-  } else if (series.key === 'NFP') {
-    if (latestVal > prevVal) {
-      value = 'strong';
-      description = `US Nonfarm Payrolls rose to ${latestVal} from ${prevVal} (job growth)`;
-    } else if (latestVal < prevVal) {
-      value = 'weak';
-      description = `US Nonfarm Payrolls fell to ${latestVal} from ${prevVal} (job losses)`;
-    } else {
-      value = 'neutral';
-      description = `US Nonfarm Payrolls unchanged at ${latestVal}`;
-    }
-  } else if (series.key === 'GDP') {
-    if (latestVal > prevVal) {
-      value = 'beat';
-      description = `US GDP rose to ${latestVal}B from ${prevVal}B (expansion)`;
-    } else if (latestVal < prevVal) {
-      value = 'miss';
-      description = `US GDP fell to ${latestVal}B from ${prevVal}B (contraction)`;
-    } else {
-      value = 'neutral';
-      description = `US GDP unchanged at ${latestVal}B`;
-    }
-  } else if (series.key === 'RETAIL_SALES') {
-    if (latestVal > prevVal) {
-      value = 'beat';
-      description = `US Retail Sales rose to ${latestVal} from ${prevVal} (consumer strength)`;
-    } else if (latestVal < prevVal) {
-      value = 'miss';
-      description = `US Retail Sales fell to ${latestVal} from ${prevVal} (consumer weakness)`;
-    } else {
-      value = 'neutral';
-      description = `US Retail Sales unchanged at ${latestVal}`;
-    }
-  } else {
-    return null;
+/**
+ * Reads macro momentum from a series, newest observation first. These series
+ * are levels that rise almost every period, so the level alone says nothing.
+ * Without consensus forecasts this measures momentum, not a data surprise.
+ */
+export function classifyFredObservations(key: FredKey, observations: FredObservation[]): { value: string; description: string } | null {
+  const values = observations.map((observation) => parseFloat(observation.value));
+
+  if (key === 'CPI') {
+    if (values.length < 14) return null;
+    const latest = percentChange(values[0], values[12]);
+    const previous = percentChange(values[1], values[13]);
+    return {
+      value: byPace(latest, previous, CPI_ACCELERATION_MARGIN_PP, 'high', 'low'),
+      description: `US CPI inflation was ${fixed(latest)}% year on year, from ${fixed(previous)}% the month before.`,
+    };
   }
+
+  if (key === 'UNEMPLOYMENT') {
+    if (values.length < 2) return null;
+    const change = Math.round((values[0] - values[1]) * 10) / 10;
+    return {
+      value: change > 0 ? 'weak' : change < 0 ? 'strong' : 'neutral',
+      description: `US unemployment was ${values[0]}%, from ${values[1]}% the month before.`,
+    };
+  }
+
+  if (key === 'NFP') {
+    if (values.length < RECENT_PACE_MONTHS + 2) return null;
+    const changes = values.slice(0, -1).map((value, index) => value - values[index + 1]);
+    const pace = average(changes.slice(1, RECENT_PACE_MONTHS + 1));
+    return {
+      value: changes[0] < 0 ? 'weak' : byPace(changes[0], pace, PAYROLL_PACE_MARGIN_THOUSANDS, 'strong', 'weak'),
+      description: `US payrolls changed by ${fixed(changes[0], 0)}k, against a recent average of ${fixed(pace, 0)}k a month.`,
+    };
+  }
+
+  if (key === 'GDP') {
+    if (values.length < 3) return null;
+    const annualized = (latest: number, base: number) => (Math.pow(latest / base, 4) - 1) * 100;
+    const latest = annualized(values[0], values[1]);
+    const previous = annualized(values[1], values[2]);
+    return {
+      value: latest < 0 ? 'miss' : byPace(latest, previous, GDP_PACE_MARGIN_PP, 'beat', 'miss'),
+      description: `US real GDP grew at a ${fixed(latest, 1)}% annualized pace, from ${fixed(previous, 1)}% the quarter before.`,
+    };
+  }
+
+  if (values.length < RECENT_PACE_MONTHS + 2) return null;
+  const changes = values.slice(0, -1).map((value, index) => percentChange(value, values[index + 1]));
+  const pace = average(changes.slice(1, RECENT_PACE_MONTHS + 1));
+  return {
+    value: byPace(changes[0], pace, RETAIL_PACE_MARGIN_PP, 'beat', 'miss'),
+    description: `US retail sales changed ${fixed(changes[0])}% on the month, against a recent average of ${fixed(pace)}%.`,
+  };
+}
+
+function mapToMacroEvent(series: typeof FRED_SERIES[number], observations: FredObservation[]): MacroEvent | null {
+  const reading = classifyFredObservations(series.key, observations);
+  if (!reading) return null;
+  const latest = observations[0];
 
   return {
     id: `fred_${series.key}_${latest.date}`,
     category: series.category,
     title: series.title,
-    description,
+    description: reading.description,
     timestamp: new Date(latest.date).toISOString(),
     impact: series.impact,
-    value,
+    value: reading.value,
     country: 'US',
     url: `https://fred.stlouisfed.org/series/${series.seriesId}`,
     sourceName: 'FRED',
@@ -182,12 +196,9 @@ export async function fetchFredEvents(): Promise<MacroEvent[]> {
   for (const series of FRED_SERIES) {
     try {
       const observations = await fetchFredSeries(series.seriesId, apiKey);
-      if (observations.length < 2) continue;
+      if (observations.length === 0 || isStale(observations[0].date, series.maxAgeDays)) continue;
 
-      const [latest, previous] = observations;
-      if (isStale(latest.date)) continue;
-
-      const event = mapToMacroEvent(series, latest, previous);
+      const event = mapToMacroEvent(series, observations);
       if (event) events.push(event);
     } catch (err) {
       console.error(`[FRED] Failed to fetch ${series.key}:`, err);
@@ -228,8 +239,6 @@ export async function fetchRateSpread(): Promise<number | null> {
 
     const dgs2 = parseFloat(dgs2Obs[0].value);
     const fedFunds = parseFloat(fedFundsObs[0].value);
-
-    if (isNaN(dgs2) || isNaN(fedFunds)) return null;
 
     const spread = Math.round((dgs2 - fedFunds) * 100) / 100;
 

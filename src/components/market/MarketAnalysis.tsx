@@ -146,7 +146,7 @@ export function MarketMethodology({ data }: { data: BiasResult }) {
         </dl>
         <p>The displayed percentage is the rounded signed score on a -100 to +100 scale. It is not a win probability or a price return. Scores above +50 are bullish; +15 to +50 lean bullish. Scores from -14 to +14 are neutral; -50 to -15 lean bearish, and below -50 is bearish.</p>
         <p>Conviction combines score magnitude, event count, high-impact events and directional agreement. High conviction needs a magnitude above 40, at least three scored events, a high-impact event and at least 60% agreement. Medium conviction needs a magnitude above 25, at least two events and a high-impact event.</p>
-        <p>Agreement measures the share on the more common bullish or bearish side, which may differ from the weighted score direction. Coverage counts matched scored events against configured rules; it is not a confidence probability. Inputs already reflect category caps and rule adjustments; final score clamping can prevent them from summing to the displayed score. Technical price confirmation is not measured here.</p>
+        <p>Agreement measures the share of scored events pointing the same way as the final score. Coverage counts matched scored events against configured rules; it is not a confidence probability. Inputs already reflect category caps and rule adjustments; final score clamping can prevent them from summing to the displayed score. Technical price confirmation is not measured here.</p>
       </details>
     </section>
   );

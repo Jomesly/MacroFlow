@@ -126,7 +126,7 @@ function normalizeCountry(country?: string): string | undefined {
   if (!country) return undefined;
   const upper = country.toUpperCase();
   if (upper === 'UNITED STATES') return 'US';
-  if (upper === 'UNITED KINGDOM') return 'GB';
+  if (upper === 'UNITED KINGDOM' || upper === 'UK') return 'GB';
   return upper;
 }
 
@@ -140,11 +140,8 @@ function ruleMatchesEvent(
 
   if (ruleCountry) return eventCountry === ruleCountry;
 
-  if (
-    symbol === 'GBPUSD' &&
-    eventCountry &&
-    COUNTRY_SENSITIVE_CATEGORIES.has(event.category)
-  ) {
+  // GBPUSD has two legs, so macro data only counts once its country is known.
+  if (symbol === 'GBPUSD' && COUNTRY_SENSITIVE_CATEGORIES.has(event.category)) {
     return false;
   }
 
@@ -163,6 +160,26 @@ function ruleMatchesEvent(
 
 function categoryCap(category: MacroEvent['category']): number {
   return CATEGORY_CAPS[category] ?? 30;
+}
+
+/**
+ * Caps a category's net score, trimming only the dominant side so opposing
+ * evidence still counts. The result does not depend on event arrival order.
+ */
+function applyCategoryCap(scores: number[], cap: number): number[] {
+  const net = scores.reduce((sum, score) => sum + score, 0);
+  if (Math.abs(net) <= cap) return scores;
+
+  const side = Math.sign(net);
+  const dominant = scores.filter((score) => Math.sign(score) === side).reduce((sum, score) => sum + score, 0);
+  const factor = (side * cap - (net - dominant)) / dominant;
+  const capped = scores.map((score) => (Math.sign(score) === side ? Math.round(score * factor) : score));
+
+  // Rounding must not move the net off the cap.
+  const drift = side * cap - capped.reduce((sum, score) => sum + score, 0);
+  const largest = capped.reduce((best, score, index) => (score * side > capped[best] * side ? index : best), 0);
+  capped[largest] += drift;
+  return capped;
 }
 
 function absPercent(score: number): number {
@@ -234,7 +251,7 @@ export function calculateBias(
   return symbols.map((sym) => {
     let totalScore = 0;
     const scoredEvents: BiasResult['events'] = [];
-    const categoryTotals: Partial<Record<MacroEvent['category'], number>> = {};
+    const contributions: { event: MacroEvent; score: number }[] = [];
 
     for (const event of events) {
       const matchingRules = biasRules.filter(
@@ -251,32 +268,34 @@ export function calculateBias(
           ? getEmploymentModulation(sym, event.value, regime)
           : 1.0;
 
-        const modulatedScore = Math.round(rule.scoreChange * modulation);
-
-        const current = categoryTotals[event.category] ?? 0;
-        const cappedTotal = clamp(
-          current + modulatedScore,
-          -categoryCap(event.category),
-          categoryCap(event.category)
-        );
-        const appliedScore = cappedTotal - current;
-
-        if (appliedScore === 0) continue;
-
-        totalScore += appliedScore;
-        categoryTotals[event.category] = cappedTotal;
-        scoredEvents.push({
-          id: event.id,
-          category: event.category,
-          title: event.title,
-          description: event.description,
-          impact: event.impact,
-          scoreChange: appliedScore,
-          country: event.country,
-          url: event.url,
-          sourceName: event.sourceName,
-        });
+        contributions.push({ event, score: Math.round(rule.scoreChange * modulation) });
       }
+    }
+
+    const appliedScores = new Map<(typeof contributions)[number], number>();
+    for (const category of new Set(contributions.map(({ event }) => event.category))) {
+      const inCategory = contributions.filter(({ event }) => event.category === category);
+      const capped = applyCategoryCap(inCategory.map(({ score }) => score), categoryCap(category));
+      inCategory.forEach((contribution, index) => appliedScores.set(contribution, capped[index]));
+    }
+
+    for (const contribution of contributions) {
+      const { event } = contribution;
+      const appliedScore = appliedScores.get(contribution) ?? 0;
+      if (appliedScore === 0) continue;
+
+      totalScore += appliedScore;
+      scoredEvents.push({
+        id: event.id,
+        category: event.category,
+        title: event.title,
+        description: event.description,
+        impact: event.impact,
+        scoreChange: appliedScore,
+        country: event.country,
+        url: event.url,
+        sourceName: event.sourceName,
+      });
     }
 
     totalScore = clamp(totalScore, -100, 100);
@@ -284,10 +303,15 @@ export function calculateBias(
     const strength = getStrength(totalScore);
 
     const bullishCount = scoredEvents.filter((e) => e.scoreChange > 0).length;
+    const bearishCount = scoredEvents.filter((e) => e.scoreChange < 0).length;
     const totalRelevant = scoredEvents.length;
-    const agreementRatio = totalRelevant > 0 ? bullishCount / totalRelevant : 0;
+    const alignedCount = totalScore > 0
+      ? bullishCount
+      : totalScore < 0
+        ? bearishCount
+        : Math.max(bullishCount, bearishCount);
     const confirmationRatio = totalRelevant > 0
-      ? Math.round((agreementRatio >= 0.5 ? agreementRatio : 1 - agreementRatio) * 100)
+      ? Math.round((alignedCount / totalRelevant) * 100)
       : 0;
 
     const highImpactCount = scoredEvents.filter((e) => e.impact === 'high').length;
