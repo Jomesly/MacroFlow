@@ -80,7 +80,7 @@ Read the [restoration evaluation](docs/restoration-final-report-2026-11-10.md) a
 
 ## Product tour
 
-These screenshots use representative fixtures and a disposable local test account. They illustrate the interface, not current quotes, the latest market count, or measured trading performance. They contain no production journal records or usable credentials.
+Screenshots refreshed on November 11, 2026 show the current interface and all 12 supported markets. Market readings are calculated by the production scoring implementation from illustrative sample inputs; journal views use synthetic trades in disposable local accounts. These are interface examples, not live quotes or measured trading performance. No production journal records or credentials are included. See [screenshot provenance](docs/images/README.md).
 
 <details>
 <summary><strong>Market analysis</strong></summary>
