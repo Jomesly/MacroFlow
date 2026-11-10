@@ -71,9 +71,13 @@ service-account*.json
 /playwright-report/
 /data/validation-v3/
 /data/probability/
-/data/prediction-research/
-/data/prediction-research-initial-smoke/
-/data/prediction-research-asset-news-v2/
+# Every prospective experiment, including new versioned output directories.
+/data/prediction-research*/
+# Private local exports and database copies.
+/data/exports/
+/data/private/
+*.dump
+*.sql.gz
 /supabase/.temp/
 
 # vercel
