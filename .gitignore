@@ -73,6 +73,7 @@ service-account*.json
 /data/probability/
 /data/prediction-research/
 /data/prediction-research-initial-smoke/
+/data/prediction-research-asset-news-v2/
 /supabase/.temp/
 
 # vercel

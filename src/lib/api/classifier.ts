@@ -62,6 +62,38 @@ function inferCountry(text: string): string | undefined {
   return regions[0];
 }
 
+/** A crypto subject and the regulatory action must occur in the same clause. */
+function cryptoPolicySignals(text: string): SentimentResult[] {
+  const clauses = text.split(/[.!?;](?:\s+|$)|\s+(?:but|whereas|however)\s+/i);
+  const values = new Map<string, EventImpact>();
+  for (const clause of clauses) {
+    if (!/\b(bitcoin|btc|crypto(?:currency|currencies)?|digital assets?|stablecoins?|ethereum|ether)\b/i.test(clause)) continue;
+    // A denial is not an approval; an expected action is not an accomplished action.
+    if (/\b(no|not|never|without|unlikely|won't|hasn't|haven't)\b.{0,30}\b(approv\w*|ban\w*|allow\w*|reject\w*|den(?:y|ies|ied)|restrict\w*)\b/i.test(clause)
+      || /\b(may|might|could|would|expects?|expected|seeks?|seeking|hopes?)\b.{0,30}\b(approv\w*|ban\w*|allow\w*|reject\w*|restrict\w*)\b/i.test(clause)
+      || /\b(approval|ban|decision)\b.{0,15}\b(expected|pending|anticipated|rumou?red)\b/i.test(clause)) continue;
+    const authority = /\b(sec|regulators?|regulatory|government|court|authorities|lawmakers?|parliament|congress)\b/i.test(clause);
+    const negative = /\b(ban(?:s|ned|ning)?|restrict(?:s|ed|ing|ions?)?|crackdown|cracks? down|cracked down)\b/i.test(clause)
+      || /\b(reject(?:s|ed|ing)?|den(?:y|ies|ied|ying))\b.{0,60}\b(etf|approval|application)\b/i.test(clause)
+      || (authority && /\b(su(?:e|es|ed|ing)|penalt(?:y|ies))\b/i.test(clause));
+    const positive = (authority || /\betf\b/i.test(clause))
+      && /\b(approv(?:e|es|ed|al)|greenlight(?:s|ed)?|allow(?:s|ed)?|clearance)\b/i.test(clause);
+    const impact = /\b(sec|bitcoin|crypto)\b/i.test(clause) ? 'high' : 'medium';
+    const value = negative ? 'negative' : positive ? 'positive' : null;
+    if (value && (impact === 'high' || !values.has(value))) values.set(value, impact);
+  }
+  return [...values].map(([value, impact]) => ({ category: 'crypto_regulation', value, impact,
+    title: text.length > 80 ? text.slice(0, 77) + '...' : text, description: text }));
+}
+
+function policyForecastRevision(text: string, match: RegExpExecArray): boolean {
+  const verb = match[0].match(/(cut|lower|raise|hike|ease)$/i)?.[0];
+  if (!verb) return false;
+  const tail = text.slice(match.index + match[0].length - verb.length);
+  const target = tail.match(/^[a-z]+\b[^.;!?]{0,45}\b(forecasts?|projections?|estimates?|outlook)\b/i)?.[0];
+  return !!target && !/\b(rates?|policy|borrowing costs?)\b/i.test(target);
+}
+
 const RULES: Rule[] = [
   // ── Fed Tone ──
   { patterns: [/\bfed\s*(cut|dovish|ease|lower)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
@@ -187,22 +219,15 @@ const RULES: Rule[] = [
 
   // ── Crypto Regulation ──
   // Price moves are deliberately absent: a falling coin is not a regulatory event.
-  { patterns: [/\bSEC\b.{0,40}\b(approve|approval|greenlight|allow)/], category: 'crypto_regulation', value: 'positive', impact: 'high' },
-  { patterns: [/\bSEC\b.{0,40}\b(reject|deny|crack.?down|sue|suit|penalty)/], category: 'crypto_regulation', value: 'negative', impact: 'high' },
-  { patterns: [/\bcrypto\b.{0,40}\b(etf.{0,20}\bapprov|approv|regulation.*\bclear)/i], category: 'crypto_regulation', value: 'positive', impact: 'high' },
-  { patterns: [/\bcrypto\b.{0,40}\b(ban|crack.?down|restrict)/i], category: 'crypto_regulation', value: 'negative', impact: 'high' },
-  { patterns: [/\bbitcoin\b.{0,40}\b(etf.{0,20}\bapprov|approv)/i], category: 'crypto_regulation', value: 'positive', impact: 'high' },
-  { patterns: [/\bbitcoin\b.{0,40}\b(ban|restrict|crack.?down)/i], category: 'crypto_regulation', value: 'negative', impact: 'high' },
-  { patterns: [/\bregulatory\b.{0,40}\b(clear|approve|greenlight)/i], category: 'crypto_regulation', value: 'positive', impact: 'medium' },
-  { patterns: [/\bregulatory\b.{0,40}\b(crack.?down|restrict|tighten)/i], category: 'crypto_regulation', value: 'negative', impact: 'medium' },
+  // Crypto actions are resolved by cryptoPolicySignals, including denial/negation.
 
   // ── Nasdaq / Tech specific ──
   { patterns: [/\b(nasdaq|tech stock|technology)\b.{0,40}\b(rally|surge|climb|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
   { patterns: [/\b(nasdaq|tech stock|technology)\b.{0,40}\b(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
   { patterns: [/\b(dow|djia)\b.{0,40}\b(rally|surge|climb|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
   { patterns: [/\b(dow|djia)\b.{0,40}\b(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
-  { patterns: [/(s&p|\bsp500\b|\bindex\b).{0,40}\b(record|high|rally|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
-  { patterns: [/(s&p|\bsp500\b|\bindex\b).{0,40}\b(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
+  { patterns: [/(s&p|\bsp500\b|\b(?:stock|equity) (?:market )?index\b|\bnasdaq\b|\bdow jones\b).{0,40}\b(record|high|rall(?:y|ies)|gain|rise)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'medium' },
+  { patterns: [/(s&p|\bsp500\b|\b(?:stock|equity) (?:market )?index\b|\bnasdaq\b|\bdow jones\b).{0,40}\b(fall|drop|decline|retreat|plunge)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
 
   // ── Earnings ──
   { patterns: [/\bearnings\b.{0,40}\b(beat|surge|above|record|strong|positive)/i], category: 'earnings', value: 'positive', impact: 'high' },
@@ -224,7 +249,7 @@ export function classifyHeadline(text: string): SentimentResult[] {
   if (TECHNICAL_ARTICLE.test(text)) return [];
   const foreignEquityOnly = FOREIGN_EQUITY.test(text) && !GLOBAL_EQUITY.test(text);
   const seen = new Set<string>();
-  const results: SentimentResult[] = [];
+  const results: SentimentResult[] = cryptoPolicySignals(text);
   for (const rule of RULES) {
     if (rule.category === 'risk_sentiment' && foreignEquityOnly) continue;
     // Price verbs near an upcoming release do not describe the economic measure.
@@ -236,6 +261,7 @@ export function classifyHeadline(text: string): SentimentResult[] {
       const match = pattern.exec(text);
       if (!match) continue;
       if (POLICY_CATEGORIES.has(rule.category) && isNegatedPolicyMove(text, match)) continue;
+      if (POLICY_CATEGORIES.has(rule.category) && policyForecastRevision(text, match)) continue;
       const key = `${rule.category}:${rule.value}`;
       if (!seen.has(key)) {
         seen.add(key);

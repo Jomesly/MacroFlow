@@ -2,6 +2,8 @@
 
 Completed November 10, 2026. Reference: `e52443bff3b65df86d7568c40c68175517db11ef`. Inspected production: `178457f05e7f45e90353230af0612a6fa144f200`. Work is on `fix/prediction-scoring-consistency`; **nothing from this investigation has been deployed**. The unrelated original checkout was preserved.
 
+Subsequent targeted work: [GBPUSD and Bitcoin input corrections](gbpusd-bitcoin-followup-2026-11-10.md). That report supersedes the classifier/version/active-experiment status below; the historical outcome results remain unchanged because their archive contains no news.
+
 ## Three separate conclusions
 
 1. **Correctness improved.** Fixed mismatched conviction units, supporting-evidence calculations, category-cap inconsistencies, two reproduced headline misclassifications, and stale-response presentation defenses. Tests cover bullish and bearish displayed 49/50/51 boundaries. These are verified software fixes, not evidence of better forecasts.

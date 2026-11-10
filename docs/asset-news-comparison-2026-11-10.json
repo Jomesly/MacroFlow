@@ -1,0 +1,560 @@
+{
+  "generatedAt": "2026-11-10T15:46:22.198Z",
+  "before": {
+    "revision": "ddf155bfdc5d09f1cbc98194eca5bd209d2bcb91",
+    "oldHashes": {
+      "api/classifier.ts": "ff9ce29969476ad98916671419430409c5a439e87d8ba2e23529553e74cdd6eb",
+      "engine.ts": "267867d7a1e56ead02322cd2b04641ca8d0a7a301e2559a95677ecf796970e2e",
+      "alignment.ts": "37299162ae8161dfe57b5e2409b7156e56d6a7602835c2c07e841a719fcdcd32",
+      "macro-context.ts": "fc3443bcaa8fe340805a51a58f33af702eb7830e2ecfffa42e49db563d8cb180",
+      "rules.ts": "0f5ca868ef6227dab32bf5e58cd368d78fc2e50b7dc8b692cb4a9d2582c7177a",
+      "types.ts": "85dd83bed6a7f10a7c65eef538dd635a9f5eefec6a35267b6a57f31fa180a9f3",
+      "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+      "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+    }
+  },
+  "afterClassifierHash": "9d7bb80d59ac2530949f123f2db517c2f2e886b3f4eaac403762b5b05770e815",
+  "captureHash": "2d0dcf5b8c26cb34ffcc6e29e33d0ac782eced2f99810fa11cd36b87fc84b699",
+  "asOf": "2026-11-10T15:33:45.569Z",
+  "scope": "Same retained article text for every classifier. Source-level first-signal deduplication retained. Cannot recover discarded articles or reconstruct original provider ordering beyond retained rows.",
+  "changedArticles": [
+    {
+      "text": "Breaking: US Consumer Price Index rises 0.4% MoM in October vs. 0.3% expected Monthly inflation in the United States, as measured by the change in the Consumer Price Index (CPI), was 0.4% in October, the US Bureau of Labor Statistics (BLS) reported on Tuesday. This print followed the 0.6% increase reported in September and came in above the market expectation of 0.3%.",
+      "timestamp": "2026-11-10T09:30:00.000Z",
+      "before": [
+        "risk_sentiment:risk_on"
+      ],
+      "after": []
+    },
+    {
+      "text": "Will stablecoins survive once the banks catch up? As crypto firms and banks converge, it is fair to ask what lasting advantage stablecoins have, argues Alessandro Hatami, founder of Pacemakers and former COO of Digital Banking at Lloyds Banking Group.",
+      "timestamp": "2026-11-10T14:00:00.000Z",
+      "before": [
+        "crypto_regulation:negative"
+      ],
+      "after": []
+    }
+  ],
+  "captured": {
+    "before": {
+      "inputCount": 23,
+      "inputHash": "24930d5cb33ee40e8459e632e7b77bbfa8d376256d585b0ee886b9e44b8cdab6",
+      "current": [
+        {
+          "symbol": "GBPUSD",
+          "net": -83,
+          "percent": -31,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 75,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -99,
+          "percent": -43,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 63,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "crypto_regulation": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ],
+      "restoration": [
+        {
+          "symbol": "GBPUSD",
+          "net": -83,
+          "percent": -83,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 75,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -99,
+          "percent": -99,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 63,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "crypto_regulation": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ]
+    },
+    "equitySubjectsOnly": {
+      "inputCount": 22,
+      "inputHash": "a0a15644ea12597884712d5b66aab00b452b99ce51c751278167d50c73c0b6cd",
+      "current": [
+        {
+          "symbol": "GBPUSD",
+          "net": -93,
+          "percent": -35,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 80,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 20,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -99,
+          "percent": -43,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 67,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "crypto_regulation": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ],
+      "restoration": [
+        {
+          "symbol": "GBPUSD",
+          "net": -93,
+          "percent": -93,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 80,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 20,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -99,
+          "percent": -99,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 67,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "crypto_regulation": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ]
+    },
+    "cryptoScopeOnly": {
+      "inputCount": 22,
+      "inputHash": "282a0906d13faf09e0e908b11156cbb7087ce417e0cb908fa4aad444ad9bb595",
+      "current": [
+        {
+          "symbol": "GBPUSD",
+          "net": -83,
+          "percent": -31,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 75,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -59,
+          "percent": -26,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 60,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ],
+      "restoration": [
+        {
+          "symbol": "GBPUSD",
+          "net": -83,
+          "percent": -83,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 75,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -59,
+          "percent": -59,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 60,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ]
+    },
+    "policyTargetsOnly": {
+      "inputCount": 23,
+      "inputHash": "24930d5cb33ee40e8459e632e7b77bbfa8d376256d585b0ee886b9e44b8cdab6",
+      "current": [
+        {
+          "symbol": "GBPUSD",
+          "net": -83,
+          "percent": -31,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 75,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -99,
+          "percent": -43,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 63,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "crypto_regulation": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ],
+      "restoration": [
+        {
+          "symbol": "GBPUSD",
+          "net": -83,
+          "percent": -83,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 75,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -99,
+          "percent": -99,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 63,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "crypto_regulation": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ]
+    },
+    "allFixes": {
+      "inputCount": 21,
+      "inputHash": "1b523f7fe04ecd22ff4ffbd32f2a2535b4a135d245a3e771e16bbae10fa6be70",
+      "current": [
+        {
+          "symbol": "GBPUSD",
+          "net": -93,
+          "percent": -35,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 80,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 20,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -59,
+          "percent": -26,
+          "direction": "bearish",
+          "conviction": "low",
+          "agreement": 64,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ],
+      "restoration": [
+        {
+          "symbol": "GBPUSD",
+          "net": -93,
+          "percent": -93,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 80,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": -8,
+            "employment": -5,
+            "retail_sales": -5,
+            "risk_sentiment": 20,
+            "fed_tone": -40,
+            "dollar_strength": -20,
+            "yields": -10
+          }
+        },
+        {
+          "symbol": "BTCUSD",
+          "net": -59,
+          "percent": -59,
+          "direction": "bearish",
+          "conviction": "high",
+          "agreement": 64,
+          "categoryPoints": {
+            "inflation": -25,
+            "gdp": 3,
+            "employment": 3,
+            "risk_sentiment": 30,
+            "fed_tone": -40,
+            "dollar_strength": -15,
+            "yields": -15
+          }
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "text": "Bank of England cuts its inflation forecast",
+      "before": [
+        {
+          "category": "boe_tone",
+          "value": "dovish",
+          "impact": "high",
+          "title": "Bank of England cuts its inflation forecast",
+          "description": "Bank of England cuts its inflation forecast"
+        }
+      ],
+      "after": []
+    },
+    {
+      "text": "SEC approves new stock exchange rules",
+      "before": [
+        {
+          "category": "crypto_regulation",
+          "value": "positive",
+          "impact": "high",
+          "title": "SEC approves new stock exchange rules",
+          "description": "SEC approves new stock exchange rules"
+        }
+      ],
+      "after": []
+    },
+    {
+      "text": "SEC denies Bitcoin ETF approval",
+      "before": [
+        {
+          "category": "crypto_regulation",
+          "value": "positive",
+          "impact": "high",
+          "title": "SEC denies Bitcoin ETF approval",
+          "description": "SEC denies Bitcoin ETF approval"
+        }
+      ],
+      "after": [
+        {
+          "category": "crypto_regulation",
+          "value": "negative",
+          "impact": "high",
+          "title": "SEC denies Bitcoin ETF approval",
+          "description": "SEC denies Bitcoin ETF approval"
+        }
+      ]
+    },
+    {
+      "text": "SEC has not approved a Bitcoin ETF",
+      "before": [
+        {
+          "category": "crypto_regulation",
+          "value": "positive",
+          "impact": "high",
+          "title": "SEC has not approved a Bitcoin ETF",
+          "description": "SEC has not approved a Bitcoin ETF"
+        }
+      ],
+      "after": []
+    },
+    {
+      "text": "Bitcoin ETF approval expected next month",
+      "before": [
+        {
+          "category": "crypto_regulation",
+          "value": "positive",
+          "impact": "high",
+          "title": "Bitcoin ETF approval expected next month",
+          "description": "Bitcoin ETF approval expected next month"
+        }
+      ],
+      "after": []
+    },
+    {
+      "text": "Bank of England cuts interest rates",
+      "before": [
+        {
+          "category": "boe_tone",
+          "value": "dovish",
+          "impact": "high",
+          "title": "Bank of England cuts interest rates",
+          "description": "Bank of England cuts interest rates"
+        }
+      ],
+      "after": [
+        {
+          "category": "boe_tone",
+          "value": "dovish",
+          "impact": "high",
+          "title": "Bank of England cuts interest rates",
+          "description": "Bank of England cuts interest rates"
+        }
+      ]
+    },
+    {
+      "text": "SEC approves spot Bitcoin ETF",
+      "before": [
+        {
+          "category": "crypto_regulation",
+          "value": "positive",
+          "impact": "high",
+          "title": "SEC approves spot Bitcoin ETF",
+          "description": "SEC approves spot Bitcoin ETF"
+        }
+      ],
+      "after": [
+        {
+          "category": "crypto_regulation",
+          "value": "positive",
+          "impact": "high",
+          "title": "SEC approves spot Bitcoin ETF",
+          "description": "SEC approves spot Bitcoin ETF"
+        }
+      ]
+    }
+  ],
+  "historical": {
+    "rows": 3334,
+    "changed": 0,
+    "newsArchive": false,
+    "outcomeReport": "docs/restoration-evaluation-2026-11-10.json",
+    "conclusion": "No changed historical directions; the existing identical-input four-hour outcome results remain applicable. This archive cannot evaluate these news corrections. No forecast-accuracy gain is claimed."
+  }
+}

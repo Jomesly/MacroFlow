@@ -8,7 +8,7 @@ import { fetchFredInputs } from './fred';
 import { getCalendar, nextHighEvent } from '../calendar';
 import { coalesce, getCacheEntry, setCache } from './cache';
 
-const CACHE_KEY = 'merged_events_v9';
+const CACHE_KEY = 'merged_events_v10';
 const eventSchema = z.object({
   id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'other']),
   title: z.string(), description: z.string(), timestamp: z.iso.datetime(),
