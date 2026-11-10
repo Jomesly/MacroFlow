@@ -71,6 +71,8 @@ service-account*.json
 /playwright-report/
 /data/validation-v3/
 /data/probability/
+/data/prediction-research/
+/data/prediction-research-initial-smoke/
 /supabase/.temp/
 
 # vercel

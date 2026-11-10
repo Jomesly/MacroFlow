@@ -13,6 +13,7 @@ describe('calendar surprises', () => {
   it('scores a release whose forecast was archived before it came out', () => {
     const [surprise] = buildCalendarSurprises([cpi], seenBefore, asOf);
     expect(surprise).toMatchObject({ evidenceType: 'surprise', category: 'inflation', value: 'high', country: 'US', sourceName: 'ForexFactory + FRED' });
+    expect(surprise.releaseEvidence).toEqual({ actual: 0.5, estimate: 0.3, consensusFirstSeenAt: '2026-11-09T00:00:00.000Z', releasedAt: cpi.time });
   });
   it('keeps the original surprise direction when the feed revises its forecast after release', () => {
     const archived = new Map([[cpi.id, { forecast: '0.3%', firstSeenAt: '2026-11-09T00:00:00.000Z' }]]);

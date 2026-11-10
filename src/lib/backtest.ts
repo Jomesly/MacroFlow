@@ -45,14 +45,20 @@ export function directionSign(direction: Direction): -1 | 0 | 1 {
 
 /** Enter strictly after prediction at the next bar OPEN, then hold four contiguous hours. */
 export function evaluateFourHours(snapshot: ReplaySnapshot, prices: PriceDataset | null, costBps = 5): EvaluationRecord {
-  const result = snapshot.result;
+  const record = evaluateDirectionFourHours(snapshot.timestamp, snapshot.result, prices, costBps);
+  return snapshot.schemaVersion === 1 && snapshot.modelVersion === MODEL_VERSION ? record
+    : { ...record, entryTime: null, exitTime: null, grossReturn: null, netReturn: null, longNetReturn: null, shortNetReturn: null, mae: null, rejection: 'Wrong model/schema version' };
+}
+
+/** Model-independent outcome math for explicitly versioned comparative research. */
+export function evaluateDirectionFourHours(timestamp: string, result: BiasResult, prices: PriceDataset | null, costBps = 5): EvaluationRecord {
+  const snapshot = { timestamp };
   const record: EvaluationRecord = { timestamp: snapshot.timestamp, symbol: result.symbol,
     direction: result.direction, score: result.biasScore, regime: result.alignment?.context.regime ?? 'unknown',
     qualified: result.alignment?.status === 'aligned' && result.conviction === 'high',
     entryTime: null, exitTime: null, grossReturn: null, netReturn: null, longNetReturn: null, shortNetReturn: null, mae: null, rejection: null };
   const reject = (reason: string) => ({ ...record, rejection: reason });
   if (!Number.isFinite(costBps) || costBps < 0) throw new Error('Invalid round-trip cost');
-  if (snapshot.schemaVersion !== 1 || snapshot.modelVersion !== MODEL_VERSION) return reject('Wrong model/schema version');
   const side = directionSign(result.direction);
   if (!side) return reject('Neutral prediction');
   if (!prices || prices.schemaVersion !== 1 || prices.instrument !== result.symbol || prices.intervalMinutes > 60 || prices.intervalMinutes <= 0) return reject('Intraday prices unavailable');

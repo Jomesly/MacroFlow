@@ -19,7 +19,7 @@ export function buildCalendarSurprises(events: CalendarEvent[], forecasts: Map<s
     const estimate = parseFeedNumber(archived.forecast);
     if (actual === null || estimate === null) continue;
     const surprise = releaseToEvent({ event: event.title, country: 'US', time: event.time, actual, estimate, impact: event.impact }, asOf, 'ForexFactory + FRED');
-    if (surprise) surprises.push(surprise);
+    if (surprise) surprises.push({ ...surprise, releaseEvidence: { actual, estimate, consensusFirstSeenAt: archived.firstSeenAt, releasedAt: event.time } });
   }
   return surprises;
 }

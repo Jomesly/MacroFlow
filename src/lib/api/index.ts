@@ -8,7 +8,7 @@ import { fetchFredInputs } from './fred';
 import { getCalendar, nextHighEvent } from '../calendar';
 import { coalesce, getCacheEntry, setCache } from './cache';
 
-const CACHE_KEY = 'merged_events_v8';
+const CACHE_KEY = 'merged_events_v9';
 const eventSchema = z.object({
   id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'other']),
   title: z.string(), description: z.string(), timestamp: z.iso.datetime(),
@@ -16,6 +16,7 @@ const eventSchema = z.object({
   country: z.string().optional(), url: z.string().optional(), sourceName: z.string().optional(),
   evidenceType: z.enum(['headline', 'surprise', 'trend', 'market']).optional(),
   seriesId: z.string().optional(), observationDate: z.string().optional(), expiresAt: z.iso.datetime().optional(),
+  releaseEvidence: z.object({ actual: z.number(), estimate: z.number(), consensusFirstSeenAt: z.iso.datetime(), releasedAt: z.iso.datetime() }).optional(),
 });
 const contextSchema = z.object({
   asOf: z.iso.datetime(), regime: z.enum(['rates_sensitive', 'growth_sensitive', 'mixed', 'unknown']),
@@ -23,9 +24,16 @@ const contextSchema = z.object({
   inflation: z.enum(['accelerating', 'cooling', 'stable', 'unknown']), growth: z.enum(['expanding', 'contracting', 'unknown']),
   labor: z.enum(['improving', 'weakening', 'mixed', 'unknown']), complete: z.boolean(), reasons: z.array(z.string()),
 });
+const calendarEvidenceSchema = z.object({
+  fetchedAt: z.iso.datetime(), archiveStatus: z.enum(['ok', 'failed']),
+  events: z.array(z.object({ id: z.string(), title: z.string(), currency: z.string(), time: z.string(),
+    impact: z.enum(['high', 'medium', 'low', 'holiday']), forecast: z.string().nullable(), actual: z.string().nullable(), previous: z.string().nullable(), affects: z.array(z.string()) })),
+  archivedForecasts: z.array(z.tuple([z.string(), z.object({ forecast: z.string(), firstSeenAt: z.iso.datetime() })])),
+});
 const cachedEventsSchema = z.object({
   events: z.array(eventSchema), context: contextSchema, cachedAt: z.iso.datetime(),
   sourceHealth: z.record(z.string(), z.enum(['ok', 'empty', 'failed'])),
+  calendarEvidence: calendarEvidenceSchema.optional(),
   nextEvent: z.object({ name: z.string(), country: z.string(), date: z.iso.datetime(), impact: z.enum(['high', 'medium']), affects: z.array(z.string()) }).nullable(),
 });
 
@@ -35,6 +43,7 @@ interface CachedEvents {
   cachedAt: string;
   sourceHealth: SourceHealth;
   nextEvent: UpcomingEvent | null;
+  calendarEvidence?: z.infer<typeof calendarEvidenceSchema>;
 }
 
 export async function fetchAllEvents(): Promise<CachedEvents & { stale?: boolean }> {
@@ -72,7 +81,8 @@ export async function fetchAllEvents(): Promise<CachedEvents & { stale?: boolean
       || event.sourceName !== 'ForexFactory + FRED' || event.evidenceType !== 'surprise'),
       sourceHealth, nextEvent, stale: true };
   }
-  const data: CachedEvents = { events: [...new Map(events.map(event => [event.id, event])).values()], context: fred.context, cachedAt: asOf, sourceHealth, nextEvent };
+  const data: CachedEvents = { events: [...new Map(events.map(event => [event.id, event])).values()], context: fred.context, cachedAt: asOf, sourceHealth, nextEvent,
+    calendarEvidence: calendar ? { fetchedAt: calendar.fetchedAt, archiveStatus: calendar.archiveStatus, events: calendar.events, archivedForecasts: calendar.archivedForecasts ?? [] } : undefined };
   if (data.events.length) await setCache(CACHE_KEY, data, 60_000, 3_600_000);
   return data;
   });

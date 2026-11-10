@@ -56,6 +56,7 @@ describe('getCalendar', () => {
     expect(result.surprises).toHaveLength(1);
     expect(result.surprises[0]).toMatchObject({ category: 'inflation', value: 'high' });
     expect(result.archiveStatus).toBe('ok');
+    expect(result.archivedForecasts).toEqual([['cpi', { forecast: '0.3%', firstSeenAt: '2026-11-09T00:00:00.000Z' }]]);
   });
 
   it('retains feed events but reports archive failure without scoring surprises', async () => {

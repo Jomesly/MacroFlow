@@ -1,8 +1,9 @@
 import { calculateBias, cappedCategoryPoints, HIGH_CONVICTION_PERCENT } from './engine';
 import { MODEL_VERSION, selectEventsAsOf, unknownContext } from './macro-context';
 import type { AssetSymbol, MacroContext, MacroEvent, AlignmentAssessment } from './types';
+import { CURRENT_SCORING, type ScoringPolicy } from './scoring-policy';
 
-export function scoreMacroAlignment(events: MacroEvent[], context: MacroContext, asOf: string, symbol?: AssetSymbol) {
+export function scoreMacroAlignment(events: MacroEvent[], context: MacroContext, asOf: string, symbol?: AssetSymbol, policy: Readonly<ScoringPolicy> = CURRENT_SCORING) {
   const contextAge = Date.parse(asOf) - Date.parse(context.asOf);
   const safeContext = Number.isFinite(contextAge) && contextAge >= 0 && contextAge < 2 * 86_400_000
     ? context : unknownContext(asOf, 'Regime context is stale or from the future');
@@ -12,10 +13,10 @@ export function scoreMacroAlignment(events: MacroEvent[], context: MacroContext,
     if (['dollar_strength', 'yields'].includes(event.category) && event.evidenceType !== 'market') return false;
     if (!['inflation', 'employment', 'gdp', 'pmi', 'retail_sales'].includes(event.category)) return true;
     // A news mention is neither a measured trend nor a verified release surprise.
-    return (event.evidenceType === 'trend' || event.evidenceType === 'surprise')
+    return (policy.economicHeadlines || event.evidenceType === 'trend' || event.evidenceType === 'surprise')
       && ['US', 'GB', 'UK', 'EU', 'JP', 'CH', 'AU', 'CA', 'NZ', 'UNITED STATES', 'UNITED KINGDOM'].includes(event.country?.toUpperCase() ?? '');
   });
-  return calculateBias(selected, symbol, safeContext).map(result => {
+  return calculateBias(selected, symbol, safeContext, policy).map(result => {
     const reasons: string[] = [];
     const supportive = result.events.filter(event => event.scoreChange * result.biasScore > 0);
     const categoryTotals = cappedCategoryPoints(result.events);
@@ -43,7 +44,7 @@ export function scoreMacroAlignment(events: MacroEvent[], context: MacroContext,
       conviction: status === 'aligned' ? result.conviction : 'low' as const,
       signal: status === 'aligned' ? result.signal : 'neutral' as const,
       lastUpdated: asOf,
-      alignment: { modelVersion: MODEL_VERSION, horizonHours: 4 as const, status, marketConfirmation, reasons,
+      alignment: { modelVersion: policy === CURRENT_SCORING ? MODEL_VERSION : `${MODEL_VERSION}:${policy.id}`, horizonHours: 4 as const, status, marketConfirmation, reasons,
         context: safeContext, probability: null, validation: 'unvalidated' as const },
     };
   });

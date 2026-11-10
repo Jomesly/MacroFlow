@@ -70,12 +70,12 @@ Aggregate before category caps; score-relative agreement; distinct supporting ca
 
 ## Diagnostic and limitations
 
-Added `scripts/audit-engine-changes.ts`. It clones the current engine into ignored local diagnostic directories and changes exactly one named expression per variant; it fails if the expected source expression changes. Variants are never imported by runtime code. Inputs are selected as-of from prior-day ALFRED vintages and completed market bars. There is no fitting or outcome-based model selection.
+Added `scripts/audit-engine-changes.ts`. The initial diagnostic cloned source and changed one expression per variant. The completed implementation now uses explicit frozen research policies, avoiding source rewriting; live callers retain the default policy. Inputs are selected as-of from prior-day ALFRED vintages and completed market bars. There is no fitting or outcome-based model selection. See the [final implementation and outcome report](restoration-final-report-2026-11-10.md).
 
 ```powershell
 npx tsx scripts/audit-engine-changes.ts --data=C:/CodingProjects/MacroFlow/data/validation-v3
 ```
 
-Output: `.artifacts/engine-change-audit.json`, including source hashes, exact replacements, seven constructed cases, capacities and historical counts. Reference-scale-only changes zero raw scores/directions and restores four qualified readings in this limited archive. Economic-headline admission changes zero historical rows **because the archive contains no news**; that is not evidence the filter is harmless. Do not add the change counts across variants: effects overlap and interact.
+Output: `.artifacts/engine-change-audit.json`, including source hashes, explicit policy definitions, seven constructed cases, capacities and historical counts. Reference-scale-only changes zero raw scores/directions and restores four qualified readings in this limited archive. Economic-headline admission changes zero historical rows **because the archive contains no news**; that is not evidence the filter is harmless. Do not add the change counts across variants: effects overlap and interact.
 
 The diagnostic completed across 8,335 rows. ESLint for the new script and full TypeScript checking pass. No runtime changes, deployment, or new performance claims were made in this follow-up. Existing unit/browser checks from the preceding repair remain software checks, not evidence of prediction accuracy. The prior claim of a completed investigation must not be read as completion of the broader engine-restoration objective.

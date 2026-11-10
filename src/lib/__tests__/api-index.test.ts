@@ -78,6 +78,9 @@ describe('fetchAllEvents source health', () => {
     const { fetchAllEvents } = await import('../api');
     const result = await fetchAllEvents();
     expect(result.nextEvent).toEqual({ name: 'CPI m/m', country: 'USD', date, impact: 'high', affects: ['XAUUSD'] });
+    expect(result.calendarEvidence?.events[0].forecast).toBe('0.3%');
+    expect(result.calendarEvidence?.events[0].actual).toBeNull();
+    expect(result.calendarEvidence?.archivedForecasts).toEqual([]);
   });
   it('recovers an expired snapshot without renewing its timestamp or dropping evidence metadata', async () => {
     const { fetchAllEvents } = await import('../api');

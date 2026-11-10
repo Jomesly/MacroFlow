@@ -2,13 +2,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { pathToFileURL } from 'node:url';
 import { scoreMacroAlignment } from '../src/lib/alignment';
 import { maxBiasPoints } from '../src/lib/engine';
 import { buildMacroInputs, selectEventsAsOf, type FredSnapshot } from '../src/lib/macro-context';
 import { buildMarketEvents, type PriceDataset } from '../src/lib/market-evidence';
 import { contextFixture } from '../src/lib/__tests__/fixtures/macro';
 import type { AssetSymbol, MacroContext, MacroEvent } from '../src/lib/types';
+import { RESEARCH_POLICIES } from '../src/lib/scoring-policy';
 
 const symbols: AssetSymbol[] = ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD'];
 const read = (file: string) => fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
@@ -18,25 +18,11 @@ const sha256 = (value: string) => createHash('sha256').update(value).digest('hex
 async function main() {
   const root = path.resolve(arg('data', 'data/validation-v3'));
   const output = path.resolve(arg('output', '.artifacts/engine-change-audit.json'));
-  const sources = Object.fromEntries(['engine.ts', 'alignment.ts', 'bias-reading.ts', 'rules.ts', 'types.ts', 'macro-context.ts']
+  const sources = Object.fromEntries(['engine.ts', 'alignment.ts', 'bias-reading.ts', 'rules.ts', 'types.ts', 'macro-context.ts', 'scoring-policy.ts']
     .map(file => [file, read(path.join('src/lib', file))]));
-  const variants = {
-    fullTrendWeight: { file: 'engine.ts', from: "const weight = event.evidenceType === 'trend' ? 0.5 : 1;", to: 'const weight = 1;' },
-    referenceActivitySigns: { file: 'engine.ts', from: 'context ? macroModulation(sym, event, context)', to: 'context ? 1' },
-    admitEconomicHeadlines: { file: 'alignment.ts', from: "return (event.evidenceType === 'trend' || event.evidenceType === 'surprise')", to: 'return true' },
-    referenceDisplayScale: { file: 'engine.ts',
-      from: 'const biasPercent = maxPoints > 0 ? clamp(Math.round((100 * totalScore) / maxPoints), -100, 100) : 0;',
-      to: 'const biasPercent = Math.round(clamp(totalScore, -100, 100));' },
-  };
-  const scorers: Record<string, typeof scoreMacroAlignment> = { currentRepair: scoreMacroAlignment };
-  for (const [name, variant] of Object.entries(variants)) {
-    const dir = path.resolve('.artifacts/engine-ablations', name);
-    fs.mkdirSync(dir, { recursive: true });
-    if (sources[variant.file].split(variant.from).length !== 2) throw new Error(`Source changed; inspect diagnostic replacement: ${name}`);
-    for (const [file, contents] of Object.entries(sources)) fs.writeFileSync(path.join(dir, file),
-      file === variant.file ? contents.replace(variant.from, variant.to) : contents);
-    scorers[name] = (await import(pathToFileURL(path.join(dir, 'alignment.ts')).href)).scoreMacroAlignment;
-  }
+  const variants = RESEARCH_POLICIES;
+  const scorers: Record<string, typeof scoreMacroAlignment> = Object.fromEntries(Object.entries(variants)
+    .map(([name, policy]) => [name, (events, context, asOf, symbol) => scoreMacroAlignment(events, context, asOf, symbol, policy)]));
   const asOf = '2026-11-10T12:00:00.000Z';
   const { context, events: trends } = buildMacroInputs(contextFixture(), asOf);
   const event = (category: MacroEvent['category'], value: string, evidenceType: MacroEvent['evidenceType']): MacroEvent => ({

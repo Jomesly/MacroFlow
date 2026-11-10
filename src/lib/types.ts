@@ -78,6 +78,8 @@ export interface MacroEvent {
   seriesId?: string;
   observationDate?: string;
   expiresAt?: string;
+  /** Exact release evidence retained for prospective audits; never infer consensus retrospectively. */
+  releaseEvidence?: { actual: number; estimate: number; consensusFirstSeenAt: string; releasedAt: string };
 }
 
 export interface BiasRule {

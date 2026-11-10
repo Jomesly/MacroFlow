@@ -4,8 +4,9 @@ import { getArchivedForecasts } from './archive-cache';
 import { fetchWeeklyFeed } from './feed';
 import { buildCalendarSurprises } from './surprises';
 import { fetchUsActual, US_RELEASES } from './us-actuals';
+import type { ArchivedForecast } from './archive';
 
-export interface CalendarResult { events: CalendarEvent[]; surprises: MacroEvent[]; fetchedAt: string; archiveStatus: 'ok' | 'failed' }
+export interface CalendarResult { events: CalendarEvent[]; surprises: MacroEvent[]; fetchedAt: string; archiveStatus: 'ok' | 'failed'; archivedForecasts?: [string, ArchivedForecast][] }
 
 /** First-release value for one event, cached: found for 7 days, missing retried after 15 minutes. */
 async function actualFor(event: CalendarEvent, apiKey: string): Promise<string | null> {
@@ -27,7 +28,7 @@ export async function getCalendar(asOf = new Date().toISOString()): Promise<Cale
     if (!apiKey || !released || event.currency !== 'USD' || !US_RELEASES[event.title]) return event;
     return { ...event, actual: await actualFor(event, apiKey) };
   }));
-  return { events, surprises: buildCalendarSurprises(events, archive.forecasts, asOf), fetchedAt: new Date().toISOString(), archiveStatus: archive.status };
+  return { events, surprises: buildCalendarSurprises(events, archive.forecasts, asOf), fetchedAt: new Date().toISOString(), archiveStatus: archive.status, archivedForecasts: [...archive.forecasts] };
 }
 
 export function nextHighEvent(events: CalendarEvent[], asOf: string): UpcomingEvent | null {

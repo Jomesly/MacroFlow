@@ -22,14 +22,15 @@ export async function getEvents(): Promise<{
   context: MacroContext;
   stale?: boolean;
   nextEvent: UpcomingEvent | null;
+  calendarEvidence?: Awaited<ReturnType<typeof fetchAllEvents>>['calendarEvidence'];
 }> {
   try {
-    const { events: liveEvents, cachedAt, sourceHealth, stale, context, nextEvent } = await fetchAllEvents();
+    const { events: liveEvents, cachedAt, sourceHealth, stale, context, nextEvent, calendarEvidence } = await fetchAllEvents();
 
     if (liveEvents.length > 0) {
-      return { events: liveEvents, source: 'live', cachedAt, sourceHealth, stale, context, nextEvent };
+      return { events: liveEvents, source: 'live', cachedAt, sourceHealth, stale, context, nextEvent, calendarEvidence };
     }
-    return { events: baselineEvents.map(e => ({ ...e, timestamp: cachedAt })), source: 'baseline', cachedAt, sourceHealth, context, nextEvent };
+    return { events: baselineEvents.map(e => ({ ...e, timestamp: cachedAt })), source: 'baseline', cachedAt, sourceHealth, context, nextEvent, calendarEvidence };
   } catch {
     // fall through
   }

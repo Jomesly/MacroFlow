@@ -1,0 +1,4196 @@
+{
+  "generatedAt": "2026-11-10T15:27:54.263Z",
+  "purpose": "Descriptive development comparison, not independent validation",
+  "first": "2026-09-12T00:00:00.000Z",
+  "last": "2026-11-10T04:00:00.000Z",
+  "scheduledPerAsset": 1667,
+  "horizonHours": 4,
+  "roundTripCostBps": 5,
+  "protocol": "Same as-of inputs and price-only nonoverlap windows. Next hourly open strictly after prediction; four contiguous hours. Flat outcomes count as misses. Frequency counts all scheduled timestamps, including missing-price periods. Paired deltas use jointly directional windows; differing abstentions reported separately. All existing data previously inspected. Daily block bootstrap is descriptive and does not remove multi-day dependence or selection bias. Index/FX prices are directional proxies, not guaranteed executable fills; costs illustrative.",
+  "limitations": [
+    "No archived news or consensus, so full reference engine and pre-release usefulness cannot be reconstructed.",
+    "Gold prices unavailable. No untouched historical holdout remains.",
+    "Modern transforms are not relabeled as old surprises. Reference only evaluated on shared market profile.",
+    "Qualified signals and macro direction are separate; technical-entry performance is not evaluated."
+  ],
+  "provenance": {
+    "reference": {
+      "revision": "e52443bff3b65df86d7568c40c68175517db11ef",
+      "hashes": {
+        "engine.ts": "18ce34da4314416f597698f3272734db8b6d701c89dcfb4b49fca3a3748642ba",
+        "rules.ts": "9875321ce810c729ac5365cb37c4026e66e2a2ff2e941df0dff80290cac32fd2",
+        "types.ts": "800dc0722943cb4c492432caa1bfc3a9ff40c1233ef00ac125e151af600be731"
+      },
+      "spread": "omitted, as in reference API"
+    },
+    "production": {
+      "revision": "178457f05e7f45e90353230af0612a6fa144f200",
+      "hashes": {
+        "engine.ts": "85d5f055dbb13e6f94e55dca21f8a62c1d537d0531b1e8d01a2bb277d70aad70",
+        "rules.ts": "0f5ca868ef6227dab32bf5e58cd368d78fc2e50b7dc8b692cb4a9d2582c7177a",
+        "types.ts": "45d5a3ebc70c3046954a873b4c483447cd19615e8013228940e6875757dc1985",
+        "alignment.ts": "83cb99105d5e6c0c09ce0db1cde013279e1bf05463ded57c954133889a9073d8",
+        "macro-context.ts": "505474e901a7e4024254938e83314ae8b30847e7a2ec66d2a5ab2e39d90cddea"
+      },
+      "spread": "context"
+    },
+    "currentRepair": {
+      "policy": {
+        "id": "current-repair",
+        "scale": "category-capacity",
+        "activitySigns": "regime",
+        "trendWeight": 0.5,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "referenceScale": {
+      "policy": {
+        "id": "reference-scale",
+        "scale": "fixed-100",
+        "activitySigns": "regime",
+        "trendWeight": 0.5,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "referenceSigns": {
+      "policy": {
+        "id": "reference-signs",
+        "scale": "category-capacity",
+        "activitySigns": "reference",
+        "trendWeight": 0.5,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "fullTrendWeight": {
+      "policy": {
+        "id": "full-trend-weight",
+        "scale": "category-capacity",
+        "activitySigns": "regime",
+        "trendWeight": 1,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "economicHeadlines": {
+      "policy": {
+        "id": "economic-headlines",
+        "scale": "category-capacity",
+        "activitySigns": "regime",
+        "trendWeight": 0.5,
+        "economicHeadlines": true
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "restoration": {
+      "policy": {
+        "id": "restoration-v1",
+        "scale": "fixed-100",
+        "activitySigns": "reference",
+        "trendWeight": 0.5,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "pipeline": {
+      "src/lib/events.ts": "a5c2ccf7bca6283aefff44661938eee3c0298c4ba0baee3cf2efcd28a0fb833f",
+      "src/lib/market-evidence.ts": "91c1e6d29cc727856275f20cf0c08fa3e6d746f8c89a1d5fa690e14d802d7312",
+      "src/lib/backtest.ts": "1d9510bcb3cb2d4e90c1982f25668ee3b8b8cf4bb2a52e3b1c8b47c87e396f36",
+      "src/lib/research-evaluation.ts": "80497c4d58e8467cd9efe5a47268851700f737706ff98ec4a26b4000a8930d62",
+      "src/lib/api/cache.ts": "a61daf46d8005bb5c4ac0c9383f9ca68dc593aafa645de8c08377e4cdb63e475",
+      "src/lib/api/calendar.ts": "437c2e469c37707e91c25cd3ad8284685ca933285ec225e54bdcdccd736b212c",
+      "src/lib/api/classifier.ts": "68f96b0b58bf062be69b0f73837dda45c81995a58f34b9ed0b03249762df8c1e",
+      "src/lib/api/finnhub.ts": "ab00a89ac36953640e38c41b856ea538328db7cb49d040a9e219b80d88dc900b",
+      "src/lib/api/fmp.ts": "51d7eead21819487241d234cfe0cf5dc3475cd763d42df2b7f164a60229383fd",
+      "src/lib/api/fred-client.ts": "7150e67516e6f13c2461ef7bcd1af57f2b439ed931e3387d5332f366e4b2352e",
+      "src/lib/api/fred.ts": "4880c89b5e93f25a707a43c3767b9dc5042c46bcdbf3c0c2ff4acd16fbd4ce75",
+      "src/lib/api/index.ts": "c7c1fde4d33a478156b69a570e76191145bc0f4ffdc5d7c2da13a408fedae2cc",
+      "src/lib/api/intraday.ts": "dd90ad5572bb2f048c64b35bf4f80d74de7abfd904b0b227a2f9d3287390d0c4",
+      "src/lib/api/macro-context.ts": "ef65902c3add5855aac082f0789a41f29e1b811c1fd57e5f54c9328931309ce7",
+      "src/lib/api/rss.ts": "b3cd393de7c59d1c4de34ae73cd4a14f35a9f6961ab277df24b03a46242b32a0",
+      "src/lib/api/twelvedata.ts": "5d910592d810a159125dacbe7755b1b78ac7af913c93e581e082ff7640dbd84c",
+      "src/lib/calendar/archive-cache.ts": "ed9fb50115bfb67070c594bd039a996e1319c48c5d59c83a2ed5430445e76adc",
+      "src/lib/calendar/archive.ts": "2a40c9443012dd420306eb954c8cc3c9d60da60ab4e78a68c8462b7e46321d37",
+      "src/lib/calendar/feed.ts": "23183c3d858f9350e3cadd660000fdeaa46576c0d9e737c5957e71a9ea1dc91a",
+      "src/lib/calendar/filter-store.ts": "0bfa47ce6fec4534242688e7e6b2eb4ed699f336166aec92538aa93f00495a6c",
+      "src/lib/calendar/index.ts": "f1e4d24e906eeff024264f2b673501f933b3d50a4462b353547eed5e35b2732b",
+      "src/lib/calendar/surprises.ts": "130ccf8d9e2c8520c3d1d4befefb9a0c29b1236beda62072b9e5fcf076cceb57",
+      "src/lib/calendar/us-actuals.ts": "8345019042b6e30ca9acc62945bd9dd090405b448e9eb99676f485b5a9aa7c3e",
+      "src/lib/calendar/view.ts": "26e2975f871329bb8e731e434137611495b714ee6740eb8e6dd5f38c178af164",
+      "scripts/prediction-research.ts": "485623fcf4cc7198b0f0bd98d11ae5901ca1d9bb4aead8a81c9b4f5c38245525",
+      "scripts/evaluate-prospective.ts": "f1174feeacb9a66360e4a4e67772996cb06faf8f11afa431de7c30eccf0e8136",
+      "scripts/watch-predictions.ts": "adaa93ceb588bd271ec7c904cb0c9e52f8c5247d3cb009d2aa5e672dad4a4e43",
+      "scripts/lib/prediction-log.ts": "af70a23a6f0bc169767855e9ace276c9af16ed8b3cf8e3dda89ea5e0a141b601",
+      "scripts/lib/research-models.ts": "85067991337fb643af9022f961282894703a4e082a9608a85825d67985fbec1f",
+      "package-lock.json": "a5198b166cf6aa603879e88eb127fb618f715aa05ec62d38334b58d11ddd0f44"
+    }
+  },
+  "dataHashes": {
+    "fred/2026-09-11.json": "723f5fbe200b5ab2e6461cf3b2d39fad1f40c7a5f71c248c9b1aa3646d0694d0",
+    "fred/2026-09-12.json": "ba31f96ea6f9b63ef94e526982e50d3e2d2524521c6205c4b9cb436ffab23e0d",
+    "fred/2026-09-13.json": "9cdc01cc85111c2b85e5b270dfe54e2048a463705ff51faf4724d9e9623d6788",
+    "fred/2026-09-14.json": "6ced30ba3c8c1b6a29f1a36aefaa7399ca97590d18198a3d87a82207fc572917",
+    "fred/2026-09-15.json": "15ec57aa00fd0d9a7ff036c0e7d3ddf994b7a550d38d4d08c7c09e29b1872123",
+    "fred/2026-09-16.json": "7add3d2378cec97acf0bc97e9b649823ca12eabda93067beb9f342286aa330f6",
+    "fred/2026-09-17.json": "3558f377c1d33a6b47dc1e014f401819ba44ea2563689fc7ab54d299d123e148",
+    "fred/2026-09-18.json": "2aefa590b77c928b3293081ff3b9e848915352c9df606b6bf8feb1f7c1481cca",
+    "fred/2026-09-19.json": "9fb8cd01328f122de8775f9fa8592b79c1451fcc95c539384daf49f39f05322f",
+    "fred/2026-09-20.json": "e6e78111c2d60de8109ea6f784eb38962300813aacd65721118ca19e7edb7f5f",
+    "fred/2026-09-21.json": "d51be428bc62108ae441d2dcd318e6dc11d0974ed5909b819856679c4a39b768",
+    "fred/2026-09-22.json": "7d7f1b157a8c5ac15172d3cdbd254a5d2111d06ad0e42429bc36ff91d9f7210c",
+    "fred/2026-09-23.json": "6bbf39c31b65d06f9949c7ed4cb7246ed7b85c55174add0b08eb08153ea4d3dc",
+    "fred/2026-09-24.json": "17a5095593aa027df9d26a13daeed8e6e56e07e836c62adad358f4c430aafdc6",
+    "fred/2026-09-25.json": "423a75e16a784fbbd8ba6a95736f233a7274d8b6c554e5d1ede151fe509bf025",
+    "fred/2026-09-26.json": "4fa7a5b5e8ff1a093377719ed4886a703e2cfa27c74be00f41d5c60c34970e40",
+    "fred/2026-09-27.json": "da08803fd517109d5f6632b9da5261c4e6a76fa0392311f7fcbbc2d5cfb3a580",
+    "fred/2026-09-28.json": "ff27be3b1b07c0e74f902704ed795c6daac67057e5d0b022de47c7a170d6f1d6",
+    "fred/2026-09-29.json": "4ac4217a41ef340b009ec76c9e51d2634790eb342b9585052de6d604b32485e7",
+    "fred/2026-09-30.json": "9b092e96fe5fb56643539f83be3c692fb1730316f820324da5b9b48d303a8458",
+    "fred/2026-10-01.json": "a2ab95cb01e25a2ef950b86ac81bb7eefcbc8d63119888a9e879e8b06938b3f3",
+    "fred/2026-10-02.json": "2a2e727928820ba91c8c0664b77adaeda0d426116a7d54d8b67cd208ebcb7f05",
+    "fred/2026-10-03.json": "9b232a91e6bab9e5851def4a95c5ff99d8331f1e408f42fcd7f642186ec904af",
+    "fred/2026-10-04.json": "1950796e31214c4f63290ae746527052646995b896b300d2d977516e7d9581fd",
+    "fred/2026-10-05.json": "7a7149b903ba7160547e533f93159527a4af1b64bf95d3bb3f947bd46f16fc58",
+    "fred/2026-10-06.json": "2d1b9610c15368e662a400f5bc51f6ac86348727929d988f9262a5f463d1e14a",
+    "fred/2026-10-07.json": "8180cd2e8fd7bf8a897757c17fd1042bf494686035df9a543b6130b7ce82a6b5",
+    "fred/2026-10-08.json": "cc6494976431d4b04f5dcde390e219eaa1c9a35e8488e45b5a1eb20b20d181c0",
+    "fred/2026-10-09.json": "e28a3101f6de1da5c23eedf2950cd2e9d9e4d8cf12f403abcf8a7f084fc5981f",
+    "fred/2026-10-10.json": "355b788be56309dd2e2b5d300701477933459951970f39ad0322db62982a2d6d",
+    "fred/2026-10-11.json": "be53c3c0f65c18fad9bdf7cf7d6341cf4be5d90110cac3488106af8e60246417",
+    "fred/2026-10-12.json": "942bac4a11d67a3062e3964e64e116a6c9f157a8cc83c27df9701c6b03d00c6c",
+    "fred/2026-10-13.json": "6efef5b6a6ae101168feacee43aa547a8a877608d70bd4adc6e7c4afc2ff8b51",
+    "fred/2026-10-14.json": "9e87564030db546ba455ad76a7a5442527adbe3f6edbced5918b19542f42c6bd",
+    "fred/2026-10-15.json": "7f0b981b54f4831f1afa3c44d039f5ff4fbb6f1f3dab1cf494567894dd3b593d",
+    "fred/2026-10-16.json": "9033b3a042e2b1b713b8388fdf46fbd8e9a93f6c8182543cd101f383640eb70e",
+    "fred/2026-10-17.json": "d340b019c1be92ea4264aba69604b4626117bec48413cb7b4d18b93fc5a63927",
+    "fred/2026-10-18.json": "f946f975851e1d47023c1e2353d4f022c8af507337a1bf4ea10809313de360a8",
+    "fred/2026-10-19.json": "3c2faa5370020bcb8794af88e8cb7e3f98102bab17c29f085a03c0b55ab07ebf",
+    "fred/2026-10-20.json": "f14db48ccfc8317b6d3c6a02e513e595b722d7f7d56685a921d4f9e87a5d559f",
+    "fred/2026-10-21.json": "4f111fe28f07bbab83bf7d9892afdb669654c41c8e97fa42a03fbdd9b17e49ae",
+    "fred/2026-10-22.json": "6811c3ad73f3cc5f21bda717a8aba8a8d2d26bb1cb6489cd35440fbd9ef146ab",
+    "fred/2026-10-23.json": "57d3a0b226eaa3d0e9628feaa222e3b313cc7223057e3e675239ed3abb4e375f",
+    "fred/2026-10-24.json": "2479536dbde7b8a6059613373c83fb25e20b06cd6f163566874f9e98d3e513dc",
+    "fred/2026-10-25.json": "b6e680717792b7a36e873800f5198f441a40006eebdbc426b9a5189b865ed977",
+    "fred/2026-10-26.json": "f113b48e5046d7c1caa0ed9ca258d2270525ce08310e12226a5fd24da7064f3d",
+    "fred/2026-10-27.json": "5121c8be3c79f382c5cff516bebb0db6280f01689ab5c4834592a60697517c85",
+    "fred/2026-10-28.json": "f363adf1c8e4e3815e993d1b069b6f3df44b64f7a651d70f3b9dd64b41233fa2",
+    "fred/2026-10-29.json": "84171707d4be79a629a21add5a7747a5f39c89dea6f6d4752d5c272331fe59fc",
+    "fred/2026-10-30.json": "d6eedb5b78f36800870130f125e763639e89e13fb9db024a615be13ec3d1ac34",
+    "fred/2026-10-31.json": "1bcada3a4456c1db71d61ed0506451731ba7f0dd586af2d68ffbd5e3a36d631d",
+    "fred/2026-11-01.json": "7137caa9c1e19862acade687c409c0cb236b24d0949d698bf6576b3b55fbb77b",
+    "fred/2026-11-02.json": "6e88e43a8affcf6c2943ec6d5550c8c6ff34a3b3c4b924e9c626ccdf8e5870f4",
+    "fred/2026-11-03.json": "25a707f386a06755f26c2f8461d135eb791a612148bdbfc736b626ee6cfc44dd",
+    "fred/2026-11-04.json": "6df0ac57b9e6768b7ea205e9a0c88dad1278d8119bbea61dd216117fd65cde09",
+    "fred/2026-11-05.json": "56ed0fad90dbee952b64b0a054aa4fc962fe38ccaf3e613704fc7bb567a06065",
+    "fred/2026-11-06.json": "c44cb5a94d79685cda108c6f0ac76d6e51ecc0e885df0e5d4e772622a5bf3c19",
+    "fred/2026-11-07.json": "5093ccfcebfefef28ff6dd0c570e2d1ff9d2de266c984c980794f8159ff8ce96",
+    "fred/2026-11-08.json": "6cabeb9c47fc5045057167a909c7c84857ef246f98eb1bb5c182a2beef90407b",
+    "fred/2026-11-09.json": "4bf55c4a132173113de756c9835bfc43f700f02790e3ec1ac79255f47daeeba9",
+    "prices/XAUUSD": "599d0198696570cdaaad563f6c70415c2e8faf54c25dea3a4058bbbbc3a433fd",
+    "prices/GBPUSD": "1b594cfc0220a82c4bb2b3d8bca207e29d54e9f0377830165e66ad6925469169",
+    "prices/US100": "217d3c79ce0f971095106208f9c3d4f5c710c268953a274299d09b5ce7892eb8",
+    "prices/DJ30": "d102a06c5cca9044a51a28dafa8c1a43c74566fde318f2ab0c01beb955618a28",
+    "prices/BTCUSD": "1b5fcabd1b4df38c207a5605e445abf9baf5443e817f864aea909f8c7852244c",
+    "prices/DXY": "5a8ba10553d453b11bf11c5e4c3cf849fdfd12f4e345b9dfdfc82e37509ca0e5",
+    "prices/US10Y": "db9c28e9ff206e1f3e166672ba57cdcb1fe8eb9dbb24369bb68531eeaaaf7ff3"
+  },
+  "profiles": {
+    "shared-market": {
+      "XAUUSD": {
+        "rejections": {
+          "Price dataset failed quality checks": 1667
+        },
+        "models": {
+          "reference": {
+            "directional": 667,
+            "qualified": null,
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "production": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "currentRepair": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "referenceScale": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "referenceSigns": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "economicHeadlines": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "restoration": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          }
+        }
+      },
+      "GBPUSD": {
+        "rejections": {
+          "No timely entry bar": 440,
+          "Incomplete four-hour window or session gap": 31,
+          "Incomplete four-hour window": 3
+        },
+        "models": {
+          "reference": {
+            "directional": 434,
+            "qualified": null,
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.26034793041391724,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 70,
+              "n": 70,
+              "days": 27,
+              "wins": 43,
+              "ties": 2,
+              "directionalAccuracy": 0.6142857142857143,
+              "wilson95": [
+                0.4971552064563055,
+                0.7195248221454583
+              ],
+              "alwaysLongAccuracy": 0.42857142857142855,
+              "meanNetBps": -3.94149489575468,
+              "alwaysLongNetBps": -4.941589179596128,
+              "alwaysShortNetBps": -5.058410820403871
+            },
+            "pairedVsCurrent": {
+              "n": 70,
+              "days": 27,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "production": {
+            "directional": 434,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.26034793041391724,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 70,
+              "n": 70,
+              "days": 27,
+              "wins": 43,
+              "ties": 2,
+              "directionalAccuracy": 0.6142857142857143,
+              "wilson95": [
+                0.4971552064563055,
+                0.7195248221454583
+              ],
+              "alwaysLongAccuracy": 0.42857142857142855,
+              "meanNetBps": -3.94149489575468,
+              "alwaysLongNetBps": -4.941589179596128,
+              "alwaysShortNetBps": -5.058410820403871
+            },
+            "pairedVsCurrent": {
+              "n": 70,
+              "days": 27,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "currentRepair": {
+            "directional": 434,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.26034793041391724,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 70,
+              "n": 70,
+              "days": 27,
+              "wins": 43,
+              "ties": 2,
+              "directionalAccuracy": 0.6142857142857143,
+              "wilson95": [
+                0.4971552064563055,
+                0.7195248221454583
+              ],
+              "alwaysLongAccuracy": 0.42857142857142855,
+              "meanNetBps": -3.94149489575468,
+              "alwaysLongNetBps": -4.941589179596128,
+              "alwaysShortNetBps": -5.058410820403871
+            },
+            "pairedVsCurrent": {
+              "n": 70,
+              "days": 27,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceScale": {
+            "directional": 434,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.26034793041391724,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 70,
+              "n": 70,
+              "days": 27,
+              "wins": 43,
+              "ties": 2,
+              "directionalAccuracy": 0.6142857142857143,
+              "wilson95": [
+                0.4971552064563055,
+                0.7195248221454583
+              ],
+              "alwaysLongAccuracy": 0.42857142857142855,
+              "meanNetBps": -3.94149489575468,
+              "alwaysLongNetBps": -4.941589179596128,
+              "alwaysShortNetBps": -5.058410820403871
+            },
+            "pairedVsCurrent": {
+              "n": 70,
+              "days": 27,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceSigns": {
+            "directional": 434,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.26034793041391724,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 70,
+              "n": 70,
+              "days": 27,
+              "wins": 43,
+              "ties": 2,
+              "directionalAccuracy": 0.6142857142857143,
+              "wilson95": [
+                0.4971552064563055,
+                0.7195248221454583
+              ],
+              "alwaysLongAccuracy": 0.42857142857142855,
+              "meanNetBps": -3.94149489575468,
+              "alwaysLongNetBps": -4.941589179596128,
+              "alwaysShortNetBps": -5.058410820403871
+            },
+            "pairedVsCurrent": {
+              "n": 70,
+              "days": 27,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 434,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.26034793041391724,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 70,
+              "n": 70,
+              "days": 27,
+              "wins": 43,
+              "ties": 2,
+              "directionalAccuracy": 0.6142857142857143,
+              "wilson95": [
+                0.4971552064563055,
+                0.7195248221454583
+              ],
+              "alwaysLongAccuracy": 0.42857142857142855,
+              "meanNetBps": -3.94149489575468,
+              "alwaysLongNetBps": -4.941589179596128,
+              "alwaysShortNetBps": -5.058410820403871
+            },
+            "pairedVsCurrent": {
+              "n": 70,
+              "days": 27,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "economicHeadlines": {
+            "directional": 434,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.26034793041391724,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 70,
+              "n": 70,
+              "days": 27,
+              "wins": 43,
+              "ties": 2,
+              "directionalAccuracy": 0.6142857142857143,
+              "wilson95": [
+                0.4971552064563055,
+                0.7195248221454583
+              ],
+              "alwaysLongAccuracy": 0.42857142857142855,
+              "meanNetBps": -3.94149489575468,
+              "alwaysLongNetBps": -4.941589179596128,
+              "alwaysShortNetBps": -5.058410820403871
+            },
+            "pairedVsCurrent": {
+              "n": 70,
+              "days": 27,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "restoration": {
+            "directional": 434,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.26034793041391724,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 70,
+              "n": 70,
+              "days": 27,
+              "wins": 43,
+              "ties": 2,
+              "directionalAccuracy": 0.6142857142857143,
+              "wilson95": [
+                0.4971552064563055,
+                0.7195248221454583
+              ],
+              "alwaysLongAccuracy": 0.42857142857142855,
+              "meanNetBps": -3.94149489575468,
+              "alwaysLongNetBps": -4.941589179596128,
+              "alwaysShortNetBps": -5.058410820403871
+            },
+            "pairedVsCurrent": {
+              "n": 70,
+              "days": 27,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      },
+      "US100": {
+        "rejections": {
+          "No timely entry bar": 1216,
+          "Incomplete four-hour window or session gap": 240,
+          "Incomplete four-hour window": 6
+        },
+        "models": {
+          "reference": {
+            "directional": 372,
+            "qualified": null,
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.22315536892621476,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "production": {
+            "directional": 372,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.22315536892621476,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "currentRepair": {
+            "directional": 372,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.22315536892621476,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "referenceScale": {
+            "directional": 372,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.22315536892621476,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "referenceSigns": {
+            "directional": 372,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.22315536892621476,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 372,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.22315536892621476,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "economicHeadlines": {
+            "directional": 372,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.22315536892621476,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "restoration": {
+            "directional": 372,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.22315536892621476,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          }
+        }
+      },
+      "DJ30": {
+        "rejections": {
+          "No timely entry bar": 1216,
+          "Incomplete four-hour window or session gap": 240,
+          "Incomplete four-hour window": 6
+        },
+        "models": {
+          "reference": {
+            "directional": 344,
+            "qualified": null,
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.20635872825434912,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "production": {
+            "directional": 344,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.20635872825434912,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "currentRepair": {
+            "directional": 344,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.20635872825434912,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "referenceScale": {
+            "directional": 344,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.20635872825434912,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "referenceSigns": {
+            "directional": 344,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.20635872825434912,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 344,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.20635872825434912,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "economicHeadlines": {
+            "directional": 344,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.20635872825434912,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "restoration": {
+            "directional": 344,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.20635872825434912,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          }
+        }
+      },
+      "BTCUSD": {
+        "rejections": {
+          "Incomplete four-hour window": 3,
+          "No timely entry bar": 1
+        },
+        "models": {
+          "reference": {
+            "directional": 667,
+            "qualified": null,
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 44,
+              "wins": 69,
+              "ties": 0,
+              "directionalAccuracy": 0.5307692307692308,
+              "wilson95": [
+                0.4453328226886355,
+                0.614439325881017
+              ],
+              "alwaysLongAccuracy": 0.45384615384615384,
+              "meanNetBps": -10.471318383446034,
+              "alwaysLongNetBps": -7.999328607803297,
+              "alwaysShortNetBps": -2.0006713921967076
+            },
+            "pairedVsCurrent": {
+              "n": 130,
+              "days": 44,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "production": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 44,
+              "wins": 69,
+              "ties": 0,
+              "directionalAccuracy": 0.5307692307692308,
+              "wilson95": [
+                0.4453328226886355,
+                0.614439325881017
+              ],
+              "alwaysLongAccuracy": 0.45384615384615384,
+              "meanNetBps": -10.471318383446034,
+              "alwaysLongNetBps": -7.999328607803297,
+              "alwaysShortNetBps": -2.0006713921967076
+            },
+            "pairedVsCurrent": {
+              "n": 130,
+              "days": 44,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "currentRepair": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 44,
+              "wins": 69,
+              "ties": 0,
+              "directionalAccuracy": 0.5307692307692308,
+              "wilson95": [
+                0.4453328226886355,
+                0.614439325881017
+              ],
+              "alwaysLongAccuracy": 0.45384615384615384,
+              "meanNetBps": -10.471318383446034,
+              "alwaysLongNetBps": -7.999328607803297,
+              "alwaysShortNetBps": -2.0006713921967076
+            },
+            "pairedVsCurrent": {
+              "n": 130,
+              "days": 44,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceScale": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 44,
+              "wins": 69,
+              "ties": 0,
+              "directionalAccuracy": 0.5307692307692308,
+              "wilson95": [
+                0.4453328226886355,
+                0.614439325881017
+              ],
+              "alwaysLongAccuracy": 0.45384615384615384,
+              "meanNetBps": -10.471318383446034,
+              "alwaysLongNetBps": -7.999328607803297,
+              "alwaysShortNetBps": -2.0006713921967076
+            },
+            "pairedVsCurrent": {
+              "n": 130,
+              "days": 44,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceSigns": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 44,
+              "wins": 69,
+              "ties": 0,
+              "directionalAccuracy": 0.5307692307692308,
+              "wilson95": [
+                0.4453328226886355,
+                0.614439325881017
+              ],
+              "alwaysLongAccuracy": 0.45384615384615384,
+              "meanNetBps": -10.471318383446034,
+              "alwaysLongNetBps": -7.999328607803297,
+              "alwaysShortNetBps": -2.0006713921967076
+            },
+            "pairedVsCurrent": {
+              "n": 130,
+              "days": 44,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 44,
+              "wins": 69,
+              "ties": 0,
+              "directionalAccuracy": 0.5307692307692308,
+              "wilson95": [
+                0.4453328226886355,
+                0.614439325881017
+              ],
+              "alwaysLongAccuracy": 0.45384615384615384,
+              "meanNetBps": -10.471318383446034,
+              "alwaysLongNetBps": -7.999328607803297,
+              "alwaysShortNetBps": -2.0006713921967076
+            },
+            "pairedVsCurrent": {
+              "n": 130,
+              "days": 44,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "economicHeadlines": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 44,
+              "wins": 69,
+              "ties": 0,
+              "directionalAccuracy": 0.5307692307692308,
+              "wilson95": [
+                0.4453328226886355,
+                0.614439325881017
+              ],
+              "alwaysLongAccuracy": 0.45384615384615384,
+              "meanNetBps": -10.471318383446034,
+              "alwaysLongNetBps": -7.999328607803297,
+              "alwaysShortNetBps": -2.0006713921967076
+            },
+            "pairedVsCurrent": {
+              "n": 130,
+              "days": 44,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "restoration": {
+            "directional": 667,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.40011997600479904,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 44,
+              "wins": 69,
+              "ties": 0,
+              "directionalAccuracy": 0.5307692307692308,
+              "wilson95": [
+                0.4453328226886355,
+                0.614439325881017
+              ],
+              "alwaysLongAccuracy": 0.45384615384615384,
+              "meanNetBps": -10.471318383446034,
+              "alwaysLongNetBps": -7.999328607803297,
+              "alwaysShortNetBps": -2.0006713921967076
+            },
+            "pairedVsCurrent": {
+              "n": 130,
+              "days": 44,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      }
+    },
+    "modern-trend-market": {
+      "XAUUSD": {
+        "rejections": {
+          "Price dataset failed quality checks": 1667
+        },
+        "models": {
+          "production": {
+            "directional": 573,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 2,
+            "sub50High": 2,
+            "changedDirection": 0,
+            "signalFrequency": 0.3437312537492502,
+            "qualifiedFrequency": 0.0011997600479904018,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "currentRepair": {
+            "directional": 573,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.3437312537492502,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "referenceScale": {
+            "directional": 573,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 2,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.3437312537492502,
+            "qualifiedFrequency": 0.0011997600479904018,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "referenceSigns": {
+            "directional": 573,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.3437312537492502,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 950,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 409,
+            "signalFrequency": 0.5698860227954409,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "economicHeadlines": {
+            "directional": 573,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.3437312537492502,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          },
+          "restoration": {
+            "directional": 573,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 2,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.3437312537492502,
+            "qualifiedFrequency": 0.0011997600479904018,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 0,
+              "commonNonoverlappingWindows": 0,
+              "priceCoverage": 0,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "pairedVsCurrent": {
+              "n": 0,
+              "days": 0,
+              "difference": null,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": null
+            }
+          }
+        }
+      },
+      "GBPUSD": {
+        "rejections": {
+          "No timely entry bar": 440,
+          "Incomplete four-hour window or session gap": 31,
+          "Incomplete four-hour window": 3
+        },
+        "models": {
+          "production": {
+            "directional": 615,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.36892621475704857,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 85,
+              "n": 85,
+              "days": 31,
+              "wins": 46,
+              "ties": 2,
+              "directionalAccuracy": 0.5411764705882353,
+              "wilson95": [
+                0.4357614755911955,
+                0.6430304417088081
+              ],
+              "alwaysLongAccuracy": 0.47058823529411764,
+              "meanNetBps": -5.698141738197108,
+              "alwaysLongNetBps": -3.6159942371390157,
+              "alwaysShortNetBps": -6.384005762860986
+            },
+            "pairedVsCurrent": {
+              "n": 85,
+              "days": 31,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "currentRepair": {
+            "directional": 615,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.36892621475704857,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 85,
+              "n": 85,
+              "days": 31,
+              "wins": 46,
+              "ties": 2,
+              "directionalAccuracy": 0.5411764705882353,
+              "wilson95": [
+                0.4357614755911955,
+                0.6430304417088081
+              ],
+              "alwaysLongAccuracy": 0.47058823529411764,
+              "meanNetBps": -5.698141738197108,
+              "alwaysLongNetBps": -3.6159942371390157,
+              "alwaysShortNetBps": -6.384005762860986
+            },
+            "pairedVsCurrent": {
+              "n": 85,
+              "days": 31,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceScale": {
+            "directional": 615,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.36892621475704857,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 85,
+              "n": 85,
+              "days": 31,
+              "wins": 46,
+              "ties": 2,
+              "directionalAccuracy": 0.5411764705882353,
+              "wilson95": [
+                0.4357614755911955,
+                0.6430304417088081
+              ],
+              "alwaysLongAccuracy": 0.47058823529411764,
+              "meanNetBps": -5.698141738197108,
+              "alwaysLongNetBps": -3.6159942371390157,
+              "alwaysShortNetBps": -6.384005762860986
+            },
+            "pairedVsCurrent": {
+              "n": 85,
+              "days": 31,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceSigns": {
+            "directional": 615,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.36892621475704857,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 85,
+              "n": 85,
+              "days": 31,
+              "wins": 46,
+              "ties": 2,
+              "directionalAccuracy": 0.5411764705882353,
+              "wilson95": [
+                0.4357614755911955,
+                0.6430304417088081
+              ],
+              "alwaysLongAccuracy": 0.47058823529411764,
+              "meanNetBps": -5.698141738197108,
+              "alwaysLongNetBps": -3.6159942371390157,
+              "alwaysShortNetBps": -6.384005762860986
+            },
+            "pairedVsCurrent": {
+              "n": 85,
+              "days": 31,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 880,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 311,
+            "signalFrequency": 0.5278944211157769,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 130,
+              "n": 130,
+              "days": 36,
+              "wins": 71,
+              "ties": 3,
+              "directionalAccuracy": 0.5461538461538461,
+              "wilson95": [
+                0.4604711849762164,
+                0.6291870378782622
+              ],
+              "alwaysLongAccuracy": 0.4307692307692308,
+              "meanNetBps": -5.606654148078077,
+              "alwaysLongNetBps": -4.392039640974314,
+              "alwaysShortNetBps": -5.607960359025686
+            },
+            "pairedVsCurrent": {
+              "n": 82,
+              "days": 29,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "economicHeadlines": {
+            "directional": 615,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.36892621475704857,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 85,
+              "n": 85,
+              "days": 31,
+              "wins": 46,
+              "ties": 2,
+              "directionalAccuracy": 0.5411764705882353,
+              "wilson95": [
+                0.4357614755911955,
+                0.6430304417088081
+              ],
+              "alwaysLongAccuracy": 0.47058823529411764,
+              "meanNetBps": -5.698141738197108,
+              "alwaysLongNetBps": -3.6159942371390157,
+              "alwaysShortNetBps": -6.384005762860986
+            },
+            "pairedVsCurrent": {
+              "n": 85,
+              "days": 31,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "restoration": {
+            "directional": 615,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.36892621475704857,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1193,
+              "commonNonoverlappingWindows": 240,
+              "priceCoverage": 0.7156568686262748,
+              "activeOnCommonWindows": 85,
+              "n": 85,
+              "days": 31,
+              "wins": 46,
+              "ties": 2,
+              "directionalAccuracy": 0.5411764705882353,
+              "wilson95": [
+                0.4357614755911955,
+                0.6430304417088081
+              ],
+              "alwaysLongAccuracy": 0.47058823529411764,
+              "meanNetBps": -5.698141738197108,
+              "alwaysLongNetBps": -3.6159942371390157,
+              "alwaysShortNetBps": -6.384005762860986
+            },
+            "pairedVsCurrent": {
+              "n": 85,
+              "days": 31,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      },
+      "US100": {
+        "rejections": {
+          "No timely entry bar": 1216,
+          "Incomplete four-hour window or session gap": 240,
+          "Incomplete four-hour window": 6
+        },
+        "models": {
+          "production": {
+            "directional": 659,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 2,
+            "sub50High": 2,
+            "changedDirection": 0,
+            "signalFrequency": 0.39532093581283745,
+            "qualifiedFrequency": 0.0011997600479904018,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 10,
+              "n": 10,
+              "days": 10,
+              "wins": 7,
+              "ties": 0,
+              "directionalAccuracy": 0.7,
+              "wilson95": [
+                0.39677321997956516,
+                0.892210712513788
+              ],
+              "alwaysLongAccuracy": 0.7,
+              "meanNetBps": 24.846185076991993,
+              "alwaysLongNetBps": -14.596134393479176,
+              "alwaysShortNetBps": 4.596134393479173
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "currentRepair": {
+            "directional": 659,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.39532093581283745,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 10,
+              "n": 10,
+              "days": 10,
+              "wins": 7,
+              "ties": 0,
+              "directionalAccuracy": 0.7,
+              "wilson95": [
+                0.39677321997956516,
+                0.892210712513788
+              ],
+              "alwaysLongAccuracy": 0.7,
+              "meanNetBps": 24.846185076991993,
+              "alwaysLongNetBps": -14.596134393479176,
+              "alwaysShortNetBps": 4.596134393479173
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceScale": {
+            "directional": 659,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 2,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.39532093581283745,
+            "qualifiedFrequency": 0.0011997600479904018,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 10,
+              "n": 10,
+              "days": 10,
+              "wins": 7,
+              "ties": 0,
+              "directionalAccuracy": 0.7,
+              "wilson95": [
+                0.39677321997956516,
+                0.892210712513788
+              ],
+              "alwaysLongAccuracy": 0.7,
+              "meanNetBps": 24.846185076991993,
+              "alwaysLongNetBps": -14.596134393479176,
+              "alwaysShortNetBps": 4.596134393479173
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceSigns": {
+            "directional": 949,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 913,
+            "signalFrequency": 0.5692861427714457,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 18,
+              "n": 18,
+              "days": 18,
+              "wins": 10,
+              "ties": 0,
+              "directionalAccuracy": 0.5555555555555556,
+              "wilson95": [
+                0.3371606942825164,
+                0.7544076889861088
+              ],
+              "alwaysLongAccuracy": 0.5555555555555556,
+              "meanNetBps": -6.33282722380113,
+              "alwaysLongNetBps": 3.98343809266751,
+              "alwaysShortNetBps": -13.983438092667516
+            },
+            "pairedVsCurrent": {
+              "n": 6,
+              "days": 6,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 1490,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 1254,
+            "signalFrequency": 0.8938212357528494,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 41,
+              "n": 41,
+              "days": 41,
+              "wins": 20,
+              "ties": 0,
+              "directionalAccuracy": 0.4878048780487805,
+              "wilson95": [
+                0.3425418723993569,
+                0.6351574068413481
+              ],
+              "alwaysLongAccuracy": 0.5365853658536586,
+              "meanNetBps": -1.1491529109943308,
+              "alwaysLongNetBps": -6.680169341900479,
+              "alwaysShortNetBps": -3.3198306580995265
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "economicHeadlines": {
+            "directional": 659,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.39532093581283745,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 10,
+              "n": 10,
+              "days": 10,
+              "wins": 7,
+              "ties": 0,
+              "directionalAccuracy": 0.7,
+              "wilson95": [
+                0.39677321997956516,
+                0.892210712513788
+              ],
+              "alwaysLongAccuracy": 0.7,
+              "meanNetBps": 24.846185076991993,
+              "alwaysLongNetBps": -14.596134393479176,
+              "alwaysShortNetBps": 4.596134393479173
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "restoration": {
+            "directional": 949,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 913,
+            "signalFrequency": 0.5692861427714457,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 18,
+              "n": 18,
+              "days": 18,
+              "wins": 10,
+              "ties": 0,
+              "directionalAccuracy": 0.5555555555555556,
+              "wilson95": [
+                0.3371606942825164,
+                0.7544076889861088
+              ],
+              "alwaysLongAccuracy": 0.5555555555555556,
+              "meanNetBps": -6.33282722380113,
+              "alwaysLongNetBps": 3.98343809266751,
+              "alwaysShortNetBps": -13.983438092667516
+            },
+            "pairedVsCurrent": {
+              "n": 6,
+              "days": 6,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      },
+      "DJ30": {
+        "rejections": {
+          "No timely entry bar": 1216,
+          "Incomplete four-hour window or session gap": 240,
+          "Incomplete four-hour window": 6
+        },
+        "models": {
+          "production": {
+            "directional": 456,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.2735452909418116,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 10,
+              "n": 10,
+              "days": 10,
+              "wins": 5,
+              "ties": 0,
+              "directionalAccuracy": 0.5,
+              "wilson95": [
+                0.23658959361548731,
+                0.7634104063845126
+              ],
+              "alwaysLongAccuracy": 0.5,
+              "meanNetBps": 15.633579037035886,
+              "alwaysLongNetBps": -31.888988899928744,
+              "alwaysShortNetBps": 21.888988899928748
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "currentRepair": {
+            "directional": 456,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.2735452909418116,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 10,
+              "n": 10,
+              "days": 10,
+              "wins": 5,
+              "ties": 0,
+              "directionalAccuracy": 0.5,
+              "wilson95": [
+                0.23658959361548731,
+                0.7634104063845126
+              ],
+              "alwaysLongAccuracy": 0.5,
+              "meanNetBps": 15.633579037035886,
+              "alwaysLongNetBps": -31.888988899928744,
+              "alwaysShortNetBps": 21.888988899928748
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceScale": {
+            "directional": 456,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.2735452909418116,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 10,
+              "n": 10,
+              "days": 10,
+              "wins": 5,
+              "ties": 0,
+              "directionalAccuracy": 0.5,
+              "wilson95": [
+                0.23658959361548731,
+                0.7634104063845126
+              ],
+              "alwaysLongAccuracy": 0.5,
+              "meanNetBps": 15.633579037035886,
+              "alwaysLongNetBps": -31.888988899928744,
+              "alwaysShortNetBps": 21.888988899928748
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceSigns": {
+            "directional": 850,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 850,
+            "signalFrequency": 0.5098980203959208,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 20,
+              "n": 20,
+              "days": 20,
+              "wins": 6,
+              "ties": 0,
+              "directionalAccuracy": 0.3,
+              "wilson95": [
+                0.14547527396899385,
+                0.5189767762289793
+              ],
+              "alwaysLongAccuracy": 0.35,
+              "meanNetBps": -14.548589350155009,
+              "alwaysLongNetBps": -13.95743067392329,
+              "alwaysShortNetBps": 3.9574306739232896
+            },
+            "pairedVsCurrent": {
+              "n": 6,
+              "days": 6,
+              "difference": 0.16666666666666666,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0.5
+              ]
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 1456,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 1083,
+            "signalFrequency": 0.8734253149370126,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 41,
+              "n": 41,
+              "days": 41,
+              "wins": 13,
+              "ties": 0,
+              "directionalAccuracy": 0.3170731707317073,
+              "wilson95": [
+                0.19564433205311735,
+                0.46984485655745856
+              ],
+              "alwaysLongAccuracy": 0.4634146341463415,
+              "meanNetBps": -17.47872184438962,
+              "alwaysLongNetBps": -13.219267904850055,
+              "alwaysShortNetBps": 3.2192679048500494
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "economicHeadlines": {
+            "directional": 456,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.2735452909418116,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 10,
+              "n": 10,
+              "days": 10,
+              "wins": 5,
+              "ties": 0,
+              "directionalAccuracy": 0.5,
+              "wilson95": [
+                0.23658959361548731,
+                0.7634104063845126
+              ],
+              "alwaysLongAccuracy": 0.5,
+              "meanNetBps": 15.633579037035886,
+              "alwaysLongNetBps": -31.888988899928744,
+              "alwaysShortNetBps": 21.888988899928748
+            },
+            "pairedVsCurrent": {
+              "n": 10,
+              "days": 10,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "restoration": {
+            "directional": 850,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 850,
+            "signalFrequency": 0.5098980203959208,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 205,
+              "commonNonoverlappingWindows": 41,
+              "priceCoverage": 0.12297540491901619,
+              "activeOnCommonWindows": 20,
+              "n": 20,
+              "days": 20,
+              "wins": 6,
+              "ties": 0,
+              "directionalAccuracy": 0.3,
+              "wilson95": [
+                0.14547527396899385,
+                0.5189767762289793
+              ],
+              "alwaysLongAccuracy": 0.35,
+              "meanNetBps": -14.548589350155009,
+              "alwaysLongNetBps": -13.95743067392329,
+              "alwaysShortNetBps": 3.9574306739232896
+            },
+            "pairedVsCurrent": {
+              "n": 6,
+              "days": 6,
+              "difference": 0.16666666666666666,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0.5
+              ]
+            }
+          }
+        }
+      },
+      "BTCUSD": {
+        "rejections": {
+          "Incomplete four-hour window": 3,
+          "No timely entry bar": 1
+        },
+        "models": {
+          "production": {
+            "directional": 330,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.19796040791841632,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 57,
+              "n": 57,
+              "days": 26,
+              "wins": 30,
+              "ties": 0,
+              "directionalAccuracy": 0.5263157894736842,
+              "wilson95": [
+                0.3991779445222314,
+                0.6501304234365335
+              ],
+              "alwaysLongAccuracy": 0.543859649122807,
+              "meanNetBps": -9.148202427439585,
+              "alwaysLongNetBps": -9.282078003710504,
+              "alwaysShortNetBps": -0.7179219962894996
+            },
+            "pairedVsCurrent": {
+              "n": 57,
+              "days": 26,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "currentRepair": {
+            "directional": 330,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.19796040791841632,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 57,
+              "n": 57,
+              "days": 26,
+              "wins": 30,
+              "ties": 0,
+              "directionalAccuracy": 0.5263157894736842,
+              "wilson95": [
+                0.3991779445222314,
+                0.6501304234365335
+              ],
+              "alwaysLongAccuracy": 0.543859649122807,
+              "meanNetBps": -9.148202427439585,
+              "alwaysLongNetBps": -9.282078003710504,
+              "alwaysShortNetBps": -0.7179219962894996
+            },
+            "pairedVsCurrent": {
+              "n": 57,
+              "days": 26,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceScale": {
+            "directional": 330,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.19796040791841632,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 57,
+              "n": 57,
+              "days": 26,
+              "wins": 30,
+              "ties": 0,
+              "directionalAccuracy": 0.5263157894736842,
+              "wilson95": [
+                0.3991779445222314,
+                0.6501304234365335
+              ],
+              "alwaysLongAccuracy": 0.543859649122807,
+              "meanNetBps": -9.148202427439585,
+              "alwaysLongNetBps": -9.282078003710504,
+              "alwaysShortNetBps": -0.7179219962894996
+            },
+            "pairedVsCurrent": {
+              "n": 57,
+              "days": 26,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "referenceSigns": {
+            "directional": 330,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.19796040791841632,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 57,
+              "n": 57,
+              "days": 26,
+              "wins": 30,
+              "ties": 0,
+              "directionalAccuracy": 0.5263157894736842,
+              "wilson95": [
+                0.3991779445222314,
+                0.6501304234365335
+              ],
+              "alwaysLongAccuracy": 0.543859649122807,
+              "meanNetBps": -9.148202427439585,
+              "alwaysLongNetBps": -9.282078003710504,
+              "alwaysShortNetBps": -0.7179219962894996
+            },
+            "pairedVsCurrent": {
+              "n": 57,
+              "days": 26,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "fullTrendWeight": {
+            "directional": 693,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 381,
+            "signalFrequency": 0.41571685662867425,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 138,
+              "n": 138,
+              "days": 39,
+              "wins": 70,
+              "ties": 0,
+              "directionalAccuracy": 0.5072463768115942,
+              "wilson95": [
+                0.4247728454305531,
+                0.5893273903253888
+              ],
+              "alwaysLongAccuracy": 0.5144927536231884,
+              "meanNetBps": -5.07521229895956,
+              "alwaysLongNetBps": -8.528732495571779,
+              "alwaysShortNetBps": -1.4712675044282268
+            },
+            "pairedVsCurrent": {
+              "n": 56,
+              "days": 25,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "economicHeadlines": {
+            "directional": 330,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.19796040791841632,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 57,
+              "n": 57,
+              "days": 26,
+              "wins": 30,
+              "ties": 0,
+              "directionalAccuracy": 0.5263157894736842,
+              "wilson95": [
+                0.3991779445222314,
+                0.6501304234365335
+              ],
+              "alwaysLongAccuracy": 0.543859649122807,
+              "meanNetBps": -9.148202427439585,
+              "alwaysLongNetBps": -9.282078003710504,
+              "alwaysShortNetBps": -0.7179219962894996
+            },
+            "pairedVsCurrent": {
+              "n": 57,
+              "days": 26,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          },
+          "restoration": {
+            "directional": 330,
+            "qualified": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 0,
+              "n": 0,
+              "days": 0,
+              "wins": 0,
+              "ties": 0,
+              "directionalAccuracy": null,
+              "wilson95": null,
+              "alwaysLongAccuracy": null,
+              "meanNetBps": null,
+              "alwaysLongNetBps": null,
+              "alwaysShortNetBps": null
+            },
+            "high": 0,
+            "sub50High": 0,
+            "changedDirection": 0,
+            "signalFrequency": 0.19796040791841632,
+            "qualifiedFrequency": 0,
+            "direction": {
+              "scheduled": 1667,
+              "priceEligible": 1663,
+              "commonNonoverlappingWindows": 355,
+              "priceCoverage": 0.9976004799040192,
+              "activeOnCommonWindows": 57,
+              "n": 57,
+              "days": 26,
+              "wins": 30,
+              "ties": 0,
+              "directionalAccuracy": 0.5263157894736842,
+              "wilson95": [
+                0.3991779445222314,
+                0.6501304234365335
+              ],
+              "alwaysLongAccuracy": 0.543859649122807,
+              "meanNetBps": -9.148202427439585,
+              "alwaysLongNetBps": -9.282078003710504,
+              "alwaysShortNetBps": -0.7179219962894996
+            },
+            "pairedVsCurrent": {
+              "n": 57,
+              "days": 26,
+              "difference": 0,
+              "intervalLevel": 0.95,
+              "dailyBootstrapInterval": [
+                0,
+                0
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

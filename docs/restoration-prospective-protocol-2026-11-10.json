@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "registeredAt": "2026-11-10T15:33:17.494Z",
+  "protocol": {
+    "id": "macro-restoration-prospective-v1",
+    "startsAt": "2026-11-11T00:00:00.000Z",
+    "endsAt": "2027-02-09T00:00:00.000Z",
+    "frequency": "First capture per UTC hour; receipt time is prediction time; do not backfill missed hours.",
+    "horizonHours": 4,
+    "costBps": 5,
+    "minimumNonoverlappingPairsPerAsset": 100,
+    "minimumObservedDaysPerAsset": 30,
+    "primary": "Restoration versus currentRepair on healthy modern inputs, paired four-hour direction. Report abstentions, coverage and the always-long baseline. Reference comparison restricted to mutually supported inputs.",
+    "decision": "One final evaluation after end, no outcome peeking or tuning. Require positive paired improvement with day-block uncertainty, adjusted across the five original assets (99% individual intervals), adequate coverage and sample criteria; otherwise inconclusive. This is a screening criterion, not proof of tradable profitability.",
+    "excludedFromHoldout": "All data through 2026-11-10, tests, fixtures, failed/stale captures, model-hash changes, missing or non-executable price windows. Log exclusions and gaps."
+  },
+  "modelHash": "c6836df0945b28af996c93e65ce9a98949da1f569154362673e9302fed254e2e",
+  "provenance": {
+    "reference": {
+      "revision": "e52443bff3b65df86d7568c40c68175517db11ef",
+      "hashes": {
+        "engine.ts": "18ce34da4314416f597698f3272734db8b6d701c89dcfb4b49fca3a3748642ba",
+        "rules.ts": "9875321ce810c729ac5365cb37c4026e66e2a2ff2e941df0dff80290cac32fd2",
+        "types.ts": "800dc0722943cb4c492432caa1bfc3a9ff40c1233ef00ac125e151af600be731"
+      },
+      "spread": "omitted, as in reference API"
+    },
+    "production": {
+      "revision": "178457f05e7f45e90353230af0612a6fa144f200",
+      "hashes": {
+        "engine.ts": "85d5f055dbb13e6f94e55dca21f8a62c1d537d0531b1e8d01a2bb277d70aad70",
+        "rules.ts": "0f5ca868ef6227dab32bf5e58cd368d78fc2e50b7dc8b692cb4a9d2582c7177a",
+        "types.ts": "45d5a3ebc70c3046954a873b4c483447cd19615e8013228940e6875757dc1985",
+        "alignment.ts": "83cb99105d5e6c0c09ce0db1cde013279e1bf05463ded57c954133889a9073d8",
+        "macro-context.ts": "505474e901a7e4024254938e83314ae8b30847e7a2ec66d2a5ab2e39d90cddea"
+      },
+      "spread": "context"
+    },
+    "currentRepair": {
+      "policy": {
+        "id": "current-repair",
+        "scale": "category-capacity",
+        "activitySigns": "regime",
+        "trendWeight": 0.5,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "referenceScale": {
+      "policy": {
+        "id": "reference-scale",
+        "scale": "fixed-100",
+        "activitySigns": "regime",
+        "trendWeight": 0.5,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "referenceSigns": {
+      "policy": {
+        "id": "reference-signs",
+        "scale": "category-capacity",
+        "activitySigns": "reference",
+        "trendWeight": 0.5,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "fullTrendWeight": {
+      "policy": {
+        "id": "full-trend-weight",
+        "scale": "category-capacity",
+        "activitySigns": "regime",
+        "trendWeight": 1,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "economicHeadlines": {
+      "policy": {
+        "id": "economic-headlines",
+        "scale": "category-capacity",
+        "activitySigns": "regime",
+        "trendWeight": 0.5,
+        "economicHeadlines": true
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "restoration": {
+      "policy": {
+        "id": "restoration-v1",
+        "scale": "fixed-100",
+        "activitySigns": "reference",
+        "trendWeight": 0.5,
+        "economicHeadlines": false
+      },
+      "hashes": {
+        "engine.ts": "2210eb8ec22f1b05e664dac89559fb39fc99776af9bbf713e790dd3352635be0",
+        "alignment.ts": "c2a4b82d76cfadadd87ccd531590031387e97abad0dcd3b86d02c475edad0f42",
+        "rules.ts": "aa2f15a6536f503fb1a0bf63163e4b4fa910a223a89a12caa12aa11b58017f33",
+        "types.ts": "6e21ae8fb269e1487e7c56c4890b79433c7896fec0cb9aa429e6b12e7e6debda",
+        "bias-reading.ts": "e1f3a5101ece299563e67c0e444145082afc83f51bf7448030ce0b53173f1534",
+        "macro-context.ts": "056a69c63a01ef8ad4fa952a64288661d8d429481fac1476c87cb293c9dc85c8",
+        "scoring-policy.ts": "39af555a710e64502522103fee942eb8880864f4b07a24c46ef63f8819112623"
+      }
+    },
+    "pipeline": {
+      "src/lib/events.ts": "a5c2ccf7bca6283aefff44661938eee3c0298c4ba0baee3cf2efcd28a0fb833f",
+      "src/lib/market-evidence.ts": "91c1e6d29cc727856275f20cf0c08fa3e6d746f8c89a1d5fa690e14d802d7312",
+      "src/lib/backtest.ts": "1d9510bcb3cb2d4e90c1982f25668ee3b8b8cf4bb2a52e3b1c8b47c87e396f36",
+      "src/lib/research-evaluation.ts": "80497c4d58e8467cd9efe5a47268851700f737706ff98ec4a26b4000a8930d62",
+      "src/lib/api/cache.ts": "a61daf46d8005bb5c4ac0c9383f9ca68dc593aafa645de8c08377e4cdb63e475",
+      "src/lib/api/calendar.ts": "437c2e469c37707e91c25cd3ad8284685ca933285ec225e54bdcdccd736b212c",
+      "src/lib/api/classifier.ts": "68f96b0b58bf062be69b0f73837dda45c81995a58f34b9ed0b03249762df8c1e",
+      "src/lib/api/finnhub.ts": "ab00a89ac36953640e38c41b856ea538328db7cb49d040a9e219b80d88dc900b",
+      "src/lib/api/fmp.ts": "51d7eead21819487241d234cfe0cf5dc3475cd763d42df2b7f164a60229383fd",
+      "src/lib/api/fred-client.ts": "7150e67516e6f13c2461ef7bcd1af57f2b439ed931e3387d5332f366e4b2352e",
+      "src/lib/api/fred.ts": "4880c89b5e93f25a707a43c3767b9dc5042c46bcdbf3c0c2ff4acd16fbd4ce75",
+      "src/lib/api/index.ts": "c7c1fde4d33a478156b69a570e76191145bc0f4ffdc5d7c2da13a408fedae2cc",
+      "src/lib/api/intraday.ts": "dd90ad5572bb2f048c64b35bf4f80d74de7abfd904b0b227a2f9d3287390d0c4",
+      "src/lib/api/macro-context.ts": "ef65902c3add5855aac082f0789a41f29e1b811c1fd57e5f54c9328931309ce7",
+      "src/lib/api/rss.ts": "b3cd393de7c59d1c4de34ae73cd4a14f35a9f6961ab277df24b03a46242b32a0",
+      "src/lib/api/twelvedata.ts": "5d910592d810a159125dacbe7755b1b78ac7af913c93e581e082ff7640dbd84c",
+      "src/lib/calendar/archive-cache.ts": "ed9fb50115bfb67070c594bd039a996e1319c48c5d59c83a2ed5430445e76adc",
+      "src/lib/calendar/archive.ts": "2a40c9443012dd420306eb954c8cc3c9d60da60ab4e78a68c8462b7e46321d37",
+      "src/lib/calendar/feed.ts": "23183c3d858f9350e3cadd660000fdeaa46576c0d9e737c5957e71a9ea1dc91a",
+      "src/lib/calendar/filter-store.ts": "0bfa47ce6fec4534242688e7e6b2eb4ed699f336166aec92538aa93f00495a6c",
+      "src/lib/calendar/index.ts": "f1e4d24e906eeff024264f2b673501f933b3d50a4462b353547eed5e35b2732b",
+      "src/lib/calendar/surprises.ts": "130ccf8d9e2c8520c3d1d4befefb9a0c29b1236beda62072b9e5fcf076cceb57",
+      "src/lib/calendar/us-actuals.ts": "8345019042b6e30ca9acc62945bd9dd090405b448e9eb99676f485b5a9aa7c3e",
+      "src/lib/calendar/view.ts": "26e2975f871329bb8e731e434137611495b714ee6740eb8e6dd5f38c178af164",
+      "scripts/prediction-research.ts": "fec7df9af8fa11c288ae57a72adbc316a0067ce3c5df1120e87577e5fd3e199b",
+      "scripts/evaluate-prospective.ts": "f1174feeacb9a66360e4a4e67772996cb06faf8f11afa431de7c30eccf0e8136",
+      "scripts/watch-predictions.ts": "adaa93ceb588bd271ec7c904cb0c9e52f8c5247d3cb009d2aa5e672dad4a4e43",
+      "scripts/lib/prediction-log.ts": "e2db73ad8904e5217fa292ebd52adf8fbbef95e232b6f106ccf594f72ec909cc",
+      "scripts/lib/research-models.ts": "85067991337fb643af9022f961282894703a4e082a9608a85825d67985fbec1f",
+      "package-lock.json": "a5198b166cf6aa603879e88eb127fb618f715aa05ec62d38334b58d11ddd0f44"
+    }
+  }
+}

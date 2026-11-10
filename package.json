@@ -16,7 +16,12 @@
     "backtest:report": "tsx scripts/generate-backtest-report.ts",
     "probability:capture": "tsx scripts/probability-workflow.ts capture",
     "probability:fit": "tsx scripts/probability-workflow.ts fit",
-    "probability:audit": "tsx scripts/probability-workflow.ts audit"
+    "probability:audit": "tsx scripts/probability-workflow.ts audit",
+    "research:evaluate": "tsx scripts/evaluate-restoration.ts",
+    "research:init": "node --conditions=react-server --import tsx scripts/prediction-research.ts init",
+    "research:capture": "node --conditions=react-server --import tsx scripts/prediction-research.ts capture",
+    "research:watch": "tsx scripts/watch-predictions.ts",
+    "research:final": "tsx scripts/evaluate-prospective.ts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

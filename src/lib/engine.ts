@@ -11,6 +11,7 @@ import {
 } from './types';
 import { biasRules } from './rules';
 import { HIGH_CONVICTION_PERCENT } from './bias-reading';
+import { CURRENT_SCORING, type ScoringPolicy } from './scoring-policy';
 export { HIGH_CONVICTION_PERCENT } from './bias-reading';
 
 // ── Rate-regime types and helpers ──────────────────────────────────
@@ -279,7 +280,8 @@ function getLabel(score: number, direction: Direction): string {
 export function calculateBias(
   events: MacroEvent[],
   symbol?: AssetSymbol,
-  rateSpread?: number | MacroContext | null
+  rateSpread?: number | MacroContext | null,
+  policy: Readonly<ScoringPolicy> = CURRENT_SCORING
 ): BiasResult[] {
   const symbols = symbol ? [symbol] : ALL_SYMBOLS;
   const context = typeof rateSpread === 'object' && rateSpread !== null ? rateSpread : null;
@@ -309,11 +311,11 @@ export function calculateBias(
 
       for (const rule of matchingRules) {
         // Apply regime modulation to employment category only
-        const modulation = context ? macroModulation(sym, event, context) : event.category === 'employment'
+        const modulation = context ? (policy.activitySigns === 'reference' ? 1 : macroModulation(sym, event, context)) : event.category === 'employment'
           ? getEmploymentModulation(sym, event.value, regime)
           : 1.0;
 
-        const weight = event.evidenceType === 'trend' ? 0.5 : 1;
+        const weight = event.evidenceType === 'trend' ? policy.trendWeight : 1;
         const modulatedScore = Math.sign(rule.scoreChange * modulation) * Math.round(Math.abs(rule.scoreChange * modulation * weight));
 
         if (modulatedScore === 0) continue;
@@ -339,9 +341,9 @@ export function calculateBias(
 
     const categoryPoints = cappedCategoryPoints(scoredEvents);
     totalScore = [...categoryPoints.values()].reduce((sum, score) => sum + score, 0);
-    // Percentage = net news points as a share of the most points this market's news can add.
-    // Taken before the ±100 score limit so a large one-sided news pile is not flattened.
-    const maxPoints = maxBiasPoints(sym);
+    // Live default: share of category capacity. Research may explicitly restore the
+    // fixed reference point scale. Neither scale is an outcome probability.
+    const maxPoints = policy.scale === 'fixed-100' ? 100 : maxBiasPoints(sym);
     const biasPercent = maxPoints > 0 ? clamp(Math.round((100 * totalScore) / maxPoints), -100, 100) : 0;
     const scoring = { netPoints: totalScore, maxPoints, categoryPoints: Object.fromEntries(categoryPoints) };
     totalScore = clamp(totalScore, -100, 100);
