@@ -27,7 +27,8 @@ export async function setCache<T>(key: string, data: T, ttlMs: number): Promise<
   const redis = createClient();
   if (!redis) return;
   try {
-    await redis.set(`macroflow:cache:${key}`, { data, expiry: Date.now() + ttlMs });
+    // Server-side expiry too: date-keyed entries (e.g. daily FRED snapshots) are never read again to be lazily deleted.
+    await redis.set(`macroflow:cache:${key}`, { data, expiry: Date.now() + ttlMs }, { px: Math.max(1, Math.ceil(ttlMs)) });
   } catch {
     // non-critical
   }

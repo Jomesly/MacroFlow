@@ -20,7 +20,7 @@ const SIGNAL_CONFIG: Record<TradeSignal, { label: string; color: string; bg: str
 };
 
 function ScoreBar({ score }: { score: number }) {
-  const barWidth = Math.min(Math.abs(score), 100);
+  const barWidth = Math.min(Math.abs(score), 100) / 2;
   const isPositive = score >= 0;
 
   return (
@@ -31,28 +31,6 @@ function ScoreBar({ score }: { score: number }) {
       />
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="h-full w-px bg-zinc-500" />
-      </div>
-    </div>
-  );
-}
-
-function SentimentGauge({ sentiment }: { sentiment: string }) {
-  const isFear = sentiment === 'fear';
-  const isGreed = sentiment === 'greed';
-  const fill = isFear ? 25 : isGreed ? 75 : 50;
-
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-[10px] text-zinc-500">
-        <span>Fear</span>
-        <span className="font-medium text-zinc-400 capitalize">{sentiment}</span>
-        <span>Greed</span>
-      </div>
-      <div className="relative h-2 w-full rounded-full bg-zinc-800 overflow-hidden">
-        <div
-          className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${isFear ? 'bg-red-500' : isGreed ? 'bg-emerald-500' : 'bg-zinc-500'}`}
-          style={{ width: `${fill}%` }}
-        />
       </div>
     </div>
   );
@@ -71,15 +49,10 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
   const isBullish = data.direction === 'bullish' || data.direction === 'weakly_bullish';
   const isBearish = data.direction === 'bearish' || data.direction === 'weakly_bearish';
 
-  const riskOffCount = data.events.filter((e) => e.category === 'risk_sentiment' && e.scoreChange < 0).length;
-  const riskOnCount = data.events.filter((e) => e.category === 'risk_sentiment' && e.scoreChange > 0).length;
-  const tensionCount = data.events.filter((e) => e.category === 'geopolitical' && e.scoreChange > 0).length;
-  const sentiment = riskOffCount + tensionCount > riskOnCount && riskOffCount + tensionCount > 0 ? 'fear'
-    : riskOnCount > riskOffCount + tensionCount ? 'greed' : 'neutral';
-
   const highImpactCount = data.events.filter((e) => e.impact === 'high').length;
   const bullishCount = data.events.filter((e) => e.scoreChange > 0).length;
   const bearishCount = data.events.filter((e) => e.scoreChange < 0).length;
+  const supportingHighImpactCount = data.events.filter((e) => e.impact === 'high' && e.scoreChange * data.biasScore > 0).length;
 
   const tradingReadiness =
     data.conviction === 'high' && Math.abs(data.biasScore) > 40
@@ -111,6 +84,15 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
 
         <div className="grid grid-cols-5 gap-5 mb-5">
           <div className="col-span-3 space-y-4">
+            {data.alignment && (
+              <div className="rounded-lg border border-zinc-800 p-3 text-xs text-zinc-400 space-y-2">
+                <p className="font-medium text-zinc-200">4-hour alignment: {data.alignment.status.replaceAll('_', ' ')}</p>
+                <p>Regime: {data.alignment.context.regime.replaceAll('_', ' ')}. {data.alignment.context.reasons.join(' ')}</p>
+                <p>2-year yield minus effective Fed rate: {data.alignment.context.rateSpread === null ? 'unavailable' : `${data.alignment.context.rateSpread.toFixed(2)} pp`} {data.alignment.context.rateObservationDate && `(observed ${data.alignment.context.rateObservationDate})`}</p>
+                {data.alignment.reasons.map(reason => <p key={reason}>{reason}</p>)}
+                <p>Economic trends and release surprises are separate evidence. The regime and score are rule-based; four-hour win probability is not yet validated.</p>
+              </div>
+            )}
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-zinc-500">Trading Signal</span>
@@ -127,15 +109,15 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                 <span className={`text-xs font-semibold ${tradingReadiness.color}`}>{tradingReadiness.label}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Signal Coverage</span>
-                <span className="text-xs font-semibold text-zinc-300">{data.confidenceCount} / {data.totalPossibleSignals} possible signals</span>
+                <span className="text-xs text-zinc-500">Category Coverage</span>
+                <span className="text-xs font-semibold text-zinc-300">{data.confidenceCount} / {data.totalPossibleSignals} categories</span>
               </div>
             </div>
 
             <div>
               <div className="flex items-baseline justify-between mb-1.5">
                 <span className="text-xs text-zinc-500">Bias Score</span>
-                <span className={`text-sm font-semibold ${colors.text}`}>{data.biasScore > 0 ? '+' : ''}{data.biasScore} / +100</span>
+                <span className={`text-sm font-semibold ${colors.text}`}>{data.biasScore > 0 ? '+' : ''}{data.biasScore} / ±100</span>
               </div>
               <ScoreBar score={data.biasScore} />
               <div className="flex justify-between mt-1">
@@ -143,6 +125,7 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                 <span className="text-[10px] text-zinc-500">0</span>
                 <span className="text-[10px] text-zinc-600">+100 Bullish</span>
               </div>
+              <p className="text-[10px] text-zinc-500 mt-2">The percentage is a normalized rule score, not a probability or expected return.</p>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
@@ -159,7 +142,7 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                 <p className="text-sm font-semibold text-zinc-200">{data.eventCount}</p>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Agreement</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Supports Bias</p>
                 <p className="text-sm font-semibold text-zinc-200">{data.confirmationRatio}%</p>
               </div>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
@@ -177,28 +160,23 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
             </div>
 
             <div>
-              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Market Sentiment</p>
-              <SentimentGauge sentiment={sentiment} />
-            </div>
-
-            <div>
               <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Assessment</p>
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
                 {isBullish ? (
                   <p className="text-xs text-zinc-300 leading-relaxed">
                     Fundamental bias is <span className="text-emerald-400 font-medium">{data.direction === 'weakly_bullish' ? 'leaning bullish' : 'bullish'}</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
                     {bullishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
-                    {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
+                    {supportingHighImpactCount >= 1 ? ' Supporting evidence includes high-impact events.' : ' No high-impact event supports this direction.'}
                     {data.direction === 'weakly_bullish' ? ' This is a weak lean — wait for stronger confirmation before acting.' : ''}
-                    {data.conviction === 'high' ? ' This is a strong alignment between technical and fundamental drivers.' : ''}
+                    {data.conviction === 'high' ? ' Multiple macro categories support this direction under the scoring rules.' : ''}
                   </p>
                 ) : isBearish ? (
                   <p className="text-xs text-zinc-300 leading-relaxed">
                     Fundamental bias is <span className="text-red-400 font-medium">{data.direction === 'weakly_bearish' ? 'leaning bearish' : 'bearish'}</span> with <span className="text-zinc-200 font-medium">{data.conviction}</span> conviction.
                     {bearishCount} of {data.eventCount} events support this direction ({data.confirmationRatio}% agreement).
-                    {highImpactCount >= 1 ? ' High-impact events confirm the signal.' : ' Most signals are medium/low impact — monitor closely.'}
+                    {supportingHighImpactCount >= 1 ? ' Supporting evidence includes high-impact events.' : ' No high-impact event supports this direction.'}
                     {data.direction === 'weakly_bearish' ? ' This is a weak lean — wait for stronger confirmation before acting.' : ''}
-                    {data.conviction === 'high' ? ' This is a strong alignment between technical and fundamental drivers.' : ''}
+                    {data.conviction === 'high' ? ' Multiple macro categories support this direction under the scoring rules.' : ''}
                   </p>
                 ) : (
                   <p className="text-xs text-zinc-400 leading-relaxed">
@@ -216,6 +194,7 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                 <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
                   All Drivers ({data.events.length})
                 </p>
+                <p className="text-[10px] text-zinc-500 mb-2">Contributions are rule inputs before category caps and the final ±100 cap, so their sum can differ from the bias score.</p>
                 <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-1">
                   {data.events.map((e, idx) => {
                     const isExpanded = expandedIdx === idx;
@@ -248,6 +227,8 @@ export default function BiasDetail({ data, onClose }: BiasDetailProps) {
                           <div className="px-2 pb-2 pt-1">
                             <div className="rounded border border-zinc-700/50 bg-zinc-900/80 p-3 space-y-2">
                               <p className="text-xs text-zinc-100 leading-relaxed">{e.description}</p>
+                              {e.evidenceType && <p className="text-[10px] text-zinc-400">Evidence: {e.evidenceType}{e.timestamp ? ` · available ${new Date(e.timestamp).toLocaleString()}` : ''}</p>}
+                              {e.observationDate && <p className="text-[10px] text-zinc-400">Observation period: {e.observationDate}</p>}
                               <div className="flex items-center gap-2 flex-wrap">
                                 {e.sourceName && (
                                   <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/40 uppercase tracking-wider">

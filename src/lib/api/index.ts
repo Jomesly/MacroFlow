@@ -1,65 +1,41 @@
-import { MacroEvent, SourceHealth } from '../types';
+import type { MacroEvent, MacroContext, SourceHealth, UpcomingEvent } from '../types';
+import { unknownContext } from '../macro-context';
 import { fetchNews } from './finnhub';
 import { fetchMarketData } from './twelvedata';
 import { fetchRssFeeds } from './rss';
-import { fetchFredEvents } from './fred';
+import { fetchFredInputs } from './fred';
+import { getCalendar, nextHighEvent } from '../calendar';
 import { getCached, setCache } from './cache';
-
-const CACHE_KEY = 'merged_events';
-const CACHE_TTL = 900_000;
 
 interface CachedEvents {
   events: MacroEvent[];
+  context: MacroContext;
   cachedAt: string;
   sourceHealth: SourceHealth;
+  nextEvent: UpcomingEvent | null;
 }
 
-export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt: string; sourceHealth: SourceHealth; stale?: boolean }> {
-  const cached = await getCached<unknown>(CACHE_KEY);
-  const isValid = cached !== null && typeof cached === 'object' && !Array.isArray(cached) && 'events' in (cached as any) && 'cachedAt' in (cached as any) && 'sourceHealth' in (cached as any);
-  if (isValid) return cached as CachedEvents;
-
-  const sourceNames = ['finnhub', 'market_data', 'rss', 'fred'] as const;
-
-  const results = await Promise.allSettled([
-    fetchNews(),
-    fetchMarketData(),
-    fetchRssFeeds(),
-    fetchFredEvents(),
+export async function fetchAllEvents(): Promise<CachedEvents & { stale?: boolean }> {
+  const cached = await getCached<CachedEvents>('merged_events_v5');
+  if (cached && Array.isArray(cached.events) && cached.context && cached.sourceHealth && cached.cachedAt) return cached;
+  const asOf = new Date().toISOString();
+  const names = ['finnhub', 'market_data', 'rss'] as const;
+  const [results, fred, calendar] = await Promise.all([
+    Promise.allSettled([fetchNews(), fetchMarketData(), fetchRssFeeds()]),
+    fetchFredInputs(asOf).catch(() => ({ context: unknownContext(asOf), events: [] as MacroEvent[], failed: true })),
+    getCalendar(asOf).catch(() => null),
   ]);
-
-  const allEvents: MacroEvent[] = [];
-  const seenIds = new Set<string>();
+  const events: MacroEvent[] = [...fred.events];
   const sourceHealth: SourceHealth = {};
-
   results.forEach((result, index) => {
-    const sourceName = sourceNames[index];
-    sourceHealth[sourceName] = result.status === 'rejected'
-      ? 'failed'
-      : result.value.length > 0
-        ? 'ok'
-        : 'empty';
+    sourceHealth[names[index]] = result.status === 'rejected' ? 'failed' : result.value.length ? 'ok' : 'empty';
+    if (result.status === 'fulfilled') events.push(...result.value);
   });
-
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      for (const event of result.value) {
-        if (!seenIds.has(event.id)) {
-          seenIds.add(event.id);
-          allEvents.push(event);
-        }
-      }
-    }
-  }
-
-  if (allEvents.length === 0) {
-    if (isValid) {
-      return { ...(cached as CachedEvents), sourceHealth, stale: true };
-    }
-    return { events: [], cachedAt: new Date().toISOString(), sourceHealth };
-  }
-
-  const cachedAt = new Date().toISOString();
-  await setCache(CACHE_KEY, { events: allEvents, cachedAt, sourceHealth }, CACHE_TTL);
-  return { events: allEvents, cachedAt, sourceHealth };
+  sourceHealth.fred = fred.failed ? 'failed' : fred.context.complete ? 'ok' : 'empty';
+  sourceHealth.calendar_archive = calendar?.archiveStatus ?? 'failed';
+  sourceHealth.economic_calendar = !calendar || calendar.archiveStatus === 'failed' ? 'failed' : calendar.surprises.length ? 'ok' : 'empty';
+  if (calendar && calendar.archiveStatus === 'ok') events.push(...calendar.surprises);
+  const data: CachedEvents = { events, context: fred.context, cachedAt: asOf, sourceHealth, nextEvent: nextHighEvent(calendar?.events ?? [], asOf) };
+  await setCache('merged_events_v5', data, 60_000);
+  return data;
 }

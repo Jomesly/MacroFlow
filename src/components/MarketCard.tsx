@@ -29,7 +29,7 @@ const SIGNAL_TEXT_COLORS: Record<string, string> = {
 };
 
 function MiniBar({ score }: { score: number }) {
-  const barWidth = Math.min(Math.abs(score), 100);
+  const barWidth = Math.min(Math.abs(score), 100) / 2;
   const isPositive = score >= 0;
   return (
     <div className="relative h-2.5 w-full rounded-full bg-zinc-800/80 overflow-hidden">
@@ -54,7 +54,7 @@ function getScoreTooltip(score: number, direction: Direction): string {
   if (abs > 50) return `Full ${direction === 'bullish' ? 'bullish' : 'bearish'} — past strong threshold`;
   if (abs > 25) return `${50 - abs} points from strong threshold`;
   if (abs >= 15) return `${25 - abs} points from moderate threshold`;
-  return `${15 - abs} points from leaning ${score >= 0 ? 'bearish' : 'bullish'} threshold`;
+  return `${15 - abs} points from leaning ${score >= 0 ? 'bullish' : 'bearish'} threshold`;
 }
 
 function getSignalDisplay(direction: Direction, conviction: Conviction): { label: string; showWarning: boolean } {
@@ -77,7 +77,7 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
   const signalDisplay = getSignalDisplay(data.direction, data.conviction);
 
   useEffect(() => {
-    const key = `mf-direction-${data.symbol}`;
+    const key = `mf-direction-${data.alignment?.modelVersion ?? 'legacy'}-${data.symbol}`;
     const prev = sessionStorage.getItem(key);
     const cur = data.direction;
 
@@ -89,7 +89,7 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
     }
 
     sessionStorage.setItem(key, cur);
-  }, [data.symbol, data.direction, data.events]);
+  }, [data.symbol, data.direction, data.events, data.alignment?.modelVersion]);
 
   const dismissFlip = () => setFlipInfo(null);
   const handleFlipClick = () => { onClick(); dismissFlip(); };
@@ -160,9 +160,16 @@ export default function MarketCard({ data, onClick }: MarketCardProps) {
               {data.conviction.toUpperCase()} CONVICTION
             </span>
             <span className="text-[10px] text-zinc-600">
-              {data.eventCount} events · {data.confirmationRatio}% agree
+              {data.eventCount} events · {data.confirmationRatio}% support bias
             </span>
           </div>
+
+          {data.alignment && (
+            <p className={`text-[10px] mb-2 ${data.alignment.status === 'aligned' ? 'text-blue-300' : 'text-amber-400'}`} title={data.alignment.reasons.join(' ')}>
+              {data.alignment.status === 'aligned' ? '4h macro alignment · probability unvalidated'
+                : data.alignment.status === 'conflicted' ? '4h alignment: conflicting evidence' : '4h alignment: insufficient evidence'}
+            </p>
+          )}
 
           <div className="flex items-center justify-between pt-2.5 border-t border-zinc-800/50 mt-2.5">
             <span className="text-[10px] text-zinc-600">

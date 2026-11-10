@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "backtest:fetch-context": "tsx scripts/fetch-historical-calendar.ts",
+    "backtest:fetch-prices": "tsx scripts/fetch-historical-prices.ts",
+    "backtest:replay": "tsx scripts/backtest-replay.ts",
+    "backtest:returns": "tsx scripts/calculate-forward-returns.ts",
+    "backtest:report": "tsx scripts/generate-backtest-report.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -29,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.9"
   }

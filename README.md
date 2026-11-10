@@ -77,6 +77,8 @@ Standard Supabase confirmation links must be opened in the browser that initiate
 
 ## Checks
 
+The dashboard's four-hour scoring and validation policy is documented in [Macro alignment v3](docs/macro-alignment-v3.md), with the latest [diagnostic results](docs/backtest-report-v3.md). Bias percentages are rule scores, not win probabilities.
+
 ```bash
 npm test
 npx tsc --noEmit
@@ -84,7 +86,16 @@ npm run lint
 npm run build
 ```
 
-The current repository has known lint findings in the historical-calendar script, market-data code, and an engine test. Review the output before treating lint as a release gate.
+The current verification has one existing unused-variable warning in an engine test and no lint errors. See the [production-readiness report](docs/production-readiness-2026-11-10.md) for the reviewed scope, checks, and remaining data-validation limits.
+
+Calendar browser regressions use controlled API fixtures and do not mutate hosted data. With a built app running on port 3130, run on Windows:
+
+```powershell
+$env:CALENDAR_TEST_URL = 'http://localhost:3130'
+npx playwright test tests/e2e/calendar.spec.ts
+```
+
+Without `CALENDAR_TEST_URL`, these tests target the local integration runner on port 3137. Calendar archive setup uses the idempotent `supabase/calendar-forecasts.sql`; existing installations that already ran it need no additional migration for these repairs.
 
 For browser and database integration tests on Windows, start Docker Desktop and run:
 

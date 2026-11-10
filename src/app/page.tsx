@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BiasApiResponse, BiasResult, DataSource, DxyContext, SourceHealth, UpcomingEvent } from '@/lib/types';
+import { BiasApiResponse, BiasResult, DataSource, DxyContext, SourceHealth } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
 import JournalToggle from '@/components/JournalToggle';
+import EconomicCalendar from '@/components/calendar/EconomicCalendar';
 
 function DxyBar({ dxy }: { dxy: DxyContext }) {
   const isUp = dxy.status === 'strengthening';
@@ -30,59 +31,6 @@ function DxyBar({ dxy }: { dxy: DxyContext }) {
       <p className={`text-[11px] ${isUp ? 'text-red-400/70' : 'text-emerald-400/70'}`}>
         {dxy.summary}
       </p>
-    </div>
-  );
-}
-
-function CountdownTimer({ target }: { target: string }) {
-  const [remaining, setRemaining] = useState('');
-
-  useEffect(() => {
-    function tick() {
-      const diff = new Date(target).getTime() - Date.now();
-      if (diff <= 0) { setRemaining('Starting soon'); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      setRemaining(`${h}h ${m}m`);
-    }
-    tick();
-    const id = setInterval(tick, 60000);
-    return () => clearInterval(id);
-  }, [target]);
-
-  return <span className="tabular-nums">{remaining}</span>;
-}
-
-function NextEventBar({ nextEvent }: { nextEvent: UpcomingEvent }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div className="rounded-lg border border-blue-800/30 bg-blue-950/15 px-4 py-3">
-      <button onClick={() => setExpanded(!expanded)} className="flex items-center justify-between w-full text-left cursor-pointer">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-400 border border-blue-700/40 uppercase shrink-0">
-            Next Event
-          </span>
-          <span className="text-xs text-zinc-300 font-medium truncate">{nextEvent.country} {nextEvent.name}</span>
-          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
-            nextEvent.impact === 'high' ? 'bg-red-900/40 text-red-400' : 'bg-amber-900/40 text-amber-400'
-          }`}>
-            {nextEvent.impact.toUpperCase()}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-blue-300 font-mono">
-            In <CountdownTimer target={nextEvent.date} />
-          </span>
-          <svg className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </button>
-      {expanded && (
-        <p className="text-[10px] text-zinc-500 mt-2 pt-2 border-t border-blue-800/20">
-          Affects: {nextEvent.affects.join(', ')}
-        </p>
-      )}
     </div>
   );
 }
@@ -125,8 +73,8 @@ function getDailySummary(data: BiasResult[]): string {
   const bullishCount = data.filter(d => d.direction === 'bullish' || d.direction === 'weakly_bullish').length;
   const allNeutral = data.every(d => d.direction === 'neutral');
   if (allNeutral) return 'No significant macro events detected today';
-  if (bearishCount >= 3) return `${bearishCount} of ${data.length} markets leaning bearish — risk-off environment detected`;
-  if (bullishCount >= 3) return `${bullishCount} of ${data.length} markets leaning bullish — risk-on environment detected`;
+  if (bearishCount >= 3) return `${bearishCount} of ${data.length} markets leaning bearish`;
+  if (bullishCount >= 3) return `${bullishCount} of ${data.length} markets leaning bullish`;
   return 'Markets mixed — no clear macro direction today';
 }
 
@@ -188,7 +136,6 @@ export default function Home() {
   const [source, setSource] = useState<DataSource>('baseline');
   const [selected, setSelected] = useState<BiasResult | null>(null);
   const [dxy, setDxy] = useState<DxyContext | undefined>();
-  const [nextEvent, setNextEvent] = useState<UpcomingEvent | undefined | null>();
   const [sourceHealth, setSourceHealth] = useState<SourceHealth | null>(null);
   const [stale, setStale] = useState(false);
   const mountedRef = useRef(true);
@@ -203,7 +150,6 @@ export default function Home() {
         setLastUpdated(json.timestamp);
         setSource(json.source);
         setDxy(json.dxy);
-        setNextEvent(json.nextEvent);
         setSourceHealth(json.sourceHealth ?? null);
         setStale(json.stale ?? false);
         setError(null);
@@ -240,6 +186,17 @@ export default function Home() {
     hybrid: 'Live + Baseline',
     baseline: 'Baseline Only',
   };
+  const rankedMarkets = [...data].sort((a, b) => Math.abs(b.biasPercent) - Math.abs(a.biasPercent));
+  const marketGroups = [
+    {
+      title: 'Bias strength 50% and above',
+      markets: rankedMarkets.filter((item) => Math.abs(item.biasPercent) >= 50),
+    },
+    {
+      title: 'Bias strength below 50%',
+      markets: rankedMarkets.filter((item) => Math.abs(item.biasPercent) < 50),
+    },
+  ];
 
   return (
     <div className="flex flex-col flex-1">
@@ -279,17 +236,9 @@ export default function Home() {
           </div>
         )}
 
-        {nextEvent && (
-          <div className="mb-4">
-            <NextEventBar nextEvent={nextEvent} />
-          </div>
-        )}
-
-        {!nextEvent && data.length > 0 && (
-          <div className="mb-4 rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3">
-            <p className="text-[11px] text-zinc-500">No upcoming events — economic calendar data unavailable</p>
-          </div>
-        )}
+        <div className="mb-4">
+          <EconomicCalendar />
+        </div>
 
         {data.length > 0 && (
           <p className="text-xs text-zinc-400 mb-4">
@@ -343,9 +292,16 @@ export default function Home() {
         )}
 
         {data.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {data.map((item) => (
-              <MarketCard key={item.symbol} data={item} onClick={() => setSelected(item)} />
+          <div className="space-y-6">
+            {marketGroups.filter((group) => group.markets.length > 0).map((group) => (
+              <section key={group.title}>
+                <h2 className="text-xs font-medium text-zinc-400 mb-3">{group.title}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  {group.markets.map((item) => (
+                    <MarketCard key={item.symbol} data={item} onClick={() => setSelected(item)} />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}
@@ -360,7 +316,7 @@ export default function Home() {
         )}
 
         <p className="text-[10px] text-zinc-700 text-center mt-6">
-          Click any card for full analysis: trading signal, conviction, sentiment, and event details.
+          Click any card for full analysis: trading signal, conviction, and supporting and opposing events.
         </p>
       </main>
 

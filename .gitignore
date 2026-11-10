@@ -38,6 +38,7 @@ yarn-error.log*
 # Auth browser test artifacts
 /test-results/
 /playwright-report/
+/data/validation-v3/
 /supabase/.temp/
 
 # vercel

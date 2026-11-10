@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { HistoryEntry } from './types';
+import { MODEL_VERSION } from './macro-context';
 
 function createClient(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -18,7 +19,7 @@ export async function getHistory(symbol: string): Promise<HistoryEntry[]> {
   const redis = createClient();
   if (!redis) return [];
   try {
-    const raw = await redis.get<HistoryEntry[]>(`macroflow:history:${symbol}`);
+    const raw = await redis.get<HistoryEntry[]>(`macroflow:history:${MODEL_VERSION}:${symbol}`);
     return raw ?? [];
   } catch {
     return [];
@@ -29,7 +30,7 @@ export async function recordDailySnapshot(symbol: string, direction: HistoryEntr
   const redis = createClient();
   if (!redis) return;
 
-  const key = `macroflow:history:${symbol}`;
+  const key = `macroflow:history:${MODEL_VERSION}:${symbol}`;
   const today = todayKey();
 
   try {

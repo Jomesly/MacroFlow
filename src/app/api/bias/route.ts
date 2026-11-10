@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEvents } from '@/lib/events';
-import { calculateBias, ALL_SYMBOLS } from '@/lib/engine';
+import { ALL_SYMBOLS } from '@/lib/engine';
+import { scoreMacroAlignment } from '@/lib/alignment';
+import { selectEventsAsOf } from '@/lib/macro-context';
 import { AssetSymbol, BiasApiResponse, DxyContext } from '@/lib/types';
 import { getHistory, recordDailySnapshot } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
 function getDxyContext(events: Awaited<ReturnType<typeof getEvents>>['events']): DxyContext | undefined {
-  const dxyEvent = events.find((e) => e.id.startsWith('td-dxy-'));
+  const dxyEvent = events.find((e) => e.seriesId === 'DXY' && e.value !== 'neutral');
   if (!dxyEvent) return;
 
   const descMatch = dxyEvent.description.match(/Current:\s*([\d.]+)/);
@@ -28,10 +30,11 @@ export async function GET(request: NextRequest) {
 
   const symbol = symbolParam && ALL_SYMBOLS.includes(symbolParam) ? symbolParam : undefined;
 
-  const { events, source, cachedAt, sourceHealth, stale } = await getEvents();
-  const results = calculateBias(events, symbol);
+  const { events, source, cachedAt, sourceHealth, stale, context, nextEvent } = await getEvents();
+  const asOf = new Date().toISOString();
+  const results = scoreMacroAlignment(events, context, asOf, symbol);
 
-  const dxy = getDxyContext(events);
+  const dxy = getDxyContext(selectEventsAsOf(events, asOf));
 
   const data = await Promise.all(
     results.map(async (r) => {
@@ -48,7 +51,7 @@ export async function GET(request: NextRequest) {
     sourceHealth,
     stale,
     dxy,
-    nextEvent: null,
+    nextEvent: nextEvent && Date.parse(nextEvent.date) > Date.parse(asOf) ? nextEvent : null,
     disclaimer:
       'This is not financial advice. Use this dashboard for informational purposes only. Always conduct your own research before trading.',
   };

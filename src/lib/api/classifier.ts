@@ -24,16 +24,16 @@ function inferCountry(text: string): string | undefined {
 
 const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impact: EventImpact }[] = [
   // ── Fed Tone ──
-  { patterns: [/fed\s*(cut|dovish|ease|lower|pause|hold)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [/fed\s*(cut|dovish|ease|lower)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
   { patterns: [/fed\s*(hike|hawkish|tighten|raise|taper)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
   { patterns: [/federal reserve.{0,40}(dovish|cut|ease)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
   { patterns: [/federal reserve.{0,40}(hawkish|hike|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
 
   // ── BoE Tone ──
-  { patterns: [/bank of england.{0,40}(dovish|cut|ease|hold)/i], category: 'boe_tone', value: 'dovish', impact: 'high' },
+  { patterns: [/bank of england.{0,40}(dovish|cut|ease)/i], category: 'boe_tone', value: 'dovish', impact: 'high' },
   { patterns: [/bank of england.{0,40}(hawkish|hike|tighten)/i], category: 'boe_tone', value: 'hawkish', impact: 'high' },
-  { patterns: [/boe.{0,40}(dovish|cut|ease)/i], category: 'boe_tone', value: 'dovish', impact: 'medium' },
-  { patterns: [/boe.{0,40}(hawkish|hike|tighten)/i], category: 'boe_tone', value: 'hawkish', impact: 'medium' },
+  { patterns: [/\bboe\b.{0,40}(dovish|cut|ease)/i], category: 'boe_tone', value: 'dovish', impact: 'medium' },
+  { patterns: [/\bboe\b.{0,40}(hawkish|hike|tighten)/i], category: 'boe_tone', value: 'hawkish', impact: 'medium' },
 
   // ── Generic Central Bank (defaults to Fed for US-centric assets) ──
   // Only matches when no non-Fed central bank is named in the text
@@ -119,13 +119,6 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   // ── Gold-specific ──
   { patterns: [/gold.{0,40}(price|demand|buying|safe).{0,40}(rise|surge|climb|rally|gain)/i], category: 'risk_sentiment', value: 'risk_off', impact: 'medium' },
   { patterns: [/gold.{0,40}(drop|fall|decline|slide|retreat)/i], category: 'risk_sentiment', value: 'risk_on', impact: 'low' },
-  { patterns: [/(xau|gold).{0,40}(usd|dollar)/i], category: 'dollar_strength', value: 'weak', impact: 'low' },
-
-  // ── Bitcoin/Crypto specific ──
-  { patterns: [/bitcoin.{0,40}(surge|rally|climb|gain|rise|bull)/i], category: 'crypto_regulation', value: 'positive', impact: 'medium' },
-  { patterns: [/bitcoin.{0,40}(drop|crash|fall|decline|bear)/i], category: 'crypto_regulation', value: 'negative', impact: 'medium' },
-  { patterns: [/(crypto|digital asset).{0,40}(surge|rally|gain|rise)/i], category: 'crypto_regulation', value: 'positive', impact: 'medium' },
-  { patterns: [/(crypto|digital asset).{0,40}(crash|drop|fall|decline)/i], category: 'crypto_regulation', value: 'negative', impact: 'medium' },
 
   // ── Geopolitical ──
   { patterns: [/geopolitical.{0,40}(tension|risk|escalat|conflict|war)/i], category: 'geopolitical', value: 'tension', impact: 'high' },
@@ -184,6 +177,10 @@ export function classifyHeadline(text: string): SentimentResult[] {
   const seen = new Set<string>();
   const results: SentimentResult[] = [];
   for (const rule of RULES) {
+    // A generic rate headline does not identify the Fed. A hold alone does
+    // not establish a dovish surprise either.
+    if (rule.category === 'fed_tone' && !/\b(fed|federal reserve|fomc)\b/i.test(text)) continue;
+    if (rule.category === 'fed_tone' && rule.value === 'dovish' && !/\b(cuts?|cutting|dovish|eas\w*|lower\w*)\b/i.test(text)) continue;
     for (const pattern of rule.patterns) {
       if (pattern.test(text)) {
         const key = `${rule.category}:${rule.value}`;
@@ -222,6 +219,7 @@ export function createEventFromClassification(
     country: classified.country,
     url,
     sourceName: source,
+    evidenceType: 'headline',
   };
 }
 
@@ -230,39 +228,43 @@ export function classifyEconomicEvent(
   actual: number | null,
   forecast: number | null
 ): { category: EventCategory; value: string } | null {
-  // Skip events with no actual data — they haven't occurred yet
-  if (actual === null) return null;
+  // A directional surprise requires a finite actual and consensus, and a
+  // nonzero difference. Trend data without consensus is a separate input.
+  if (actual === null || forecast === null || !Number.isFinite(actual) || !Number.isFinite(forecast) || actual === forecast) return null;
 
   const name = eventName.toLowerCase();
 
-  const isBeat = forecast !== null ? actual >= forecast : null;
+  const isBeat = actual > forecast;
 
-  if (/cpi|inflation|core/i.test(name)) {
-    return { category: 'inflation', value: isBeat === true ? 'high' : isBeat === false ? 'low' : 'high' };
+  // Regional Fed surveys name their publisher, not a policy action: score them as activity data.
+  if (/\b(philadelphia|philly|richmond|kansas city|dallas|new york|ny|chicago)\s+fed\b|empire state/i.test(name)) {
+    return /manufacturing|services|business|activity/i.test(name) ? { category: 'pmi', value: isBeat ? 'beat' : 'miss' } : null;
+  }
+  if (/interest rate decision|rate decision|fomc|federal funds|fed funds|\bbank rate\b/i.test(name)) {
+    const category = /\bboe\b|bank of england|\bbank rate\b/i.test(name) ? 'boe_tone'
+      : /\bfed\b|federal reserve|fomc|federal funds|fed funds/i.test(name) ? 'fed_tone' : null;
+    return category ? { category, value: isBeat ? 'hawkish' : 'dovish' } : null;
+  }
+  // Any other central-bank release (balance sheet, votes, nowcasts) has no reliable tone mapping.
+  if (/\bfed\b|federal reserve|central bank|\bboe\b|bank of england|\bmpc\b/i.test(name)) return null;
+
+  if (/\bcpi\b|inflation|\bppi\b|\bpce\b.*price|personal consumption expenditures.*price/i.test(name)) {
+    return { category: 'inflation', value: isBeat ? 'high' : 'low' };
   }
   if (/nonfarm|payroll|employment|unemployment|jobless|jobs/i.test(name)) {
     if (/unemployment|jobless/i.test(name)) {
-      return { category: 'employment', value: isBeat === true ? 'weak' : isBeat === false ? 'strong' : 'strong' };
+      return { category: 'employment', value: isBeat ? 'weak' : 'strong' };
     }
-    return { category: 'employment', value: isBeat === true ? 'strong' : isBeat === false ? 'weak' : 'strong' };
+    return { category: 'employment', value: isBeat ? 'strong' : 'weak' };
   }
   if (/gdp/i.test(name)) {
-    return { category: 'gdp', value: isBeat === true ? 'beat' : isBeat === false ? 'miss' : 'beat' };
+    return { category: 'gdp', value: isBeat ? 'beat' : 'miss' };
   }
   if (/pmi|manufacturing|services/i.test(name)) {
-    return { category: 'pmi', value: isBeat === true ? 'beat' : isBeat === false ? 'miss' : 'beat' };
+    return { category: 'pmi', value: isBeat ? 'beat' : 'miss' };
   }
-  if (/retail sales|consumer|spending/i.test(name)) {
-    return { category: 'retail_sales', value: isBeat === true ? 'beat' : isBeat === false ? 'miss' : 'beat' };
-  }
-  if (/fed|interest rate|central bank/i.test(name)) {
-    if (/cut|lower|ease|dovish|hold/i.test(name)) {
-      return { category: 'fed_tone', value: 'dovish' };
-    }
-    if (/hike|raise|tighten|hawkish/i.test(name)) {
-      return { category: 'fed_tone', value: 'hawkish' };
-    }
-    return { category: 'fed_tone', value: 'dovish' };
+  if (/retail sales|consumer spending|personal spending/i.test(name)) {
+    return { category: 'retail_sales', value: isBeat ? 'beat' : 'miss' };
   }
 
   return null;
