@@ -167,3 +167,11 @@ function balanceRows(tiles: BoardTile[], columns: number) {
     });
   }
 }
+
+/** The tile's headline: the first driver on the market's own side, label removed. */
+export function leadDriver(item: BiasResult): string | undefined {
+  const side = item.direction.includes('bullish') ? 'Bullish:' : item.direction.includes('bearish') ? 'Bearish:' : null;
+  if (!side) return undefined;
+  const match = item.drivers.find((d) => d.startsWith(side));
+  return match?.slice(side.length).trim() || undefined;
+}

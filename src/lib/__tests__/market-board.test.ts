@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AssetSymbol, BiasResult, Conviction } from '@/lib/types';
-import { orderMarkets, packBoard, tileSize, type BoardTile } from '@/lib/market-board';
+import { leadDriver, orderMarkets, packBoard, tileSize, type BoardTile } from '@/lib/market-board';
 
 function mk(symbol: AssetSymbol, conviction: Conviction, biasPercent: number): BiasResult {
   return {
@@ -191,5 +191,20 @@ describe('packBoard', () => {
 
   it('returns an empty board for no markets', () => {
     expect(packBoard([])).toEqual([]);
+  });
+});
+
+describe('leadDriver', () => {
+  const withDrivers = (direction: BiasResult['direction'], drivers: string[]) => ({ ...mk('XAUUSD', 'high', 30), direction, drivers });
+
+  it('shows the first driver that agrees with the market direction, without its label', () => {
+    expect(leadDriver(withDrivers('bullish', ['Bearish: Stocks recover', 'Bullish: Yields fall']))).toBe('Yields fall');
+    expect(leadDriver(withDrivers('weakly_bearish', ['Bearish: ETF outflows extend']))).toBe('ETF outflows extend');
+  });
+
+  it('shows nothing when no driver agrees, or the market is neutral', () => {
+    expect(leadDriver(withDrivers('bullish', ['Bearish: Stocks recover']))).toBeUndefined();
+    expect(leadDriver(withDrivers('neutral', ['Bullish: Yields fall']))).toBeUndefined();
+    expect(leadDriver(withDrivers('bearish', []))).toBeUndefined();
   });
 });

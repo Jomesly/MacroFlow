@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import type { CSSProperties } from "react";
 import type { BiasResult } from "@/lib/types";
-import type { BoardTile } from "@/lib/market-board";
+import { leadDriver, type BoardTile } from "@/lib/market-board";
 import { marketIsOpen } from "@/lib/marketIsOpen";
 
 /** Every row shares one scale, so a small move never looks like a large one. */
@@ -67,6 +67,7 @@ export default function MarketCard({
   const negative = data.direction.includes("bearish");
   const tone = positive ? "positive" : negative ? "negative" : "neutral";
   const open = marketIsOpen(data.symbol);
+  const driver = leadDriver(data);
   const direction = data.direction.startsWith("weakly_")
     ? `Leaning ${positive ? "bullish" : "bearish"}`
     : data.direction.charAt(0).toUpperCase() + data.direction.slice(1);
@@ -144,8 +145,8 @@ export default function MarketCard({
           </span>
           <span className="market-conviction">{conviction} conviction</span>
         </span>
-        {tile?.size === "lg" && data.drivers[0] && (
-          <span className="market-driver">{data.drivers[0]}</span>
+        {tile?.size === "lg" && driver && (
+          <span className="market-driver">{driver}</span>
         )}
         <BiasHistory data={data} scale={historyScale} />
         <CaretRight
