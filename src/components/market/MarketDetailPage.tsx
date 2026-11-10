@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Minus } from '@phosphor-icons/react';
 import type { AssetSymbol, BiasApiResponse } from '@/lib/types';
 import { referenceCharts } from '@/lib/market/instruments';
@@ -13,12 +14,17 @@ import { MarketBiasAxis, MarketBiasHistory, MarketDrivers, MarketMethodology } f
 import EconomicCalendar from './EconomicCalendar';
 import MacroContext from './MacroContext';
 import PanelErrorBoundary from './PanelErrorBoundary';
+import { currentProbabilityReading, displayedProbability, probabilityText } from '@/lib/probability/presentation';
 
 export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
-  const { data: response, loading, error, refresh } = useMarketResource<BiasApiResponse>(`/api/bias?symbol=${symbol}`, 900_000);
+  const [technicalSide, setTechnicalSide] = useState('none');
+  const { data: response, loading, error, refresh } = useMarketResource<BiasApiResponse>(`/api/bias?symbol=${symbol}`, 300_000);
   const now = useMarketClock();
-  const data = response?.data.find((entry) => entry.symbol === symbol);
+  const rawData = response?.data.find((entry) => entry.symbol === symbol);
+  const blocked = error || !!response?.stale || response?.source !== 'live' || Object.values(response?.sourceHealth ?? {}).includes('failed');
+  const data = rawData ? currentProbabilityReading(rawData, blocked, now) : undefined;
   const reference = referenceCharts[symbol];
+  const probability = data ? displayedProbability(data) : null;
   const degraded = response?.sourceHealth && Object.values(response.sourceHealth).some((status) => status === 'failed');
   const tone = data?.direction.includes('bullish') ? 'positive' : data?.direction.includes('bearish') ? 'negative' : 'neutral';
   const DirectionIcon = tone === 'positive' ? ArrowUpRight : tone === 'negative' ? ArrowDownRight : Minus;
@@ -40,16 +46,17 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
           </header>
           {data && <section className="research-read" aria-label="Current market bias">
             <div className="research-bias">
-              <p>Fundamental bias</p>
-              <strong>{signed(data.biasPercent)}<span>%</span></strong>
+              <p>Four-hour direction probability</p>
+              <strong aria-label={probability === null ? 'Probability unavailable' : `${probabilityText(data)} probability of a ${data.probability?.direction === 'up' ? 'rise' : 'fall'}`}>{probability === null ? '—' : <>{(probability * 100).toFixed(1)}<span>%</span></>}</strong>
               <p className="research-direction"><DirectionIcon size={24} weight="bold" aria-hidden="true" />{directionLabel(data.direction)}</p>
             </div>
             <div className="research-assessment">
-              <p>{data.direction === 'neutral' ? 'No dominant fundamental direction in this read.' : `The scored evidence is ${directionLabel(data.direction)} with ${data.conviction} conviction.`}</p>
-              <p className="research-note">A normalized bias score, not a price change or a win probability.</p>
+              <p>{probability === null ? 'Probability unavailable' : `Estimated chance of price finishing ${data.probability?.direction === 'up' ? 'higher' : 'lower'} after a four-hour holding period.`}</p>
+              <p className="research-note">{data.probability?.reason ?? 'A validated probability model is not available for this reading.'}</p>
+              <p className="research-note">The four-hour window starts at the next hourly bar open after the reading. This measures price direction before trading costs. Your entry, stop-loss, target and technical setup are not part of this probability.</p>
               <dl>
-                <div><dt>Conviction</dt><dd>{data.conviction}</dd></div>
-                <div><dt>Agreement</dt><dd>{data.confirmationRatio}%</dd></div>
+                <div><dt>Market confirmation</dt><dd>{data.alignment?.marketConfirmation ?? 'Unavailable'}</dd></div>
+                <div><dt>Validation outcomes</dt><dd>{data.probability?.validationSamples ?? 0}</dd></div>
                 <div><dt>Scored events</dt><dd>{data.eventCount}</dd></div>
                 <div><dt>Session</dt><dd>{marketIsOpen(symbol, new Date(now)) ? 'Market open' : 'Market closed'}</dd></div>
               </dl>
@@ -67,10 +74,22 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
           </div>
           {data.alignment && <section className="research-fact" aria-labelledby="alignment-title">
             <h2 id="alignment-title">Four-hour macro alignment</h2>
-            <p>{data.alignment.status.replaceAll('_', ' ')} · probability unvalidated</p>
-            <p className="research-note">Regime: {data.alignment.context.regime.replaceAll('_', ' ')}. This rule score is not an estimated win rate.</p>
+            <p>{data.alignment.status.replaceAll('_', ' ')} · {probability === null ? 'probability unavailable' : 'probability validated on separate historical outcomes'}</p>
+            <p className="research-note">Regime: {data.alignment.context.regime.replaceAll('_', ' ')}.</p>
+            {probability !== null && data.probability?.interval95 && <p>Estimated range: {(data.probability.interval95[0] * 100).toFixed(1)}–{(data.probability.interval95[1] * 100).toFixed(1)}% (approximate 95% interval).</p>}
             {data.alignment.reasons.length > 0 && <ul>{data.alignment.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>}
           </section>}
+          <section className="research-fact" aria-labelledby="technical-title">
+            <h2 id="technical-title">Compare with your technical setup</h2>
+            <label htmlFor="technical-side">Your technical direction </label>
+            <select id="technical-side" value={technicalSide} onChange={event => setTechnicalSide(event.target.value)}>
+              <option value="none">Choose a direction</option><option value="long">Long / buy</option><option value="short">Short / sell</option>
+            </select>
+            <p role="status">{technicalSide === 'none' ? 'Choose the direction from your chart analysis.'
+              : data.direction === 'neutral' ? 'Macro evidence has no directional lean to compare.'
+              : (technicalSide === 'long') === data.direction.includes('bullish') ? 'Your technical direction matches the macro lean.' : 'Your technical direction opposes the macro lean.'}</p>
+            <p className="research-note">{probability === null ? 'There is not enough validated evidence to attach a probability to this setup.' : 'Matching direction does not establish the win rate of your technical setup.'}</p>
+          </section>
           <nav className="research-section-links" aria-label="Analysis sections"><a href="#market-drivers">Drivers</a><a href="#market-history">History</a>{marketFeatures.calendar && <a href="#economic-calendar">Upcoming releases</a>}</nav>
           <MarketDrivers data={data} />
           <MarketBiasHistory data={data} />

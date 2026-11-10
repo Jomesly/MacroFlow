@@ -206,10 +206,6 @@ function categoryCap(category: MacroEvent['category']): number {
   return CATEGORY_CAPS[category] ?? 30;
 }
 
-function absPercent(score: number): number {
-  return Math.round(Math.abs(score));
-}
-
 function getDirection(score: number): Direction {
   if (score > 50) return 'bullish';
   if (score >= 15) return 'weakly_bullish';
@@ -366,7 +362,7 @@ export function calculateBias(
       symbol: sym,
       name: ASSET_NAMES[sym],
       biasScore: totalScore,
-      biasPercent: totalScore >= 0 ? absPercent(totalScore) : -absPercent(totalScore),
+      biasPercent: null,
       direction,
       strength,
       conviction,

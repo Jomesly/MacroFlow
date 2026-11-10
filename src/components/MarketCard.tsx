@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import type { BiasResult } from "@/lib/types";
 import { marketIsOpen } from "@/lib/marketIsOpen";
+import { displayedProbability, probabilityText } from '@/lib/probability/presentation';
 
 /** Every row shares one scale, so a small move never looks like a large one. */
 function BiasHistory({ data, scale }: { data: BiasResult; scale: number }) {
@@ -65,8 +66,7 @@ export default function MarketCard({
   const direction = data.direction.startsWith("weakly_")
     ? `Leaning ${positive ? "bullish" : "bearish"}`
     : data.direction.charAt(0).toUpperCase() + data.direction.slice(1);
-  const conviction =
-    data.conviction.charAt(0).toUpperCase() + data.conviction.slice(1);
+  const probability = displayedProbability(data);
   const DirectionIcon = positive
     ? ArrowUpRight
     : negative
@@ -113,10 +113,8 @@ export default function MarketCard({
             {!open && <span>Closed</span>}
           </span>
         </span>
-        <span className="market-score">
-          {data.biasPercent > 0 ? "+" : ""}
-          {data.biasPercent}
-          <small>%</small>
+        <span className="market-score" aria-label={probability === null ? 'Four-hour probability unavailable' : `${probabilityText(data)} probability of a ${positive ? 'rise' : 'fall'} over four hours`}>
+          {probability === null ? '—' : <>{(probability * 100).toFixed(1)}<small>%</small></>}
         </span>
         <span className="market-read">
           <span className="market-direction">
@@ -128,7 +126,7 @@ export default function MarketCard({
             />
             {direction}
           </span>
-          <span className="market-conviction">{conviction} conviction</span>
+          <span className="market-conviction">{probability === null ? 'Probability unavailable' : `4h ${positive ? 'rise' : 'fall'} probability`}</span>
         </span>
         <BiasHistory data={data} scale={historyScale} />
         <CaretRight

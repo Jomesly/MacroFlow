@@ -23,6 +23,7 @@ import type {
 } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import WeeklyEconomicCalendar from '@/components/calendar/EconomicCalendar';
+import { compareProbabilities, currentProbabilityReading, displayedProbability } from '@/lib/probability/presentation';
 import MarketBreadth from '@/components/MarketBreadth';
 import Disclaimer from '@/components/Disclaimer';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
@@ -47,7 +48,7 @@ function RefreshTime({ timestamp }: { timestamp: string | null }) {
       const seconds = Math.max(
         0,
         Math.ceil(
-          (15 * 60 * 1000 - (Date.now() - Date.parse(timestamp))) / 1000,
+          (5 * 60 * 1000 - (Date.now() - Date.parse(timestamp))) / 1000,
         ),
       );
       setTime(
@@ -174,6 +175,7 @@ function UpcomingRelease({
 }
 
 export default function Home() {
+  const now = useMarketClock();
   const [response, setResponse] = useState<BiasApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -236,15 +238,18 @@ export default function Home() {
     mounted.current = true;
     const initial = setTimeout(() => void fetchBias(), 0);
     const refreshVisible = () => { if (!document.hidden) void fetchBias(); };
-    const interval = setInterval(refreshVisible, 900000);
+    const interval = setInterval(refreshVisible, 300000);
+    document.addEventListener('visibilitychange', refreshVisible);
     return () => {
       mounted.current = false;
       clearTimeout(initial);
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshVisible);
     };
   }, [fetchBias]);
 
-  const data = response?.data ?? [];
+  const probabilityBlocked = !!error || !!response?.stale || response?.source !== 'live' || Object.values(response?.sourceHealth ?? {}).includes('failed');
+  const data = (response?.data ?? []).map(result => currentProbabilityReading(result, probabilityBlocked, now));
   const visible = data
     .filter(
       (item) =>
@@ -253,7 +258,7 @@ export default function Home() {
           ? item.direction === 'neutral'
           : item.direction.includes(filter)),
     )
-    .sort((a, b) => Math.abs(b.biasPercent) - Math.abs(a.biasPercent));
+    .sort(compareProbabilities);
   const historyScale = Math.max(
     20,
     ...data.flatMap((item) =>
@@ -319,10 +324,10 @@ export default function Home() {
               <span>
                 <strong>
                   {data.length
-                    ? `${data.filter((d) => d.conviction === 'high').length}/${data.length}`
+                    ? `${data.filter((d) => displayedProbability(d) !== null).length}/${data.length}`
                     : '—'}
                 </strong>{' '}
-                high conviction
+                validated probabilities
               </span>
               <span>
                 <strong>{response ? uniqueEvents.length : '—'}</strong> distinct
@@ -379,7 +384,7 @@ export default function Home() {
                 Market overview
                 <span className="section-count">{data.length || '—'}</span>
               </h2>
-              <p>Fundamental bias, conviction, and the drivers behind it.</p>
+              <p>Macro direction and validated four-hour probabilities to compare with your technical setup.</p>
             </div>
             <button
               onClick={() => void fetchBias()}
@@ -481,7 +486,7 @@ export default function Home() {
           )}
           <p className="market-footnote">
             <span className="legend-dot" />
-            Bias is a fundamental score, not a price forecast. Open a market to
+            A percentage is shown only for a validated four-hour probability. Open a market to
             explore its full analysis.
           </p>
         </section>

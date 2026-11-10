@@ -13,7 +13,10 @@
     "backtest:fetch-prices": "tsx scripts/fetch-historical-prices.ts",
     "backtest:replay": "tsx scripts/backtest-replay.ts",
     "backtest:returns": "tsx scripts/calculate-forward-returns.ts",
-    "backtest:report": "tsx scripts/generate-backtest-report.ts"
+    "backtest:report": "tsx scripts/generate-backtest-report.ts",
+    "probability:capture": "tsx scripts/probability-workflow.ts capture",
+    "probability:fit": "tsx scripts/probability-workflow.ts fit",
+    "probability:audit": "tsx scripts/probability-workflow.ts audit"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

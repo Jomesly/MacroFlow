@@ -4,6 +4,8 @@
 
 MacroFlow brings macroeconomic signals, economic releases, and market sentiment alongside your trading record. Review the context, record a decision, and return to the journal to understand its outcome.
 
+The probability update replaces signed rule percentages with validated four-hour direction estimates. Until a supported model has sufficient independent outcomes, the dashboard shows **Probability unavailable**. See the [probability methodology, validation status and data workflow](docs/macro-probability.md).
+
 [Open MacroFlow](https://macro-flow-ecru.vercel.app) · [Product tour](#product-tour) · [Get started](#getting-started) · [Authentication setup](docs/auth-setup.md)
 
 ![MacroFlow market dashboard with five market bias cards, market breadth, upcoming releases, and source status](docs/images/dashboard.webp)

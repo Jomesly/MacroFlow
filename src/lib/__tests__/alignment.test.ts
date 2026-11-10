@@ -47,8 +47,8 @@ describe('four-hour alignment evidence gates', () => {
   });
   it('distinguishes fresh flat markets from missing observations', () => {
     const [result] = scoreMacroAlignment([...bullish().slice(0, 2), event('dollar_strength', 'neutral', 'market')], context, asOf, 'XAUUSD');
-    expect(result.alignment.status).toBe('conflicted');
-    expect(result.alignment.reasons).toContain('Market evidence does not confirm the bias.');
+    expect(result.alignment.status).toBe('unconfirmed');
+    expect(result.alignment.reasons).toContain('Market observations are neutral; confirmation is pending.');
   });
   it('rejects future context and expired market confirmation', () => {
     expect(scoreMacroAlignment(bullish(), { ...context, asOf: '2026-11-11T00:00:00Z' }, asOf, 'XAUUSD')[0].signal).toBe('neutral');
@@ -57,7 +57,7 @@ describe('four-hour alignment evidence gates', () => {
   });
   it('does not count a category with net opposing evidence as supportive breadth', () => {
     const inputs = [...Array.from({ length: 4 }, (_, i) => ({ ...event('fed_tone', 'dovish'), id: `fed-${i}` })),
-      event('dollar_strength', 'weak', 'market'), event('inflation', 'low', 'surprise'), event('inflation', 'high')];
+      event('dollar_strength', 'weak', 'market'), event('inflation', 'low', 'surprise'), event('inflation', 'high', 'surprise')];
     const [result] = scoreMacroAlignment(inputs, context, asOf, 'XAUUSD');
     expect(result.biasScore).toBeGreaterThanOrEqual(50);
     expect(result.confirmationRatio).toBeGreaterThanOrEqual(60);

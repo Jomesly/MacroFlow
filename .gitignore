@@ -70,6 +70,7 @@ service-account*.json
 /test-results/
 /playwright-report/
 /data/validation-v3/
+/data/probability/
 /supabase/.temp/
 
 # vercel

@@ -26,7 +26,7 @@ const FEEDS: FeedConfig[] = [
 ];
 
 export async function fetchRssFeeds(): Promise<MacroEvent[]> {
-  const cacheKey = 'rss_events_v3';
+  const cacheKey = 'rss_events_v4';
   const cached = await getCached<MacroEvent[]>(cacheKey);
   if (cached) return cached;
 
@@ -44,8 +44,9 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
         const seen = new Set<string>();
         const items: MacroEvent[] = [];
         for (const item of parsed.items.slice(0, feed.maxItems)) {
-          const publishedAt = (item.isoDate ?? item.pubDate ?? undefined) ? new Date(item.isoDate ?? item.pubDate!).toISOString() : undefined;
-          if (publishedAt && Date.now() - new Date(publishedAt).getTime() > MAX_ARTICLE_AGE_MS) continue;
+          const publishedMs = Date.parse(item.isoDate ?? item.pubDate ?? '');
+          if (!Number.isFinite(publishedMs) || publishedMs > Date.now() || Date.now() - publishedMs > MAX_ARTICLE_AGE_MS) continue;
+          const publishedAt = new Date(publishedMs).toISOString();
 
           const text = `${item.title ?? ''} ${item.contentSnippet ?? ''}`;
           const classifiedList = classifyHeadline(text);

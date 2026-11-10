@@ -226,6 +226,11 @@ export function classifyHeadline(text: string): SentimentResult[] {
   const results: SentimentResult[] = [];
   for (const rule of RULES) {
     if (rule.category === 'risk_sentiment' && foreignEquityOnly) continue;
+    // Price verbs near an upcoming release do not describe the economic measure.
+    if (rule.category === 'inflation' && !/\b(cpi|ppi|inflation|pce(?: price index)?)\s+(?:(?:is|was|has|have|remains?|came(?: in)?|comes(?: in)?|printed|prints)\s+)?(?:ris\w*|ros\w*|fell|fall\w*|drop\w*|cool\w*|accelerat\w*|slow\w*|climb\w*|hot\w*|high\w*|low\w*|beat\w*|miss\w*|up\b|down\b|sticky|moderate)/i.test(text)) continue;
+    const singleCompanyMove = /\b(stock|shares)\s+(fall\w*|drop\w*|plung\w*|rall\w*|surge\w*|climb\w*|gain\w*|ris\w*)|\b(apple|google|microsoft|amazon|meta|nvidia|tesla|boeing)(?:['’]s)?\s+(?:stock|shares)\b/i.test(text);
+    const broadMarketMove = /\b(markets|stocks|equities|nasdaq|dow|s&p(?: 500)?|wall street|(?:global|world|US) shares)\s+(?:are\s+|is\s+)?(fall\w*|drop\w*|plung\w*|rall\w*|surge\w*|climb\w*|gain\w*|ris\w*|higher|lower)/i.test(text);
+    if (rule.category === 'risk_sentiment' && singleCompanyMove && !broadMarketMove) continue;
     for (const pattern of rule.patterns) {
       const match = pattern.exec(text);
       if (!match) continue;

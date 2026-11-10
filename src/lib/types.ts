@@ -53,7 +53,8 @@ export interface MacroContext {
 export interface AlignmentAssessment {
   modelVersion: string;
   horizonHours: 4;
-  status: 'aligned' | 'conflicted' | 'insufficient_evidence';
+  status: 'aligned' | 'conflicted' | 'unconfirmed' | 'insufficient_evidence';
+  marketConfirmation?: 'confirming' | 'opposing' | 'flat' | 'missing';
   reasons: string[];
   context: MacroContext;
   /** Rule alignment is not an estimated win probability. */
@@ -111,7 +112,9 @@ export interface BiasResult {
   symbol: AssetSymbol;
   name: string;
   biasScore: number;
-  biasPercent: number;
+  /** Deprecated: rule points are never a percentage. New responses return null. */
+  biasPercent: number | null;
+  probability?: import('./probability/types').ProbabilityEstimate;
   direction: Direction;
   strength: Strength;
   conviction: Conviction;

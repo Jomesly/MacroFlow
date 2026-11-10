@@ -1,25 +1,19 @@
 import type { CSSProperties } from 'react';
 import type { BiasResult, HistoryEntry, ScoredEvent } from '@/lib/types';
 import { directionLabel, signed } from '@/lib/market/symbols';
-
-const AXIS_ZONES = [
-  { direction: 'bearish', label: 'Bearish', span: 50 },
-  { direction: 'weakly_bearish', label: 'Leaning', span: 35 },
-  { direction: 'neutral', label: 'Neutral', span: 30 },
-  { direction: 'weakly_bullish', label: 'Leaning', span: 35 },
-  { direction: 'bullish', label: 'Bullish', span: 50 },
-];
+import { displayedProbability, probabilityText } from '@/lib/probability/presentation';
 
 export function MarketBiasAxis({ data }: { data: BiasResult }) {
-  const score = Math.max(-100, Math.min(100, data.biasScore));
+  const probability = displayedProbability(data);
+  if (probability === null) return <p className="research-note">A percentage will appear only when comparable macro readings pass independent probability validation.</p>;
+  const score = probability * 200 - 100;
   return (
-    <div className="research-axis" role="img" aria-label={`Bias score ${signed(data.biasScore)} on a scale from -100 to +100, in the ${directionLabel(data.direction)} zone.`}>
+    <div className="research-axis" role="img" aria-label={`${probabilityText(data)} probability of price finishing ${data.probability?.direction === 'up' ? 'higher' : 'lower'} after four hours.`}>
       <div className="research-axis-track">
-        <span className={`research-axis-fill ${score < 0 ? 'is-down' : 'is-up'}`} style={{ '--magnitude': Math.abs(score) / 100 } as CSSProperties} />
         <i className="research-axis-marker" style={{ '--score': score } as CSSProperties} />
       </div>
       <div className="research-axis-zones" aria-hidden="true">
-        {AXIS_ZONES.map((zone) => <span key={zone.direction} style={{ flex: zone.span }} className={zone.direction === data.direction ? 'is-active' : undefined}>{zone.label}</span>)}
+        <span>0%</span><span>50%</span><span>100%</span>
       </div>
     </div>
   );
@@ -131,7 +125,7 @@ export function MarketMethodology({ data }: { data: BiasResult }) {
   const bearish = data.events.filter((event) => event.scoreChange < 0).length;
   return (
     <section className="research-section research-methodology" aria-labelledby="score-method-title">
-      <h2 id="score-method-title">How to read the score</h2>
+      <h2 id="score-method-title">How to read the probability</h2>
       <details>
         <summary>Score breakdown and methodology</summary>
         <dl className="research-breakdown">
@@ -144,9 +138,9 @@ export function MarketMethodology({ data }: { data: BiasResult }) {
           <div><dt>Bullish / bearish</dt><dd>{bullish} / {bearish}</dd></div>
           <div><dt>High-impact events</dt><dd>{data.events.filter((event) => event.impact === 'high').length}</dd></div>
         </dl>
-        <p>The displayed percentage is the rounded signed score on a -100 to +100 scale. It is not a win probability or a price return. Scores above +50 are bullish; +15 to +50 lean bullish. Scores from -14 to +14 are neutral; -50 to -15 lean bearish, and below -50 is bearish.</p>
-        <p>Conviction combines score magnitude, event count, high-impact events and directional agreement. High conviction needs a magnitude above 40, at least three scored events, a high-impact event and at least 60% agreement. Medium conviction needs a magnitude above 25, at least two events and a high-impact event.</p>
-        <p>Agreement measures the share of scored events pointing the same way as the final score. Coverage counts matched scored events against configured rules; it is not a confidence probability. Inputs already reflect category caps and rule adjustments; final score clamping can prevent them from summing to the displayed score. Technical price confirmation is not measured here.</p>
+        <p>The percentage estimates whether price will finish in the macro direction after four hours, measured from the next complete hourly bar open after the reading. It is learned from recorded outcomes for this market and comparable macro conditions, then checked against a separate, later period. Unchanged prices count as unsuccessful directional predictions.</p>
+        <p>Probabilities require at least 100 non-overlapping observations across 30 days in both calibration and validation, acceptable calibration error, and improvement over the historical base rate. Expired models, changed input versions, unsupported conditions, and stale or incomplete sources show probability unavailable.</p>
+        <p>The diagnostic rule score and event agreement above are model inputs, not probabilities. Driver inputs are shown before category and total caps. The probability excludes execution costs and does not measure whether your technical entry reaches its target before its stop. A matching technical direction is a comparison, not a validated combined strategy.</p>
       </details>
     </section>
   );
