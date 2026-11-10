@@ -23,8 +23,25 @@ test('signed bias percentages and low conviction remain visible without calibrat
   await expect(page.locator('.market-grid')).not.toContainText('Probability unavailable');
   await page.goto('/markets/XAUUSD');
   await expect(page.locator('.research-bias strong')).toHaveText('-98%');
-  await expect(page.getByRole('region', {name: 'Current market bias'})).toContainText('A strong bias can still have low conviction.');
+  await expect(page.getByRole('region', {name: 'Current market bias'})).toContainText('High conviction requires at least 50% magnitude');
 });
+
+for (const sign of [1, -1]) {
+  test(`refresh updates the percentage and conviction together for sign ${sign}`, async ({ page }) => {
+    body.data = body.data.map(r => ({ ...r, biasPercent: sign * 49, conviction: 'low' }));
+    await page.goto('/markets/XAUUSD');
+    await expect(page.locator('.research-bias strong')).toHaveText(`${sign > 0 ? '+' : '-'}49%`);
+    await expect(page.locator('.market-research')).toHaveAttribute('data-conviction', 'low');
+    body.data = body.data.map(r => ({ ...r, biasPercent: sign * 50, conviction: 'high' }));
+    await page.getByRole('button', {name: 'Refresh analysis', exact: true}).click();
+    await expect(page.locator('.research-bias strong')).toHaveText(`${sign > 0 ? '+' : '-'}50%`);
+    await expect(page.locator('.market-research')).toHaveAttribute('data-conviction', 'high');
+    body.data = body.data.map(r => ({ ...r, biasPercent: sign * 49, conviction: 'low' }));
+    await page.getByRole('button', {name: 'Refresh analysis', exact: true}).click();
+    await expect(page.locator('.research-bias strong')).toHaveText(`${sign > 0 ? '+' : '-'}49%`);
+    await expect(page.locator('.market-research')).toHaveAttribute('data-conviction', 'low');
+  });
+}
 
 test('both signs at the 50 threshold rank above weaker readings', async ({page}) => {
   body.data = body.data.map((r, i) => {

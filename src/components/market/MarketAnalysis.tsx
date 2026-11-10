@@ -136,16 +136,17 @@ export function MarketMethodology({ data }: { data: BiasResult }) {
         <summary>Score breakdown and methodology</summary>
         <dl className="research-breakdown">
           <div><dt>Raw score</dt><dd>{signed(data.biasScore)} / [-100, +100]</dd></div>
+          {data.scoring && <div><dt>Net points / capacity</dt><dd>{signed(data.scoring.netPoints)} / {data.scoring.maxPoints}</dd></div>}
           <div><dt>Signal</dt><dd>{data.signal.replaceAll('_', ' ')}</dd></div>
           <div><dt>Strength</dt><dd>{data.strength}</dd></div>
           <div><dt>Agreement</dt><dd>{data.confirmationRatio}%</dd></div>
-          <div><dt>Signal coverage</dt><dd>{data.confidenceCount} / {data.totalPossibleSignals} possible rules</dd></div>
+          <div><dt>Signal coverage</dt><dd>{data.confidenceCount} / {data.totalPossibleSignals} categories</dd></div>
           <div><dt>Scored events</dt><dd>{data.eventCount}</dd></div>
           <div><dt>Bullish / bearish</dt><dd>{bullish} / {bearish}</dd></div>
           <div><dt>High-impact events</dt><dd>{data.events.filter((event) => event.impact === 'high').length}</dd></div>
         </dl>
-        <p>The displayed percentage is the rounded signed score on a -100 to +100 scale. It is not a win probability or a price return. Scores above +50 are bullish; +15 to +50 lean bullish. Scores from -14 to +14 are neutral; -50 to -15 lean bearish, and below -50 is bearish.</p>
-        <p>Conviction considers score magnitude, distinct supporting categories, high-impact evidence and agreement. The live alignment checks also require fresh macro context, supporting structured economic evidence and confirming market observations. Missing, flat or conflicting confirmation can keep conviction low even when the percentage is large.</p>
+        <p>The displayed percentage is 100 × net category-capped points ÷ the sum of this market’s category caps, rounded to a whole percent. Categories without evidence contribute no points; they remain in the fixed capacity. It measures directional macro strength, not confidence, a win probability or a price return. The raw score is separately capped at ±100 points and determines the direction zone.</p>
+        <p>High conviction requires a displayed magnitude of at least 50% in either direction, three net-supporting categories, supporting high-impact evidence and at least 60% event agreement. The live alignment checks also require fresh macro context, net-supporting structured economic evidence and confirming market observations. Missing, flat or conflicting confirmation can keep conviction low even when the percentage is large.</p>
         <p>Agreement measures the share of scored events pointing the same way as the final score. Coverage counts distinct categories with a nonzero contribution against available categories. Driver inputs are shown before category and total caps, so their sum can differ from the final percentage. The technical-direction selector compares your chosen trade direction with the macro lean; it does not change the score or establish a win rate.</p>
       </details>
     </section>

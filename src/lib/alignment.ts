@@ -1,4 +1,4 @@
-import { calculateBias } from './engine';
+import { calculateBias, cappedCategoryPoints, HIGH_CONVICTION_PERCENT } from './engine';
 import { MODEL_VERSION, selectEventsAsOf, unknownContext } from './macro-context';
 import type { AssetSymbol, MacroContext, MacroEvent, AlignmentAssessment } from './types';
 
@@ -18,14 +18,15 @@ export function scoreMacroAlignment(events: MacroEvent[], context: MacroContext,
   return calculateBias(selected, symbol, safeContext).map(result => {
     const reasons: string[] = [];
     const supportive = result.events.filter(event => event.scoreChange * result.biasScore > 0);
-    const categoryTotals = new Map<string, number>();
-    for (const event of result.events) categoryTotals.set(event.category, (categoryTotals.get(event.category) ?? 0) + event.scoreChange);
+    const categoryTotals = cappedCategoryPoints(result.events);
     const categories = new Set([...categoryTotals].filter(([, score]) => score * result.biasScore > 0).map(([category]) => category));
-    const marketScore = result.events.filter(event => event.evidenceType === 'market').reduce((sum, event) => sum + event.scoreChange, 0);
+    const marketScore = [...cappedCategoryPoints(result.events.filter(event => event.evidenceType === 'market')).values()]
+      .reduce((sum, score) => sum + score, 0);
     const hasMarket = selected.some(event => event.evidenceType === 'market' && ['dollar_strength', 'yields'].includes(event.category));
     const marketConfirmation: NonNullable<AlignmentAssessment['marketConfirmation']> = !hasMarket ? 'missing' : marketScore === 0 ? 'flat'
       : marketScore * result.biasScore > 0 ? 'confirming' : 'opposing';
-    const hasPrimary = supportive.some(event => event.evidenceType === 'surprise' || event.evidenceType === 'trend');
+    const hasPrimary = supportive.some(event => categories.has(event.category)
+      && (event.evidenceType === 'surprise' || event.evidenceType === 'trend'));
     if (!safeContext.complete) reasons.push('Fresh macro and rate context is incomplete.');
     if (['US100', 'DJ30', 'US500'].includes(result.symbol) && ['mixed', 'unknown'].includes(safeContext.regime)) reasons.push('The equity growth/rate regime is unresolved.');
     if (!hasPrimary) reasons.push('No structured economic evidence supports the bias.');
@@ -33,7 +34,7 @@ export function scoreMacroAlignment(events: MacroEvent[], context: MacroContext,
     const insufficient = reasons.length > 0;
     if (marketConfirmation === 'opposing') reasons.push('Market observations oppose the macro direction.');
     if (marketConfirmation === 'flat') reasons.push('Market observations are neutral; confirmation is pending.');
-    if (Math.abs(result.biasScore) < 50) reasons.push('Bias strength is below 50.');
+    if (Math.abs(result.biasPercent) < HIGH_CONVICTION_PERCENT) reasons.push('Displayed bias strength is below 50%.');
     if (result.confirmationRatio < 60 || categories.size < 3) reasons.push('Evidence is mixed or lacks category breadth.');
     const status: AlignmentAssessment['status'] = insufficient ? 'insufficient_evidence'
       : marketConfirmation === 'flat' ? 'unconfirmed' : reasons.length ? 'conflicted' : 'aligned';

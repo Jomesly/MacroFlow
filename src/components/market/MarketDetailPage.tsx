@@ -48,7 +48,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             </div>
             <div className="research-assessment">
               <p>{data.direction === 'neutral' ? 'No dominant fundamental direction in this read.' : `The scored evidence is ${directionLabel(data.direction)} with ${data.conviction} conviction.`}</p>
-              <p className="research-note">The percentage measures directional macro strength. Conviction reflects evidence breadth and market confirmation. A strong bias can still have low conviction.</p>
+              <p className="research-note">The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation.</p>
               <dl>
                 <div><dt>Conviction</dt><dd>{data.conviction}</dd></div>
                 <div><dt>Agreement</dt><dd>{data.confirmationRatio}%</dd></div>

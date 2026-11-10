@@ -26,7 +26,7 @@ const FEEDS: FeedConfig[] = [
 ];
 
 export async function fetchRssFeeds(): Promise<MacroEvent[]> {
-  const cacheKey = 'rss_events_v4';
+  const cacheKey = 'rss_events_v5';
   const cached = await getCached<MacroEvent[]>(cacheKey);
   if (cached) return cached;
 

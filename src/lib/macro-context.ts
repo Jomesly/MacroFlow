@@ -1,6 +1,6 @@
 import type { EventCategory, MacroContext, MacroEvent } from './types';
 
-export const MODEL_VERSION = 'macro-v4-probability-4h-2026-11-10';
+export const MODEL_VERSION = 'macro-v4.1-consistent-scoring-4h-2026-11-10';
 export const DAY_MS = 86_400_000;
 export const FRED_SERIES = ['CPIAUCSL', 'PAYEMS', 'UNRATE', 'GDPC1', 'RSXFS', 'DGS2', 'DFF', 'DGS10', 'DTWEXBGS'] as const;
 export type FredSeriesId = typeof FRED_SERIES[number];

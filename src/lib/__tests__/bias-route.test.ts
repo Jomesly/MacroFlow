@@ -41,8 +41,8 @@ describe('live bias route', () => {
     vi.setSystemTime(new Date(nextEvent.date));
     expect((await (await GET(new NextRequest('http://localhost/api/bias'))).json()).nextEvent).toBeNull();
   });
-  // 70 net points of Gold's 260 possible => 27%.
-  it.each([['dovish', 'low', 'weak', 27, 'strong_buy'], ['hawkish', 'high', 'strong', -27, 'strong_sell']] as const)(
+  // 130 net points of Gold's 260 possible => 50%.
+  it.each([['dovish', 'low', 'weak', 50, 'strong_buy'], ['hawkish', 'high', 'strong', -50, 'strong_sell']] as const)(
     'preserves the aligned %s macro signal without a fitted probability model', async (policy, inflation, dollar, expected, signal) => {
       const asOf = '2026-11-10T12:00:00.000Z';
       vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
@@ -52,11 +52,18 @@ describe('live bias route', () => {
         { ...common, id: 'fed', category: 'fed_tone' as const, value: policy, evidenceType: 'headline' as const },
         { ...common, id: 'cpi', category: 'inflation' as const, value: inflation, evidenceType: 'surprise' as const },
         { ...common, id: 'dxy', category: 'dollar_strength' as const, value: dollar, evidenceType: 'market' as const },
+        { ...common, id: 'yield', category: 'yields' as const, value: expected > 0 ? 'falling' : 'rising', evidenceType: 'market' as const },
+        ...(['employment', 'gdp', 'pmi', 'retail_sales'] as const).map(category => ({ ...common, id: category, category,
+          value: category === 'employment' ? (expected > 0 ? 'weak' : 'strong') : (expected > 0 ? 'miss' : 'beat'), evidenceType: 'surprise' as const })),
       ];
       const input = { events, context, source: 'live' as const, cachedAt: asOf, sourceHealth: { fred: 'ok' as const }, nextEvent: null };
       vi.mocked(getEvents).mockResolvedValue(input);
       const body = await (await GET(new NextRequest('http://localhost/api/bias?symbol=XAUUSD'))).json();
       expect(body.data[0]).toMatchObject({ biasPercent: expected, conviction: 'high', signal, alignment: { status: 'aligned' }, probability: { value: null } });
+      // Refresh both values from the same inputs; losing the CPI release drops below 50%.
+      vi.mocked(getEvents).mockResolvedValue({ ...input, events: events.filter(event => event.id !== 'cpi') });
+      const weaker = await (await GET(new NextRequest('http://localhost/api/bias?symbol=XAUUSD'))).json();
+      expect(weaker.data[0]).toMatchObject({ biasPercent: expected > 0 ? 44 : -44, conviction: 'low', signal: 'neutral' });
       vi.mocked(getEvents).mockResolvedValue({ ...input, stale: true });
       const stale = await (await GET(new NextRequest('http://localhost/api/bias?symbol=XAUUSD'))).json();
       expect(stale.data[0]).toMatchObject({ biasPercent: expected, signal: 'neutral' });

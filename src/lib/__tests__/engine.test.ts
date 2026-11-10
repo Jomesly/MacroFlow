@@ -21,6 +21,7 @@ describe('calculateBias', () => {
       event({ category: 'fed_tone', value: 'hawkish', title: 'Fed hawkish' }),
       event({ category: 'risk_sentiment', value: 'risk_off', title: 'Risk off' }),
       event({ category: 'inflation', value: 'high', title: 'Hot inflation' }),
+      event({ category: 'yields', value: 'rising', title: 'Rising yields' }),
     ], 'US100');
 
     expect(result.direction).toBe('bearish');
@@ -216,22 +217,15 @@ describe('calculateBias', () => {
       expect(result.dailyLabel).toBe('Leaning Bearish Today');
     });
 
-    it('signal: weakly_bullish with medium conviction returns buy', () => {
-      // Need weakly_bullish (score 15-50) + medium conviction (absScore>25, eventCount>=2, highImpact>=1)
-      // fed(+30) + dollar(+25) = +55 → bullish, not weakly. Need to stay in 15-50 range.
-      // Use DJ30: employment(+15) + gdp(+15) = +30 → weakly_bullish, 2 events
-      // But need highImpactCount >= 1 for medium conviction. Both are medium impact → low conviction.
-      // Use high impact events: fed_tone is high impact.
-      // For DJ30: fed_tone/dovish = +25, that's in weakly range. Need one more event.
-      // fed(+25) + dollar(+5) = +30 → weakly_bullish. 2 events. But dollar is medium impact.
-      // highImpactCount = 1 (fed). absScore = 30 > 25. eventCount = 2. → medium conviction.
+    it('keeps a weak displayed reading low even with 30 raw points and high-impact evidence', () => {
       const [result] = calculateBias([
         event({ category: 'fed_tone', value: 'dovish', impact: 'high', title: 'Fed dovish' }),
         event({ category: 'dollar_strength', value: 'weak', impact: 'medium', title: 'Dollar weak' }),
       ], 'DJ30');
       expect(result.direction).toBe('weakly_bullish');
-      expect(result.conviction).toBe('medium');
-      expect(result.signal).toBe('buy');
+      expect(result.biasPercent).toBe(13);
+      expect(result.conviction).toBe('low');
+      expect(result.signal).toBe('neutral');
     });
 
     it('signal: weakly_bearish with low conviction returns neutral', () => {

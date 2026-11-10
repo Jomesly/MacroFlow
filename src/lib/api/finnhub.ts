@@ -3,7 +3,7 @@ import { classifyHeadline, createEventFromClassification } from './classifier';
 import { getCached, setCache } from './cache';
 
 const BASE_URL = 'https://finnhub.io/api/v1';
-const CACHE_KEY = 'finnhub_news_v4';
+const CACHE_KEY = 'finnhub_news_v5';
 const CACHE_TTL = 300_000;
 const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000;
 

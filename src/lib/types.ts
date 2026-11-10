@@ -114,6 +114,8 @@ export interface BiasResult {
   biasScore: number;
   /** Signed macro bias strength on a -100% to +100% scale; not a calibrated win probability. */
   biasPercent: number;
+  /** Audit trail for the normalized percentage, before the legacy +/-100 raw-score cap. */
+  scoring?: { netPoints: number; maxPoints: number; categoryPoints: Partial<Record<EventCategory, number>> };
   probability?: import('./probability/types').ProbabilityEstimate;
   direction: Direction;
   strength: Strength;

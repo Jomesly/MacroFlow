@@ -73,14 +73,15 @@ describe('scoring audit regressions', () => {
     expect(result.conviction).toBe('low');
   });
 
-  it('retains valid strong signals in both directions', () => {
+  it('retains direction but limits sub-50 percent readings to medium conviction', () => {
     for (const [fed, dollar, yieldValue, direction, signal] of [
-      ['dovish', 'weak', 'falling', 'bullish', 'strong_buy'],
-      ['hawkish', 'strong', 'rising', 'bearish', 'strong_sell'],
+      ['dovish', 'weak', 'falling', 'bullish', 'buy'],
+      ['hawkish', 'strong', 'rising', 'bearish', 'sell'],
     ] as const) {
       const [result] = calculateBias([event('fed', 'fed_tone', fed), event('dollar', 'dollar_strength', dollar), event('yield', 'yields', yieldValue)], 'XAUUSD');
       expect(result.direction).toBe(direction);
       expect(result.signal).toBe(signal);
+      expect(result.conviction).toBe('medium');
       expect(result.confirmationRatio).toBe(100);
     }
   });

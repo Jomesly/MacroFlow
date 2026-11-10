@@ -33,11 +33,12 @@ describe('four-hour alignment evidence gates', () => {
     const after = scoreMacroAlignment([...bullish(), event('dollar_strength', 'strong'), event('yields', 'rising')], context, asOf, 'XAUUSD')[0];
     expect(after).toEqual(before);
   });
-  it('qualifies bullish and bearish alignment symmetrically without claiming probabilities', () => {
+  it('rejects sub-50 percent alignment symmetrically without claiming probabilities', () => {
     for (const inputs of [bullish(), [event('fed_tone', 'hawkish'), event('inflation', 'high', 'surprise'), event('dollar_strength', 'strong', 'market')]]) {
       const [result] = scoreMacroAlignment(inputs, context, asOf, 'XAUUSD');
-      expect(result.alignment).toMatchObject({ status: 'aligned', horizonHours: 4, probability: null, validation: 'unvalidated' });
-      expect(result.conviction).toBe('high');
+      expect(result.alignment).toMatchObject({ status: 'conflicted', horizonHours: 4, probability: null, validation: 'unvalidated' });
+      expect(result.conviction).toBe('low');
+      expect(Math.abs(result.biasPercent)).toBe(27);
       expect(Math.abs(result.biasScore)).toBe(70);
     }
   });

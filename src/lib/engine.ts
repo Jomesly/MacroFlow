@@ -7,6 +7,7 @@ import {
   MacroContext,
   Strength,
   TradeSignal,
+  ScoredEvent,
 } from './types';
 import { biasRules } from './rules';
 
@@ -206,6 +207,15 @@ function categoryCap(category: MacroEvent['category']): number {
   return CATEGORY_CAPS[category] ?? 30;
 }
 
+/** Aggregate before capping; scoring and evidence confirmation must use the same units. */
+export function cappedCategoryPoints(events: Pick<ScoredEvent, 'category' | 'scoreChange'>[]): Map<MacroEvent['category'], number> {
+  const totals = new Map<MacroEvent['category'], number>();
+  for (const event of events) totals.set(event.category, (totals.get(event.category) ?? 0) + event.scoreChange);
+  return new Map([...totals].map(([category, score]) => [category, clamp(score, -categoryCap(category), categoryCap(category))]));
+}
+
+export const HIGH_CONVICTION_PERCENT = 50;
+
 function getDirection(score: number): Direction {
   if (score > 50) return 'bullish';
   if (score >= 15) return 'weakly_bullish';
@@ -222,15 +232,15 @@ function getStrength(score: number): Strength {
 }
 
 function getConviction(
-  absScore: number,
+  displayedMagnitude: number,
   supportingCategoryCount: number,
   supportingHighImpactCount: number,
   agreementRatio: number
 ): Conviction {
-  if (absScore > 40 && supportingCategoryCount >= 3 && supportingHighImpactCount >= 1 && agreementRatio >= 0.6) {
+  if (displayedMagnitude >= HIGH_CONVICTION_PERCENT && supportingCategoryCount >= 3 && supportingHighImpactCount >= 1 && agreementRatio >= 0.6) {
     return 'high';
   }
-  if (absScore > 25 && supportingCategoryCount >= 2 && supportingHighImpactCount >= 1 && agreementRatio > 0.5) {
+  if (displayedMagnitude > 25 && supportingCategoryCount >= 2 && supportingHighImpactCount >= 1 && agreementRatio > 0.5) {
     return 'medium';
   }
   return 'low';
@@ -327,14 +337,13 @@ export function calculateBias(
       }
     }
 
-    for (const [category, score] of Object.entries(categoryTotals)) {
-      const cap = categoryCap(category as MacroEvent['category']);
-      totalScore += clamp(score, -cap, cap);
-    }
+    const categoryPoints = cappedCategoryPoints(scoredEvents);
+    totalScore = [...categoryPoints.values()].reduce((sum, score) => sum + score, 0);
     // Percentage = net news points as a share of the most points this market's news can add.
     // Taken before the ±100 score limit so a large one-sided news pile is not flattened.
     const maxPoints = maxBiasPoints(sym);
     const biasPercent = maxPoints > 0 ? clamp(Math.round((100 * totalScore) / maxPoints), -100, 100) : 0;
+    const scoring = { netPoints: totalScore, maxPoints, categoryPoints: Object.fromEntries(categoryPoints) };
     totalScore = clamp(totalScore, -100, 100);
     const direction = getDirection(totalScore);
     const strength = getStrength(totalScore);
@@ -350,7 +359,7 @@ export function calculateBias(
     const totalPossibleSignals = countCategoriesForSymbol(sym);
 
     const conviction = getConviction(
-      Math.abs(totalScore),
+      Math.abs(biasPercent),
       supportingCategories.size,
       highImpactCount,
       agreementRatio
@@ -373,6 +382,7 @@ export function calculateBias(
       name: ASSET_NAMES[sym],
       biasScore: totalScore,
       biasPercent,
+      scoring,
       direction,
       strength,
       conviction,
