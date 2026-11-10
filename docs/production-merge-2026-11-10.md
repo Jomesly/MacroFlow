@@ -12,6 +12,7 @@ The integration of `feature/dashboard` (`4f3dbbb`) with production `main` (`0e5d
 - Preserve production provider validation, bounded caches, request coalescing, stale fallback, and daily-history updates. Version merged ingestion as `merged_events_v6`. Reuse the ingested next release instead of fetching the calendar again. Separate Redis history and browser direction-change notices by scoring model.
 - Repair the weekly calendar loading indicator's accessibility role. Cover its pending request state with an automated accessibility check; preserve stale warnings, retry controls, and blocked-storage behavior.
 - Upgrade Next.js and eslint-config-next from 16.2.9 to 16.4.6 and apply compatible dependency fixes.
+- Declare the `tsx` development dependency used by the backtest commands. Verify the installed runner so those commands do not depend on an undeclared global tool.
 
 ## Verification
 
