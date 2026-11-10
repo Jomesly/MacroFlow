@@ -30,7 +30,7 @@ test('calendar filters, source dates and independent panel recovery work', async
   await page.route('**/api/calendar', (route) => route.fulfill({ status: 503, json: { error: 'Unavailable' } }));
   await calendar.getByRole('button', { name: 'Refresh calendar', exact: true }).click();
   await expect(calendar.getByRole('alert')).toContainText('Calendar refresh failed');
-  await expect(page.getByRole('button', { name: 'View XAUUSD analysis' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'View XAUUSD analysis' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Macro context', exact: true }).getByText('4.46%', { exact: true })).toBeVisible();
 });
 
@@ -45,16 +45,17 @@ test('stale calendar and partial macro data are labelled without hiding healthy 
 });
 
 async function prepare(page: Page, body = fixture, status = 200) {
-  await page.route('**/api/bias', (route) =>
-    route.fulfill({ status, json: body }),
-  );
+  await page.route('**/api/bias*', (route) => {
+    const symbol = new URL(route.request().url()).searchParams.get('symbol');
+    return route.fulfill({ status, json: { ...body, data: symbol ? body.data.filter((entry) => entry.symbol === symbol) : body.data } });
+  });
   await page.goto('/');
   await expect(
     page.getByRole('heading', { name: 'MacroFlow', exact: true }),
   ).toBeVisible();
   if (status === 200)
     await expect(
-      page.getByRole('button', { name: 'View XAUUSD analysis' }),
+      page.getByRole('link', { name: 'View XAUUSD analysis' }),
     ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Refresh', exact: true }),
@@ -135,16 +136,15 @@ test('filters, history, source status and keyboard-accessible market analysis wo
   await expect(
     page.getByText('Connected', { exact: true }).first(),
   ).toBeVisible();
-  const card = page.getByRole('button', { name: 'View XAUUSD analysis' });
+  const card = page.getByRole('link', { name: 'View XAUUSD analysis' });
+  await expect(card).toHaveAttribute('href', '/markets/XAUUSD');
   await card.focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('dialog', { name: 'XAUUSD' })).toBeVisible();
+  await expect(page).toHaveURL('/markets/XAUUSD');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(
     page.getByRole('table', { name: 'Daily bias history for XAUUSD' }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Close market analysis' }),
-  ).toBeFocused();
   await page.evaluate(async () => {
     await Promise.all(document.getAnimations()
       .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
@@ -155,9 +155,8 @@ test('filters, history, source status and keyboard-accessible market analysis wo
     fullPage: true,
     animations: 'disabled', style: 'nextjs-portal { display: none !important; }',
   });
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(card).toBeFocused();
+  await page.goBack();
+  await expect(card).toBeVisible();
 });
 
 test('card surfaces distinguish bullish, bearish and neutral markets and update with the feed', async ({
@@ -225,14 +224,10 @@ test('mobile market analysis and enlarged text remain readable', async ({
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await prepare(page);
-  await page.getByRole('button', { name: 'View XAUUSD analysis' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('link', { name: 'View XAUUSD analysis' }).click();
+  await expect(page).toHaveURL('/markets/XAUUSD');
+  await expect(page.getByRole('region', { name: 'Current market bias' })).toBeVisible();
   await assertFits(page);
-  expect(
-    await page
-      .locator('dialog')
-      .evaluate((el) => el.scrollWidth <= el.clientWidth),
-  ).toBe(true);
   const result = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
     .analyze();
@@ -247,7 +242,6 @@ test('mobile market analysis and enlarged text remain readable', async ({
     fullPage: true,
     animations: 'disabled', style: 'nextjs-portal { display: none !important; }',
   });
-  await page.keyboard.press('Escape');
   await page.addStyleTag({ content: 'html { font-size: 200%; }' });
   await assertFits(page);
 });
@@ -305,6 +299,11 @@ for (const width of [375, 1440]) {
       page.getByRole('heading', { name: 'Sign in to your journal' }),
     ).toBeVisible();
     await assertFits(page);
+    await page.evaluate(async () => {
+      await Promise.all(document.getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+        .map((animation) => animation.finished.catch(() => {})));
+    });
     const result = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
       .analyze();

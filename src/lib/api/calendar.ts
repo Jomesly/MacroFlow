@@ -6,8 +6,9 @@ import { loadResource } from '../market/resource';
 import { parseOfficialIcal } from '../market/ical';
 import type { CalendarData, CalendarEvent, Resource } from '../market/types';
 import type { UpcomingEvent } from '../types';
+import { ALL_SYMBOLS } from '../engine';
 
-const symbols = z.enum(['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD']);
+const symbols = z.enum(ALL_SYMBOLS);
 const eventSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -107,7 +108,8 @@ function event(
     affects:
       source.currency === 'GBP'
         ? ['GBPUSD']
-        : ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD'],
+        : // Every tracked market is priced in or against the dollar.
+          [...ALL_SYMBOLS],
     sourceName: source.name,
     sourceUrl: url,
   };
@@ -175,7 +177,7 @@ export async function fetchCalendar(): Promise<Resource<CalendarData>> {
   const feeds = await Promise.all(
     sources.map((source) =>
       loadResource({
-        key: `calendar:official:v1:${source.name}:${start.toISOString().slice(0, 10)}`,
+        key: `calendar:official:v2:${source.name}:${start.toISOString().slice(0, 10)}`,
         provider: source.name,
         instrumentId: 'economic-calendar',
         sourceUrl: source.url,

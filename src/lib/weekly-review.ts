@@ -1,5 +1,6 @@
 import { computeAnalytics } from './analytics';
 import type { Trade } from './types';
+import { tradeDay, tradeDateLabel } from './trade-dates';
 
 export function weekStart(date: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Use a valid date');
@@ -22,18 +23,15 @@ export function computeWeeklyReview(
   const end = new Date(
     Date.parse(`${start}T00:00:00Z`) + 7 * 86_400_000,
   ).toISOString();
-  const fromMs = Date.parse(`${start}T00:00:00Z`),
-    toMs = Date.parse(end);
   // Performance belongs to the week of closing, including trades opened earlier.
   const closed = trades.filter(
     (t) =>
       t.result !== null &&
       (accountId === undefined || t.brokerAccountId === accountId) &&
-      Date.parse(t.closedAt ?? t.timestamp) >= fromMs &&
-      Date.parse(t.closedAt ?? t.timestamp) < toMs,
+      tradeDay(t) >= start && tradeDay(t) < end.slice(0, 10),
   );
   const moneyAccounts = new Set(
-    closed.filter((t) => t.pnlAmount !== null).map((t) => t.brokerAccountId),
+    closed.filter((t) => t.pnlAmount !== null).map((t) => t.journalAccountId ?? t.brokerAccountId),
   );
   // Different accounts can use different currencies; never silently sum them.
   const moneyComparable = moneyAccounts.size <= 1;
@@ -61,6 +59,7 @@ export function computeWeeklyReview(
       symbol: t.symbol,
       result: t.result,
       closedAt: t.closedAt ?? t.timestamp,
+      dateLabel: tradeDateLabel(t, true),
       notes: t.notes,
       setupTags: t.setupTags,
     })),

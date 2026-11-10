@@ -3,5 +3,5 @@ import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  test: { setupFiles: ['./src/test/setup.ts'], exclude: [...configDefaults.exclude, 'tests/e2e/**'] },
+  test: { setupFiles: ['./src/test/setup.ts'], exclude: [...configDefaults.exclude, 'tests/e2e/**', '.artifacts/**'] },
 });

@@ -18,7 +18,7 @@ it('rejects invalid dates and account filters before database reads', async () =
 });
 it('uses the authenticated owner and returns an uncached report', async () => {
   const res = await GET(new NextRequest('http://localhost:3000/api/journal/review?week=2026-11-08&account=1'));
-  expect(h.list).toHaveBeenCalledWith('owner');
+  expect(h.list).toHaveBeenCalledWith('owner', undefined);
   expect(res.headers.get('cache-control')).toBe('private, no-store');
   expect((await res.json()).review.start).toBe('2026-11-02');
 });

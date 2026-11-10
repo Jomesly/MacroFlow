@@ -1,4 +1,6 @@
-export type AssetSymbol = 'XAUUSD' | 'GBPUSD' | 'US100' | 'DJ30' | 'BTCUSD';
+export type AssetSymbol =
+  | 'XAUUSD' | 'GBPUSD' | 'US100' | 'DJ30' | 'BTCUSD'
+  | 'US500' | 'EURUSD' | 'USDJPY' | 'USDCHF' | 'AUDUSD' | 'USDCAD' | 'NZDUSD';
 
 export type Direction = 'bullish' | 'weakly_bullish' | 'neutral' | 'weakly_bearish' | 'bearish';
 
@@ -11,6 +13,12 @@ export type TradeSignal = 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_se
 export type EventCategory =
   | 'fed_tone'
   | 'boe_tone'
+  | 'ecb_tone'
+  | 'boj_tone'
+  | 'snb_tone'
+  | 'rba_tone'
+  | 'boc_tone'
+  | 'rbnz_tone'
   | 'inflation'
   | 'employment'
   | 'gdp'
@@ -142,23 +150,34 @@ export interface Trade {
   closedAt: string | null;
   symbol: TradeSymbol;
   direction: TradeDirection;
-  entryPrice: number;
+  entryPrice: number | null;
   exitPrice: number | null;
   result: TradeResult | null;
   pnlPercent: number | null;
   pnlAmount: number | null;
+  /** Exact decimal for editing money; legacy numeric value remains for analytics. */
+  pnlAmountExact?: string | null;
   rMultiple: number | null;
   brokerAccountId: number | null;
+  journalAccountId?: string | null;
+  tradeGroupId?: string | null;
+  revision?: number;
+  importBatchId?: string | null;
+  importSourceId?: string | null;
+  importInfo?: { dateMeaning: 'entry' | 'close'; datePrecision: 'date' | 'time'; closedPrecision: 'date' | 'time' | null; sourceDate: string; timezone: string; sourceClosedDate: string | null } | null;
   setupTags: string[];
   notes: string;
 }
 
 export interface TradePatch {
-  entryPrice?: number;
+  entryPrice?: number | null;
   exitPrice?: number | null;
   result?: TradeResult | null;
   setupTags?: string[];
   notes?: string;
+  netPnl?: string | null;
+  closedAt?: string | null;
+  expectedRevision?: number;
 }
 
 export interface TradeApiResponse {

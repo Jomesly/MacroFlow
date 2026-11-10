@@ -3,6 +3,7 @@ import { requireJournalAccess } from '@/lib/auth';
 import { deleteTrade, updateTrade, JournalStorageError, JournalValidationError } from '@/lib/journal';
 import { TradeApiResponse } from '@/lib/types';
 import { journalFeatures } from '@/lib/journal-features';
+import { TradingAccountError } from '@/lib/trading-account-types';
 import { removeScreenshots, requireOwnedTrade, ScreenshotError } from '@/lib/screenshots';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +40,7 @@ export async function PUT(
     const response: TradeApiResponse = { trade };
     return NextResponse.json(response);
   } catch (err) {
+    if (err instanceof TradingAccountError) return NextResponse.json({ error: err.message }, { status: err.status });
     if (err instanceof JournalValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }

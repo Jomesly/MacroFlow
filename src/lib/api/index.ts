@@ -10,7 +10,7 @@ const CACHE_KEY = 'merged_events';
 const CACHE_TTL = 900_000;
 
 const eventSchema = z.object({
-  id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'other']),
+  id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'other']),
   title: z.string(), description: z.string(), timestamp: z.iso.datetime(),
   impact: z.enum(['high', 'medium', 'low']), value: z.string(),
   country: z.string().optional(), url: z.string().optional(), sourceName: z.string().optional(),

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireJournalAccess } from '@/lib/auth';
 import { createTrade, listTrades, JournalStorageError, JournalValidationError } from '@/lib/journal';
 import { TradeApiResponse, TradesApiResponse } from '@/lib/types';
+import { TradingAccountError } from '@/lib/trading-account-types';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,13 +11,14 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return auth.response;
 
   try {
-    const trades = await listTrades(auth.userId);
+    const trades = await listTrades(auth.userId, request.nextUrl.searchParams.get('tradingAccount') ?? undefined);
     const response: TradesApiResponse = {
       trades,
       timestamp: new Date().toISOString(),
     };
     return NextResponse.json(response);
   } catch (err) {
+    if (err instanceof TradingAccountError) return NextResponse.json({ error: err.message }, { status: err.status });
     if (err instanceof JournalStorageError) {
       return NextResponse.json({ error: 'Journal storage unavailable' }, { status: 503 });
     }
@@ -45,6 +47,7 @@ export async function POST(request: NextRequest) {
     const response: TradeApiResponse = { trade };
     return NextResponse.json(response, { status: 201 });
   } catch (err) {
+    if (err instanceof TradingAccountError) return NextResponse.json({ error: err.message }, { status: err.status });
     if (err instanceof JournalValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }

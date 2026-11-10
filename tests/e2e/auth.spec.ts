@@ -101,6 +101,12 @@ async function login(page: Page, email: string, secret = password) {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 }
 
+async function provisionManualAccount(page: Page) {
+  const response = await page.request.post('/api/journal/trading-accounts', { data: { brokerName: 'Test Broker', accountNumber: '00123456', nickname: 'Manual journal', currency: 'USD' } });
+  expect(response.status()).toBe(201);
+  await page.reload();
+}
+
 async function emailLink(request: APIRequestContext, email: string, recovery = false, standard = false) {
   let link = '';
   await expect.poll(async () => {
@@ -126,6 +132,112 @@ async function ownerId(email: string) {
   return owner.id;
 }
 
+test('broker accounts support IDs, nicknames, separate drafts, and owned reports', async ({ page }) => {
+  const email = uniqueEmail();
+  const owner = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  expect(owner.error).toBeNull();
+  await admin.from('profiles').update({ onboarding_completed_at: new Date().toISOString() }).eq('id', owner.data.user!.id);
+  await login(page, email);
+  await expect(page.getByRole('button', { name: 'Add account', exact: true })).toBeEnabled();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: 'Add account', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add trading account' });
+  await dialog.getByLabel('Broker or firm', { exact: true }).selectOption('__custom');
+  await dialog.getByLabel('Broker or firm name').fill('Test Broker');
+  await dialog.getByLabel('Account number / ID').fill('00abc62');
+  await dialog.getByLabel(/^Nickname/).fill('Funded account');
+  const artifacts = path.resolve('.artifacts/ui-review');
+  mkdirSync(artifacts, { recursive: true });
+  await page.screenshot({ path: path.join(artifacts, 'add-account-desktop.png') });
+  await page.setViewportSize({ width: 375, height: 812 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const accessibility = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(accessibility.violations.map(v => v.id)).toEqual([]);
+  await page.screenshot({ path: path.join(artifacts, 'add-account-mobile.png') });
+  await dialog.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  const picker = page.getByLabel('Trading account', { exact: true });
+  await expect(picker).toContainText('Funded account · Test Broker · 00abc62');
+  const firstId = new URL(page.url()).searchParams.get('tradingAccount')!;
+  const tradeForm = page.locator('.journal-form-panel:visible');
+  await tradeForm.getByLabel('Notes', { exact: true }).fill('Draft for funded account only');
+
+  await page.getByRole('button', { name: 'Add account', exact: true }).click();
+  await dialog.getByLabel('Broker or firm', { exact: true }).selectOption('Test Broker');
+  await dialog.getByLabel('Account number / ID').fill('000002');
+  await dialog.getByLabel(/^Nickname/).fill('Practice');
+  await dialog.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  const secondId = new URL(page.url()).searchParams.get('tradingAccount')!;
+  await expect(tradeForm.getByLabel('Notes', { exact: true })).toHaveValue('');
+  await page.getByRole('tab', { name: 'History', exact: true }).click();
+  await picker.selectOption(firstId);
+  await page.getByRole('tab', { name: 'Log Trade', exact: true }).click();
+  await expect(tradeForm.getByLabel('Notes', { exact: true })).toHaveValue('Draft for funded account only');
+  await tradeForm.getByLabel('Symbol', { exact: true }).selectOption('XAUUSD');
+  await page.getByRole('button', { name: 'Long', exact: true }).click();
+  await tradeForm.getByLabel('Entry price', { exact: true }).fill('2700');
+  await page.getByRole('button', { name: 'Log Trade', exact: true }).click();
+  await expect(page.getByText(/^Saved to/)).toBeVisible();
+  const firstTrades = await (await page.request.get(`/api/journal/trade?tradingAccount=${firstId}`)).json();
+  expect(firstTrades.trades).toHaveLength(1);
+  expect(firstTrades.trades[0].journalAccountId).toBe(firstId);
+  expect((await (await page.request.get(`/api/journal/trade?tradingAccount=${secondId}`)).json()).trades).toHaveLength(0);
+  await page.getByRole('tab', { name: 'History', exact: true }).click();
+  await expect(page.getByRole('button').filter({ hasText: 'XAUUSD' })).toBeVisible();
+  await picker.selectOption(secondId);
+  await expect(page.getByRole('button').filter({ hasText: 'XAUUSD' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Edit account nickname' }).click();
+  const rename = page.getByRole('dialog', { name: 'Edit nickname' });
+  await rename.getByLabel(/^Nickname/).fill('Weekend practice');
+  await rename.getByRole('button', { name: 'Save nickname' }).click();
+  await expect(picker.locator('option:checked')).toContainText('Weekend practice · Test Broker · 000002');
+  await page.reload();
+  await expect(picker).toContainText('Weekend practice · Test Broker · 000002');
+  expect(new URL(page.url()).searchParams.get('tradingAccount')).toBe(secondId);
+  await page.getByRole('button', { name: 'Add account', exact: true }).click();
+  await dialog.getByLabel('Broker or firm', { exact: true }).selectOption('Test Broker');
+  await dialog.getByLabel('Account number / ID').fill('000002');
+  await dialog.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('already exists');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Add account', exact: true })).toBeFocused();
+
+  const practiceTrade = await (await page.request.post('/api/journal/trade', { data: { journalAccountId: secondId, symbol: 'GBPUSD', direction: 'long', entryPrice: 100, exitPrice: 90, result: 'loss' } })).json();
+  expect((await admin.from('trades').update({ pnl_amount: -25 }).eq('id', practiceTrade.trade.id)).error).toBeNull();
+  expect((await admin.from('trades').update({ result: 'win', exit_price: 2727, pnl_amount: 100 }).eq('id', firstTrades.trades[0].id)).error).toBeNull();
+  const firstAnalytics = await (await page.request.get(`/api/journal/analytics?tradingAccount=${firstId}`)).json();
+  const secondAnalytics = await (await page.request.get(`/api/journal/analytics?tradingAccount=${secondId}`)).json();
+  expect(firstAnalytics.analytics.totals.net).toBe(100);
+  expect(secondAnalytics.analytics.totals.net).toBe(-25);
+  const combined = await (await page.request.get('/api/journal/analytics')).json();
+  expect(combined.moneyComparable).toBe(false);
+  expect(combined.analytics.totals.net).toBeNull();
+  const review = await (await page.request.get(`/api/journal/review?tradingAccount=${firstId}`)).json();
+  expect(review.review.trades).toHaveLength(1);
+  expect(review.review.analytics.totals.net).toBe(100);
+
+  const foreignUser = await admin.auth.admin.createUser({ email: uniqueEmail(), password, email_confirm: true });
+  const foreign = await admin.from('journal_accounts').insert({ user_id: foreignUser.data.user!.id, broker_name: 'Other broker', account_number: '1234', currency: 'USD' }).select('id').single();
+  expect(foreign.error).toBeNull();
+  const foreignId = foreign.data!.id;
+  for (const endpoint of ['trade', 'analytics', 'review']) {
+    expect((await page.request.get(`/api/journal/${endpoint}?tradingAccount=${foreignId}`)).status()).toBe(404);
+  }
+  expect((await page.request.post('/api/journal/trade', { data: { journalAccountId: foreignId, symbol: 'XAUUSD', direction: 'long', entryPrice: 100 } })).status()).toBe(404);
+  expect((await page.request.patch(`/api/journal/trading-accounts/${foreignId}`, { data: { nickname: 'Stolen' } })).status()).toBe(404);
+  expect((await page.request.get('/api/journal/trade?tradingAccount=invalid')).status()).toBe(400);
+  const accounts = await (await page.request.get('/api/journal/trading-accounts')).json();
+  expect(accounts.accounts.map((a: { id: string }) => a.id)).not.toContain(foreignId);
+  const apiKey = await (await page.request.post('/api/journal/keys')).json();
+  const sync = await page.request.post('/api/journal/ingest', { headers: { authorization: 'Bearer ' + apiKey.key }, data: { ea_version: 'accounts-test', account_login: '00009999', server: 'Local-Broker', currency: 'USD', trades: [] } });
+  expect(sync.status()).toBe(200);
+  const linked = (await (await page.request.get('/api/journal/trading-accounts')).json()).accounts.find((a: { accountNumber: string }) => a.accountNumber === '00009999');
+  expect(linked.brokerAccountId).toBeTruthy();
+});
+
 test('verified signup isolates journals and enforces beta access for APIs and MT5', async ({ page, browser, request }) => {
   const emailA = uniqueEmail();
   await signup(page, emailA);
@@ -139,16 +251,17 @@ test('verified signup isolates journals and enforces beta access for APIs and MT
   await a.getByLabel('Display name (optional)').fill('Trader A');
   await a.getByRole('button', { name: 'Log my first trade' }).click();
   await expect(a).toHaveURL(/\/journal\?tab=log$/);
+  await provisionManualAccount(a);
   await a.getByLabel('Symbol', { exact: true }).selectOption('XAUUSD');
   await a.getByRole('button', { name: 'Long', exact: true }).click();
-  await a.getByLabel('Entry Price', { exact: true }).fill('2700');
+  await a.getByLabel('Entry price', { exact: true }).fill('2700');
   await a.getByRole('button', { name: 'Log Trade', exact: true }).last().click();
-  await expect(a.getByText('Trade logged', { exact: false })).toBeVisible();
+  await expect(a.getByText(/^Saved to/)).toBeVisible();
   const ownTrades = await (await a.request.get('/api/journal/trade')).json();
   expect(ownTrades.trades).toHaveLength(1);
   const tradeId = ownTrades.trades[0].id;
   await a.getByRole('tab', { name: 'History', exact: true }).click();
-  await expect(a.getByText('XAUUSD', { exact: true })).toBeVisible();
+  await expect(a.getByRole('button').filter({ hasText: 'XAUUSD' })).toBeVisible();
   await a.getByRole('tab', { name: 'Analytics', exact: true }).click();
   await expect(a.getByText('Net P&L', { exact: true })).toBeVisible();
 
@@ -253,23 +366,25 @@ test('open journal tabs discard drafts during logout and account switching', asy
   await login(page, emailA);
   await page.getByRole('button', { name: 'Save and explore journal' }).click();
   await expect(page).toHaveURL(/\/journal\?tab=log$/);
+  await provisionManualAccount(page);
   const retained = await context.newPage();
   await retained.goto('/journal');
-  await retained.getByLabel('Entry Price', { exact: true }).fill('987654');
+  await retained.getByLabel('Entry price', { exact: true }).fill('987654');
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(retained).toHaveURL(/\/login$/);
   await login(page, emailB);
   await page.getByRole('button', { name: 'Save and explore journal' }).click();
   await expect(page).toHaveURL(/\/journal\?tab=log$/);
+  await provisionManualAccount(page);
   await retained.goto('/journal');
-  await expect(retained.getByLabel('Entry Price', { exact: true })).toHaveValue('');
-  await retained.getByLabel('Entry Price', { exact: true }).fill('123456');
+  await expect(retained.getByLabel('Entry price', { exact: true })).toHaveValue('');
+  await retained.getByLabel('Entry price', { exact: true }).fill('123456');
   // Sign in directly as another account without signing out first.
   await login(page, emailA);
   await expect(page).toHaveURL(/\/journal$/);
   await expect(retained).toHaveURL(/\/login$/);
   await retained.goto('/journal');
-  await retained.getByLabel('Entry Price', { exact: true }).fill('456789');
+  await retained.getByLabel('Entry price', { exact: true }).fill('456789');
   // Simulate a suspended tab missing cross-tab notifications; focus must recheck.
   await retained.evaluate(() => window.addEventListener('storage', (event) => event.stopImmediatePropagation(), true));
   await page.bringToFront();
@@ -314,7 +429,7 @@ test('journal workspace supports responsive layouts, accessible tabs, and trade 
   for (const width of [1440, 768, 375]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.getByRole('tab', { name: 'Log Trade', exact: true }).click();
-    await expect(page.getByLabel('Entry Price', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Entry price', { exact: true })).toBeVisible();
     await audit();
     if (width === 375) await page.screenshot({ path: path.join(artifacts, 'journal-mobile.png'), fullPage: true, animations: 'disabled', style: 'nextjs-portal { display: none !important; }' });
     await page.getByRole('tab', { name: 'Log Trade', exact: true }).focus();
@@ -331,7 +446,7 @@ test('journal workspace supports responsive layouts, accessible tabs, and trade 
     await expect(page.getByRole('paragraph').filter({ hasText: /^Net P&L$/ })).toBeVisible();
     await audit();
     await page.screenshot({ path: path.join(artifacts, `analytics-${width}.png`), fullPage: true, animations: 'disabled', style: 'nextjs-portal { display: none !important; }' });
-    await page.getByRole('tab', { name: 'Connect Account', exact: true }).click();
+    await page.getByRole('tab', { name: 'Accounts', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Bring your trades together' })).toBeVisible();
     await expect(page.getByText('Loading accounts…')).toHaveCount(0);
     await audit();

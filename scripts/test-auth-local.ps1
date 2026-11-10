@@ -48,6 +48,18 @@ try {
   docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/journal-screenshots.sql *> (Join-Path $taskWorkspace 'screenshot-migration.log')
   $ErrorActionPreference = 'Stop'
   if ($LASTEXITCODE -ne 0) { throw 'Screenshot bucket migration failed in the disposable database.' }
+  $ErrorActionPreference = 'Continue' # Fresh-schema DROP IF EXISTS notices are harmless stderr.
+  docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/tests/trading-accounts.sql *> (Join-Path $taskWorkspace 'trading-accounts-migration.log')
+  $ErrorActionPreference = 'Stop'
+  if ($LASTEXITCODE -ne 0) { throw 'Trading accounts migration failed in the disposable database.' }
+  $ErrorActionPreference = 'Continue'
+  docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/journal-account-funds.sql -f /tmp/macroflow-sql/journal-account-funds.sql -f /tmp/macroflow-sql/tests/journal-account-funds.sql *> (Join-Path $taskWorkspace 'journal-funds-migration.log')
+  $ErrorActionPreference = 'Stop'
+  if ($LASTEXITCODE -ne 0) { throw 'Multi-account trades and funds assertions failed in the disposable database.' }
+  $ErrorActionPreference = 'Continue'
+  docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/journal-imports.sql -f /tmp/macroflow-sql/journal-imports.sql *> (Join-Path $taskWorkspace 'journal-imports-migration.log')
+  $ErrorActionPreference = 'Stop'
+  if ($LASTEXITCODE -ne 0) { throw 'Journal imports migration failed. See journal-imports-migration.log.' }
   Write-Host 'Migration, backfill, rerun and trigger rollback assertions passed.'
   $ErrorActionPreference = 'Continue'
   $taskStatusText = npx --yes supabase status --workdir $taskWorkspace -o json 2> (Join-Path $taskWorkspace 'supabase-status.log')

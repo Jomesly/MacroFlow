@@ -204,7 +204,7 @@ const h = vi.hoisted(() => {
     seq = 0;
   }
 
-  return { createClient, reset };
+  return { createClient, reset, seed: (table: string, rows: Row[]) => tables.set(table, rows) };
 });
 
 vi.mock('@supabase/supabase-js', () => ({ createClient: h.createClient }));
@@ -221,6 +221,28 @@ describe('journal', () => {
 
   beforeEach(() => {
     h.reset();
+  });
+
+  it('saves and lists manual trades within an owned trading account', async () => {
+    const id = '10000000-0000-4000-8000-000000000001';
+    const other = '10000000-0000-4000-8000-000000000002';
+    h.seed('journal_accounts', [{ id, user_id: USER_A }, { id: other, user_id: USER_A }]);
+    const { createTrade, listTrades } = await loadJournal();
+    await createTrade(USER_A, { journalAccountId: id, symbol: 'XAUUSD', direction: 'long', entryPrice: 2000 });
+    await createTrade(USER_A, { journalAccountId: other, symbol: 'GBPUSD', direction: 'short', entryPrice: 1.3 });
+    const trades = await listTrades(USER_A, id);
+    expect(trades).toHaveLength(1);
+    expect(trades[0]).toMatchObject({ journalAccountId: id, symbol: 'XAUUSD' });
+  });
+
+  it('refuses another owner’s trading account for reads and writes', async () => {
+    const id = '10000000-0000-4000-8000-000000000001';
+    h.seed('journal_accounts', [{ id, user_id: USER_B }]);
+    const { createTrade, listTrades } = await loadJournal();
+    await expect(createTrade(USER_A, { journalAccountId: id, symbol: 'XAUUSD', direction: 'long', entryPrice: 2000 })).rejects.toMatchObject({ status: 404 });
+    await expect(listTrades(USER_A, id)).rejects.toMatchObject({ status: 404 });
+    await expect(listTrades(USER_A, 'invalid')).rejects.toMatchObject({ status: 400 });
+    expect(await listTrades(USER_A)).toHaveLength(0);
   });
 
   it('paginates beyond the API row cap without including another owner', async () => {

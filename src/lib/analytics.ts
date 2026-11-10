@@ -1,4 +1,5 @@
 import { Trade } from './types';
+import { tradeDay } from './trade-dates';
 
 // ── TradeZella-core analytics over a user's trades ──────────────────────
 // Money math uses pnlAmount (EA/synced trades). Manual percent-only trades
@@ -26,6 +27,23 @@ export interface CalendarDay extends BucketStats {
   breakeven: number;
 }
 
+export interface DayExtreme {
+  date: string;
+  net: number;
+}
+
+export interface EquityPoint {
+  date: string;
+  net: number;
+  cumulative: number;
+}
+
+/** Entry-time bucket: `block` is the 4-hour slot of the New York day (0 = 12-4 AM). */
+export interface TimeCell extends BucketStats {
+  weekday: string;
+  block: number;
+}
+
 export interface AnalyticsResult {
   totals: {
     trades: number;
@@ -45,8 +63,20 @@ export interface AnalyticsResult {
     expectancy: number | null; // net per money trade
     avgR: number | null;
     rCoverage: number | null; // share of closed trades with rMultiple
+    winningDays: number | null; // days with money data and a positive net
+    losingDays: number | null;
+    dayWinRate: number | null; // winning / (winning + losing) days
+    winLossRatio: number | null; // avg win / |avg loss|
+    maxDrawdown: number | null; // deepest fall from a running peak, <= 0
+    bestDay: DayExtreme | null;
+    worstDay: DayExtreme | null;
+    longestWinStreak: number;
+    longestLossStreak: number;
+    currentStreak: { result: 'win' | 'loss'; count: number } | null;
   };
   calendar: CalendarDay[];
+  equity: EquityPoint[]; // running net across days that have money data
+  timeHeatmap: TimeCell[]; // entry weekday x 4-hour block, New York time
   bySymbol: Record<string, BucketStats>;
   byTag: Record<string, BucketStats>;
   bySession: Record<string, BucketStats>;
@@ -88,12 +118,12 @@ function emptyBucket(): BucketStats {
   return { trades: 0, wins: 0, losses: 0, net: 0, winRate: null };
 }
 
-function addToBucket(b: BucketStats, trade: Trade, moneyBuckets: Set<BucketStats>): void {
+function addToBucket(b: BucketStats, trade: Trade, moneyBuckets: Set<BucketStats>, decimals: number): void {
   b.trades += 1;
   if (trade.result === 'win') b.wins += 1;
   if (trade.result === 'loss') b.losses += 1;
   if (trade.pnlAmount !== null) {
-    b.net = round2((b.net ?? 0) + trade.pnlAmount);
+    b.net = Number(((b.net ?? 0) + trade.pnlAmount).toFixed(decimals));
     moneyBuckets.add(b);
   }
   b.winRate = winRateOf(b.wins, b.losses);
@@ -114,13 +144,37 @@ export function filterTrades(trades: Trade[], filters: AnalyticsFilters): Trade[
     if (filters.tags && filters.tags.length > 0 && !filters.tags.some((tag) => t.setupTags.includes(tag))) {
       return false;
     }
-    if (filters.from && t.timestamp < filters.from) return false;
-    if (filters.to && t.timestamp > filters.to) return false;
+    const date = t.importInfo?.datePrecision === 'date' ? tradeDay(t, false) : t.timestamp;
+    if (filters.from && date < filters.from) return false;
+    // A date-only bound covers its whole day, so compare it with the day part.
+    if (filters.to && (filters.to.length === 10 ? date.slice(0, 10) : date) > filters.to) return false;
     return true;
   });
 }
 
-export function computeAnalytics(trades: Trade[], filters: AnalyticsFilters = {}): AnalyticsResult {
+function closeTime(trade: Trade): number {
+  return Date.parse(trade.closedAt ?? trade.timestamp);
+}
+
+/** Runs of consecutive wins or losses in close order; breakeven trades neither extend nor end a run. */
+function streaksOf(closed: Trade[]) {
+  const decisive = closed
+    .filter((t) => t.result === 'win' || t.result === 'loss')
+    .sort((a, b) => closeTime(a) - closeTime(b));
+  let longestWinStreak = 0;
+  let longestLossStreak = 0;
+  let run: { result: 'win' | 'loss'; count: number } | undefined;
+  for (const trade of decisive) {
+    const result = trade.result as 'win' | 'loss';
+    run = run?.result === result ? { result, count: run.count + 1 } : { result, count: 1 };
+    if (result === 'win') longestWinStreak = Math.max(longestWinStreak, run.count);
+    else longestLossStreak = Math.max(longestLossStreak, run.count);
+  }
+  return { longestWinStreak, longestLossStreak, currentStreak: run ?? null };
+}
+
+export function computeAnalytics(trades: Trade[], filters: AnalyticsFilters = {}, moneyDecimals = 2): AnalyticsResult {
+  const roundMoney = (value: number) => Number(value.toFixed(moneyDecimals));
   const rows = filterTrades(trades, filters);
   const closed = rows.filter((t) => t.result !== null);
   const open = rows.length - closed.length;
@@ -132,38 +186,53 @@ export function computeAnalytics(trades: Trade[], filters: AnalyticsFilters = {}
   const money = closed.filter((t) => t.pnlAmount !== null);
   const grossProfit = money.filter((t) => (t.pnlAmount as number) > 0);
   const grossLoss = money.filter((t) => (t.pnlAmount as number) < 0);
-  const grossProfitSum = round2(grossProfit.reduce((s, t) => s + (t.pnlAmount as number), 0));
-  const grossLossSum = round2(grossLoss.reduce((s, t) => s + (t.pnlAmount as number), 0));
-  const net = money.length > 0 ? round2(money.reduce((s, t) => s + (t.pnlAmount as number), 0)) : null;
+  const grossProfitSum = roundMoney(grossProfit.reduce((s, t) => s + (t.pnlAmount as number), 0));
+  const grossLossSum = roundMoney(grossLoss.reduce((s, t) => s + (t.pnlAmount as number), 0));
+  const net = money.length > 0 ? roundMoney(money.reduce((s, t) => s + (t.pnlAmount as number), 0)) : null;
 
   const rTrades = closed.filter((t) => t.rMultiple !== null);
 
   const calendarMap = new Map<string, CalendarDay>();
-  const bySymbol: Record<string, BucketStats> = {};
-  const byTag: Record<string, BucketStats> = {};
-  const bySession: Record<string, BucketStats> = {};
-  const byWeekday: Record<string, BucketStats> = {};
+  // Tags can come from CSV files. Treat names such as __proto__ as data keys.
+  const bySymbol: Record<string, BucketStats> = Object.create(null);
+  const byTag: Record<string, BucketStats> = Object.create(null);
+  const bySession: Record<string, BucketStats> = Object.create(null);
+  const byWeekday: Record<string, BucketStats> = Object.create(null);
+  const timeMap = new Map<string, TimeCell>();
   const moneyBuckets = new Set<BucketStats>();
 
   for (const trade of closed) {
     // Calendar groups by close date (UTC), falling back to log date.
-    const day = (trade.closedAt ?? trade.timestamp).slice(0, 10);
+    const day = tradeDay(trade);
     let cal = calendarMap.get(day);
     if (!cal) {
       cal = { ...emptyBucket(), date: day, breakeven: 0 };
       calendarMap.set(day, cal);
     }
-    addToBucket(cal, trade, moneyBuckets);
+    addToBucket(cal, trade, moneyBuckets, moneyDecimals);
     if (trade.result === 'breakeven') cal.breakeven += 1;
 
-    addToBucket((bySymbol[trade.symbol] ??= emptyBucket()), trade, moneyBuckets);
+    addToBucket((bySymbol[trade.symbol] ??= emptyBucket()), trade, moneyBuckets, moneyDecimals);
 
     for (const tag of trade.setupTags) {
-      addToBucket((byTag[tag] ??= emptyBucket()), trade, moneyBuckets);
+      addToBucket((byTag[tag] ??= emptyBucket()), trade, moneyBuckets, moneyDecimals);
     }
 
-    addToBucket((bySession[sessionOf(trade.timestamp)] ??= emptyBucket()), trade, moneyBuckets);
-    addToBucket((byWeekday[nyParts(trade.timestamp).weekday] ??= emptyBucket()), trade, moneyBuckets);
+    const unknownEntry = trade.importInfo?.dateMeaning === 'close' || trade.importInfo?.datePrecision === 'date';
+    addToBucket((bySession[unknownEntry ? 'Unknown entry time' : sessionOf(trade.timestamp)] ??= emptyBucket()), trade, moneyBuckets, moneyDecimals);
+    addToBucket((byWeekday[unknownEntry ? 'Unknown entry time' : nyParts(trade.timestamp).weekday] ??= emptyBucket()), trade, moneyBuckets, moneyDecimals);
+
+    if (!unknownEntry) {
+      const { weekday, hour } = nyParts(trade.timestamp);
+      const block = Math.floor(hour / 4);
+      const key = `${weekday}:${block}`;
+      let cell = timeMap.get(key);
+      if (!cell) {
+        cell = { ...emptyBucket(), weekday, block };
+        timeMap.set(key, cell);
+      }
+      addToBucket(cell, trade, moneyBuckets, moneyDecimals);
+    }
   }
 
   for (const bucket of [
@@ -172,11 +241,33 @@ export function computeAnalytics(trades: Trade[], filters: AnalyticsFilters = {}
     ...Object.values(bySession),
     ...Object.values(byWeekday),
     ...calendarMap.values(),
+    ...timeMap.values(),
   ]) {
     finalizeBucketMoney(bucket, moneyBuckets.has(bucket));
   }
 
   const calendar = [...calendarMap.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  let running = 0;
+  let peak = 0;
+  let maxDrawdown = 0;
+  const equity: EquityPoint[] = [];
+  for (const day of calendar) {
+    if (day.net === null) continue;
+    running = roundMoney(running + day.net);
+    peak = Math.max(peak, running);
+    maxDrawdown = Math.min(maxDrawdown, roundMoney(running - peak));
+    equity.push({ date: day.date, net: day.net, cumulative: running });
+  }
+  const winningDays = equity.filter((d) => d.net > 0).length;
+  const losingDays = equity.filter((d) => d.net < 0).length;
+  const extreme = (pick: (a: EquityPoint, b: EquityPoint) => boolean): DayExtreme | null => {
+    if (equity.length === 0) return null;
+    const day = equity.reduce((best, d) => (pick(d, best) ? d : best));
+    return { date: day.date, net: day.net };
+  };
+  const avgWin = grossProfit.length > 0 ? roundMoney(grossProfitSum / grossProfit.length) : null;
+  const avgLoss = grossLoss.length > 0 ? roundMoney(grossLossSum / grossLoss.length) : null;
 
   return {
     totals: {
@@ -193,18 +284,26 @@ export function computeAnalytics(trades: Trade[], filters: AnalyticsFilters = {}
       grossLoss: money.length > 0 ? grossLossSum : null,
       profitFactor:
         grossLossSum < 0 ? round2(grossProfitSum / Math.abs(grossLossSum)) : null,
-      avgWin:
-        grossProfit.length > 0 ? round2(grossProfitSum / grossProfit.length) : null,
-      avgLoss:
-        grossLoss.length > 0 ? round2(grossLossSum / grossLoss.length) : null,
-      expectancy: money.length > 0 && net !== null ? round2(net / money.length) : null,
+      avgWin,
+      avgLoss,
+      expectancy: money.length > 0 && net !== null ? roundMoney(net / money.length) : null,
       avgR:
         rTrades.length > 0
           ? round2(rTrades.reduce((s, t) => s + (t.rMultiple as number), 0) / rTrades.length)
           : null,
       rCoverage: closed.length > 0 ? round2((rTrades.length / closed.length) * 100) : null,
+      winningDays: equity.length > 0 ? winningDays : null,
+      losingDays: equity.length > 0 ? losingDays : null,
+      dayWinRate: winRateOf(winningDays, losingDays),
+      winLossRatio: avgWin !== null && avgLoss !== null ? round2(avgWin / Math.abs(avgLoss)) : null,
+      maxDrawdown: equity.length > 0 ? maxDrawdown : null,
+      bestDay: extreme((a, b) => a.net > b.net),
+      worstDay: extreme((a, b) => a.net < b.net),
+      ...streaksOf(closed),
     },
     calendar,
+    equity,
+    timeHeatmap: [...timeMap.values()],
     bySymbol,
     byTag,
     bySession,

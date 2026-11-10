@@ -47,11 +47,11 @@ for (const width of [1440, 375]) {
         paints[level][symbol] = await readColor(row);
         expect(contrast(await readColor(row.locator('.market-score'), 'color'), paints[level][symbol])).toBeGreaterThanOrEqual(4.5);
         expect(contrast(await readColor(row.locator('.market-conviction'), 'color'), paints[level][symbol])).toBeGreaterThanOrEqual(4.5);
-        await row.getByRole('button', { name: `View ${symbol} analysis` }).focus();
+        await row.getByRole('link', { name: `View ${symbol} analysis` }).focus();
         expect(contrast(await readColor(row.locator('.market-score'), 'color'), await readColor(row))).toBeGreaterThanOrEqual(4.5);
         paints[`${level}-interactive`] ??= {};
         paints[`${level}-interactive`][symbol] = await readColor(row);
-        await expect(row.getByRole('button', { name: `View ${symbol} analysis` })).toHaveCSS('outline-style', 'solid');
+        await expect(row.getByRole('link', { name: `View ${symbol} analysis` })).toHaveCSS('outline-style', 'solid');
       }
       // Remove keyboard focus so the hover/normal comparisons are independent.
       await page.getByRole('button', { name: 'Refresh', exact: true }).focus();
@@ -141,6 +141,8 @@ for (const [label, width, height] of [['desktop', 1440, 1000], ['tablet', 768, 1
     await expect(page.getByText('4.46%', { exact: true })).toBeVisible();
     await page.getByText('Score breakdown and methodology', { exact: true }).click();
     await expect(page.getByText('42 / [-100, +100]', { exact: false })).toBeVisible();
+    // Scan from the top so no control sits under the sticky header by scroll position alone.
+    await page.evaluate(() => window.scrollTo(0, 0));
     const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
     expect(result.violations.map((violation) => ({ id: violation.id, nodes: violation.nodes.map((node) => node.target) }))).toEqual([]);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -152,26 +154,23 @@ for (const [label, width, height] of [['desktop', 1440, 1000], ['tablet', 768, 1
   });
 }
 
-test('popup links to a full page and preserves the dashboard filter, scroll and unlocked body', async ({ page }) => {
+test('a market card opens the full analysis directly and returning restores the dashboard filter and scroll', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Bullish', exact: true }).click();
-  const row = page.getByRole('button', { name: 'View XAUUSD analysis' });
-  await row.click();
+  const row = page.getByRole('link', { name: 'View XAUUSD analysis' });
+  await expect(row).toHaveAttribute('href', '/markets/XAUUSD');
+  await row.scrollIntoViewIfNeeded();
   const position = await page.evaluate(() => scrollY);
-  const link = page.getByRole('link', { name: 'Open full analysis', exact: true });
-  await expect(link).toHaveAttribute('href', '/markets/XAUUSD');
-  await link.click();
+  await row.click();
   await expect(page).toHaveURL('/markets/XAUUSD');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Current market bias' })).toBeVisible();
   expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
   await page.getByRole('link', { name: 'Back to markets', exact: true }).first().click();
   await expect(page.getByRole('button', { name: 'Bullish', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.market-card')).toHaveCount(2);
   await expect.poll(() => page.evaluate(() => scrollY)).toBeCloseTo(position, -1);
-  await row.click();
-  await page.keyboard.press('Escape');
-  await expect(row).toBeFocused();
 });
 
 test('all five symbols support switching, direct refresh and browser back', async ({ page }) => {

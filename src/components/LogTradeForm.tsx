@@ -1,326 +1,145 @@
 'use client';
+
+import { useId, useRef, useState, type FormEvent } from 'react';
 import { journalFetch } from '@/lib/journal-fetch';
+import { useSetupTags } from '@/lib/use-setup-tags';
+import { TRADE_SYMBOLS, type TradeDirection, type TradeResult } from '@/lib/types';
+import { type TradingAccount } from '@/lib/trading-account-types';
+import { tradeBatchSchema } from '@/lib/journal-batch-types';
+import { moneyUnits, normalizeMoney } from '@/lib/account-money';
 
-import { useEffect, useState } from 'react';
-import { SETUP_TAGS, TradeDirection, TradeResult, TradeSymbol, TRADE_SYMBOLS } from '@/lib/types';
-
-const LABEL_CLS = 'block text-xs font-medium text-zinc-400 mb-2';
-
-const FIELD_CLS =
-  'w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-400 transition-colors';
-
-const DIRECTION_CLS = (active: boolean, tone: 'emerald' | 'red'): string =>
-  `flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors cursor-pointer ${
-    active
-      ? tone === 'emerald'
-        ? 'bg-emerald-600 border-emerald-500 text-white'
-        : 'bg-red-600 border-red-500 text-white'
-      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-  }`;
-
-const RESULT_CLS = (active: boolean, tone: 'emerald' | 'red' | 'zinc'): string =>
-  `flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors cursor-pointer ${
-    active
-      ? tone === 'emerald'
-        ? 'bg-emerald-600 border-emerald-500 text-white'
-        : tone === 'red'
-          ? 'bg-red-600 border-red-500 text-white'
-          : 'bg-zinc-600 border-zinc-500 text-white'
-      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-  }`;
-
-function previewPnl(entry: number, exit: number, direction: TradeDirection): number {
-  const pct = ((exit - entry) / entry) * 100;
-  return Math.round((direction === 'short' ? -pct : pct) * 100) / 100;
+interface Props {
+  selectedAccountIds: string[];
+  accounts?: TradingAccount[];
+  onSavingChange: (saving: boolean) => void;
 }
 
-export default function LogTradeForm() {
+export default function LogTradeForm({ selectedAccountIds, accounts = [], onSavingChange }: Props) {
+  const id = useId();
+  const setupTags = useSetupTags();
   const [loggedAt, setLoggedAt] = useState(() => new Date());
-  const [symbol, setSymbol] = useState<TradeSymbol | ''>('');
+  const [symbol, setSymbol] = useState('');
   const [direction, setDirection] = useState<TradeDirection | ''>('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [entryPrice, setEntryPrice] = useState('');
-  const [exitPrice, setExitPrice] = useState('');
+  const [entry, setEntry] = useState('');
+  const [exit, setExit] = useState('');
   const [result, setResult] = useState<TradeResult | ''>('');
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const [tags, setTags] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
-  const [status, setStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-
-  useEffect(() => {
-    if (status !== 'success') return;
-    const id = setTimeout(() => setStatus('idle'), 4000);
-    return () => clearTimeout(id);
-  }, [status]);
-
-  const entryNum = Number(entryPrice);
-  const exitNum = Number(exitPrice);
-  const entryValid = entryPrice !== '' && Number.isFinite(entryNum) && entryNum > 0;
-  const exitFilled = exitPrice !== '';
-  const exitValid = !exitFilled || (Number.isFinite(exitNum) && exitNum > 0);
-  const exitRequiresResult = exitFilled && result === '';
-
-  const canSubmit =
-    symbol !== '' &&
-    direction !== '' &&
-    entryValid &&
-    exitValid &&
-    !exitRequiresResult &&
-    status !== 'saving';
-
-  const pnlPreview =
-    entryValid && exitValid && exitFilled && direction !== ''
-      ? previewPnl(entryNum, exitNum, direction)
-      : null;
-
-  const toggleTag = (tag: string) => {
-    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
-  };
-
-  const resetForm = () => {
-    setSymbol('');
-    setDirection('');
-    setTags([]);
-    setEntryPrice('');
-    setExitPrice('');
-    setResult('');
-    setNotes('');
-    setLoggedAt(new Date());
-  };
-
-  const submit = async () => {
-    if (!canSubmit) return;
-
-    setStatus('saving');
-    setErrorMsg('');
-
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const pending = useRef<{ signature: string; requestId: string } | null>(null);
+  const submitting = useRef(false);
+  const destinations = accounts.filter(account => selectedAccountIds.includes(account.id) && account.brokerAccountId === null);
+  const currencies = [...new Set(destinations.map(account => account.currency).filter((currency): currency is string => !!currency))];
+  const cashAmounts: Record<string, string | null> = Object.fromEntries(currencies.map(currency => {
     try {
-      const body: Record<string, unknown> = {
-        symbol,
-        direction,
-        entryPrice: entryNum,
-        setupTags: tags,
-        notes,
+      const amount = (amounts[currency] ?? '').trim();
+      return [currency, moneyUnits(amount, currency) > 0n ? normalizeMoney(amount, currency) : null];
+    } catch { return [currency, null]; }
+  }));
+  const missingCurrency = destinations.some(account => !account.currency);
+  const cashValid = result === '' || (!missingCurrency && (result === 'breakeven' || currencies.every(currency => cashAmounts[currency] !== null)));
+  const entryNumber = Number(entry);
+  const exitNumber = Number(exit);
+  const entryValid = entry !== '' && Number.isFinite(entryNumber) && entryNumber > 0 && entryNumber <= 1e12;
+  const exitValid = exit === '' || (Number.isFinite(exitNumber) && exitNumber > 0 && exitNumber <= 1e12);
+  const exitRequiresResult = exit !== '' && result === '';
+  const canSubmit = destinations.length > 0 && symbol !== '' && direction !== '' && entryValid && exitValid && !exitRequiresResult && cashValid && !saving;
+  const pnl = entryValid && exitValid && exit !== '' && direction !== ''
+    ? Math.round(((exitNumber - entryNumber) / entryNumber) * 100 * (direction === 'short' ? -1 : 1) * 100) / 100
+    : null;
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (submitting.current || !canSubmit) return;
+    setError(''); setSuccess('');
+    try {
+      // Keep capture time stable across retries. Apply the result's sign to
+      // exact decimal strings; price return stays separate from cash P&L.
+      const capturedAt = loggedAt.toISOString();
+      const payload = {
+        symbol, direction, entryPrice: entryNumber, openedAt: capturedAt, setupTags: tags, notes,
+        accounts: destinations.map(account => ({
+          accountId: account.id, exitPrice: exit === '' ? null : exitNumber,
+          result: result || null, closedAt: result ? capturedAt : null,
+          netPnl: result === 'breakeven' ? '0' : result && account.currency ? `${result === 'loss' ? '-' : ''}${cashAmounts[account.currency]}` : null,
+        })),
       };
-      if (exitFilled) body.exitPrice = exitNum;
-      if (result !== '') body.result = result;
-
-      const res = await journalFetch('/api/journal/trade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+      const signature = JSON.stringify(payload);
+      if (!pending.current || pending.current.signature !== signature) pending.current = { signature, requestId: crypto.randomUUID() };
+      const body = { ...payload, requestId: pending.current.requestId };
+      const validation = tradeBatchSchema.safeParse(body);
+      if (!validation.success) throw new Error(validation.error.issues[0].message);
+      submitting.current = true; setSaving(true); onSavingChange(true);
+      const response = await journalFetch('/api/journal/trade-batches', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
-
-      if (!res.ok) {
-        const err = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(err?.error ?? 'Failed to save trade');
-      }
-
-      resetForm();
-      setStatus('success');
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to save trade');
-      setStatus('error');
+      const saved = await response.json();
+      if (!response.ok) throw new Error(saved.error ?? 'Trade could not be saved. Retry with the same details.');
+      setSuccess(`Saved to ${destinations.map(account => account.nickname || account.accountNumber || 'My journal').join(' and ')}.`);
+      setSymbol(''); setDirection(''); setEntry(''); setExit(''); setResult(''); setAmounts({}); setTags([]); setNotes(''); setLoggedAt(new Date());
+      pending.current = null;
+      window.dispatchEvent(new Event('macroflow:journal-updated'));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Save status could not be confirmed. Retry with the same details.');
+    } finally {
+      submitting.current = false; setSaving(false); onSavingChange(false);
     }
-  };
+  }
 
-  return (
-    <div className="max-w-3xl">
-      <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-3 mb-5">
-        <span className={LABEL_CLS + ' mb-0'}>Logged At</span>
-        <span className="text-xs text-zinc-300 font-mono tabular-nums">
-          {loggedAt.toLocaleString()}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label htmlFor="journal-symbol" className={LABEL_CLS}>
-            Symbol
-          </label>
-          <select
-            id="journal-symbol"
-            value={symbol}
-            onChange={(e) => setSymbol(e.target.value as TradeSymbol | '')}
-            className={FIELD_CLS}
-          >
-            <option value="">Select symbol</option>
-            {TRADE_SYMBOLS.map((s) => (
-              <option key={s} value={s} className="bg-zinc-900">
-                {s}
-              </option>
-            ))}
+  return <form className="trade-capture trade-capture-classic" onSubmit={submit}>
+    <fieldset disabled={saving} className="trade-capture-fields">
+      <div className="capture-logged-at"><span>Logged At</span><time dateTime={loggedAt.toISOString()} suppressHydrationWarning>{loggedAt.toLocaleString()}</time></div>
+      <div className="capture-grid">
+        <label className="capture-field" htmlFor={`${id}-symbol`}>Symbol
+          <select id={`${id}-symbol`} aria-label="Symbol" required value={symbol} onChange={event => setSymbol(event.target.value)}>
+            <option value="">Select symbol</option>{TRADE_SYMBOLS.map(symbol => <option key={symbol}>{symbol}</option>)}
           </select>
-        </div>
-
-        <div>
-          <span className={LABEL_CLS}>Direction</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setDirection('long')}
-              className={DIRECTION_CLS(direction === 'long', 'emerald')}
-            >
-              Long
-            </button>
-            <button
-              type="button"
-              onClick={() => setDirection('short')}
-              className={DIRECTION_CLS(direction === 'short', 'red')}
-            >
-              Short
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-        <div>
-          <label htmlFor="journal-entry" className={LABEL_CLS}>
-            Entry Price
-          </label>
-          <input
-            id="journal-entry"
-            type="number"
-            inputMode="decimal"
-            step="any"
-            placeholder="0.00"
-            value={entryPrice}
-            onChange={(e) => setEntryPrice(e.target.value)}
-            className={FIELD_CLS}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="journal-exit" className={LABEL_CLS}>
-            Exit Price <span className="text-zinc-600 normal-case tracking-normal">(optional)</span>
-          </label>
-          <input
-            id="journal-exit"
-            type="number"
-            inputMode="decimal"
-            step="any"
-            placeholder="0.00"
-            value={exitPrice}
-            onChange={(e) => setExitPrice(e.target.value)}
-            className={FIELD_CLS}
-          />
-        </div>
-
-        <div>
-          <span className={LABEL_CLS}>P&amp;L (preview)</span>
-          <div
-            className={`w-full bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-2 text-sm font-mono tabular-nums flex items-center ${
-              pnlPreview === null
-                ? 'text-zinc-600'
-                : pnlPreview > 0
-                  ? 'text-emerald-400'
-                  : pnlPreview < 0
-                    ? 'text-red-400'
-                    : 'text-zinc-500'
-            }`}
-          >
-            {pnlPreview === null
-              ? '—'
-              : `${pnlPreview > 0 ? '+' : ''}${pnlPreview.toFixed(2)}%`}
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <span className={LABEL_CLS}>
-          Result
-          {exitRequiresResult && (
-            <span className="ml-2 text-amber-400 normal-case tracking-normal">
-              — required when exit price is filled
-            </span>
-          )}
-        </span>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setResult('win')}
-            className={RESULT_CLS(result === 'win', 'emerald')}
-          >
-            Win
-          </button>
-          <button
-            type="button"
-            onClick={() => setResult('loss')}
-            className={RESULT_CLS(result === 'loss', 'red')}
-          >
-            Loss
-          </button>
-          <button
-            type="button"
-            onClick={() => setResult('breakeven')}
-            className={RESULT_CLS(result === 'breakeven', 'zinc')}
-          >
-            Breakeven
-          </button>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <span className={LABEL_CLS}>Setup Tags</span>
-        <div className="flex flex-wrap gap-2">
-          {SETUP_TAGS.map((tag) => {
-            const active = tags.includes(tag);
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => toggleTag(tag)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                  active
-                    ? 'bg-zinc-100 border-zinc-100 text-zinc-950'
-                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-                }`}
-              >
-                {tag}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mb-5">
-        <label htmlFor="journal-notes" className={LABEL_CLS}>
-          Notes
         </label>
-        <textarea
-          id="journal-notes"
-          rows={3}
-          placeholder="Setup context, mistakes, lessons..."
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className={FIELD_CLS + ' resize-y'}
-        />
+        <fieldset className="capture-direction"><legend>Direction</legend><div className="capture-segmented">
+          {(['long', 'short'] as const).map(value => <button key={value} type="button" aria-pressed={direction === value} className={direction === value ? `is-${value}` : ''} onClick={() => setDirection(value)}>{value === 'long' ? 'Long' : 'Short'}</button>)}
+        </div></fieldset>
       </div>
-
-      {errorMsg && (
-        <p className="mb-3 text-xs text-red-400">{errorMsg}</p>
-      )}
-
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={submit}
-          disabled={!canSubmit}
-          className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-colors ${
-            canSubmit
-              ? 'bg-zinc-100 hover:bg-zinc-300 text-zinc-950 cursor-pointer'
-              : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-          }`}
-        >
-          {status === 'saving' ? 'Saving...' : 'Log Trade'}
-        </button>
-
-        {status === 'success' && (
-          <span className="rounded-lg border border-emerald-800/30 bg-emerald-950/20 px-4 py-2 text-xs text-emerald-400">
-            Trade logged successfully
-          </span>
-        )}
+      <div className="capture-grid capture-price-grid">
+        <label className="capture-field" htmlFor={`${id}-entry`}>Entry Price
+          <input id={`${id}-entry`} aria-label="Entry price" required type="number" step="any" min="0.00000001" max="1000000000000" inputMode="decimal" value={entry} onChange={event => setEntry(event.target.value)} placeholder="0.00" />
+        </label>
+        <label className="capture-field" htmlFor={`${id}-exit`}><span>Exit Price <span className="capture-optional">(optional)</span></span>
+          <input id={`${id}-exit`} aria-label="Exit Price (optional)" type="number" step="any" min="0.00000001" max="1000000000000" inputMode="decimal" value={exit} onChange={event => setExit(event.target.value)} placeholder="0.00" />
+        </label>
+        <div className="capture-field">
+          <span id={`${id}-pnl-label`}>P&amp;L (preview)</span>
+          <output className={`capture-pnl-preview${pnl !== null && pnl > 0 ? ' is-positive' : pnl !== null && pnl < 0 ? ' is-negative' : ''}`} aria-labelledby={`${id}-pnl-label`} title="Price change percentage; not cash profit or loss.">{pnl === null ? '—' : `${pnl > 0 ? '+' : ''}${pnl.toFixed(2)}%`}</output>
+        </div>
       </div>
+      <fieldset className="capture-result">
+        <legend>Result{exitRequiresResult && <span className="capture-result-hint"> — required when exit price is filled</span>}</legend>
+        <div className="capture-segmented">
+          {(['win', 'loss', 'breakeven'] as const).map(value => <button key={value} type="button" aria-pressed={result === value} className={result === value ? `is-${value}` : ''} onClick={() => setResult(current => current === value ? '' : value)}>{value === 'win' ? 'Win' : value === 'loss' ? 'Loss' : 'Breakeven'}</button>)}
+        </div>
+      </fieldset>
+      {result && <div className="capture-cash-result">
+        {result !== 'breakeven' && currencies.map(currency => <label className="capture-field" key={currency} htmlFor={`${id}-amount-${currency}`}>
+          Amount ({currency})
+          <input id={`${id}-amount-${currency}`} aria-label={`Amount (${currency})`} aria-describedby={`${id}-amount-help`} type="text" inputMode="decimal" required value={amounts[currency] ?? ''} onChange={event => setAmounts(current => ({ ...current, [currency]: event.target.value }))} placeholder="0.00" />
+        </label>)}
+        <p className="capture-help" id={`${id}-amount-help`}>{result === 'breakeven' ? 'Breakeven records zero. Your balance stays the same.' : `Enter a positive amount. ${result === 'win' ? 'Win adds it to' : 'Loss deducts it from'} ${destinations.length > 1 ? 'each selected account’s balance' : 'your account balance'}.${currencies.length > 1 ? ' Enter each amount in the currency shown.' : ''}`}</p>
+        {missingCurrency && <p className="capture-error" role="alert">Set the account currency in Account details before recording a cash result.</p>}
+      </div>}
+      <fieldset className="capture-tags"><legend>Setup Tags</legend><div>
+        {setupTags.map(tag => <button key={tag} type="button" aria-pressed={tags.includes(tag)} onClick={() => setTags(current => current.includes(tag) ? current.filter(value => value !== tag) : [...current, tag])}>{tag}</button>)}
+      </div></fieldset>
+      <label className="capture-field" htmlFor={`${id}-notes`}>Notes
+        <textarea id={`${id}-notes`} aria-label="Notes" rows={3} maxLength={10_000} placeholder="Setup context, mistakes, lessons..." value={notes} onChange={event => setNotes(event.target.value)} />
+      </label>
+    </fieldset>
+    {error && <p className="capture-error" role="alert">{error}</p>}
+    <div className="capture-submit">
+      <button className="account-primary-button" type="submit" disabled={!canSubmit}>{saving ? 'Saving…' : 'Log Trade'}</button>
+      {success && <p className="capture-success" role="status">{success}</p>}
+      {!destinations.length && <span>Choose a trading account above to save.</span>}
     </div>
-  );
+  </form>;
 }

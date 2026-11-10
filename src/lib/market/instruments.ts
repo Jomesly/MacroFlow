@@ -35,4 +35,46 @@ export const referenceCharts: Record<
     widgetCandidate: 'BITSTAMP:BTCUSD',
     note: 'BTC/USD spot reference. Exchange prices can differ from your broker.',
   },
+  US500: {
+    name: 'S&P 500 index',
+    url: 'https://www.tradingview.com/symbols/SPX/',
+    widgetCandidate: 'SP:SPX',
+    note: 'S&P 500 cash index reference. Your broker’s US500 CFD can trade at a different price.',
+  },
+  EURUSD: {
+    name: 'Euro / US dollar',
+    url: 'https://www.tradingview.com/symbols/EURUSD/?exchange=FXCM',
+    widgetCandidate: 'FX:EURUSD',
+    note: 'EUR/USD reference. Provider quotes can differ from your broker.',
+  },
+  USDJPY: {
+    name: 'US dollar / Japanese yen',
+    url: 'https://www.tradingview.com/symbols/USDJPY/?exchange=FXCM',
+    widgetCandidate: 'FX:USDJPY',
+    note: 'USD/JPY reference. Provider quotes can differ from your broker.',
+  },
+  USDCHF: {
+    name: 'US dollar / Swiss franc',
+    url: 'https://www.tradingview.com/symbols/USDCHF/?exchange=FXCM',
+    widgetCandidate: 'FX:USDCHF',
+    note: 'USD/CHF reference. Provider quotes can differ from your broker.',
+  },
+  AUDUSD: {
+    name: 'Australian dollar / US dollar',
+    url: 'https://www.tradingview.com/symbols/AUDUSD/?exchange=FXCM',
+    widgetCandidate: 'FX:AUDUSD',
+    note: 'AUD/USD reference. Provider quotes can differ from your broker.',
+  },
+  USDCAD: {
+    name: 'US dollar / Canadian dollar',
+    url: 'https://www.tradingview.com/symbols/USDCAD/?exchange=FXCM',
+    widgetCandidate: 'FX:USDCAD',
+    note: 'USD/CAD reference. Provider quotes can differ from your broker.',
+  },
+  NZDUSD: {
+    name: 'New Zealand dollar / US dollar',
+    url: 'https://www.tradingview.com/symbols/NZDUSD/?exchange=FXCM',
+    widgetCandidate: 'FX:NZDUSD',
+    note: 'NZD/USD reference. Provider quotes can differ from your broker.',
+  },
 };

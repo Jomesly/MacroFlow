@@ -1229,17 +1229,21 @@ button:active:not(:disabled),
 }
 .journal-main {
   flex: 1;
+  padding-top: 24px;
 }
 .journal-heading {
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
+}
+.journal-heading .page-kicker {
+  margin-bottom: 6px;
 }
 .journal-heading h1 {
-  font-size: clamp(36px, 4.4vw, 64px);
-  line-height: 0.92;
+  font-size: clamp(24px, 2.5vw, 36px);
+  line-height: 1.12;
   letter-spacing: -0.03em;
   font-weight: 700;
   text-transform: uppercase;
@@ -1247,7 +1251,7 @@ button:active:not(:disabled),
 .journal-heading p {
   color: var(--muted);
   font-size: 13px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 .journal-access-label {
   display: flex;
@@ -1255,6 +1259,270 @@ button:active:not(:disabled),
   gap: 7px;
   font-size: 11px;
   color: var(--positive);
+}
+.trading-account-bar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+.trading-account-picker { flex: 1; min-width: 0; }
+.trading-account-picker > label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+.trading-account-picker select,
+.account-field input,
+.account-field select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  color: var(--frost);
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.trading-account-actions { display: flex; gap: 8px; }
+.account-primary-button, .account-secondary-button, .account-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  cursor: pointer;
+}
+.account-primary-button { background: var(--frost); color: var(--background); font-weight: 600; }
+.account-primary-button:hover { background: var(--signal-hover); }
+.account-secondary-button, .account-icon-button { background: transparent; color: var(--foreground); }
+.account-secondary-button:hover, .account-icon-button:hover { border-color: var(--muted); }
+.account-primary-button:disabled, .account-secondary-button:disabled, .account-icon-button:disabled { opacity: .5; cursor: not-allowed; }
+.account-icon-button { width: 44px; flex-shrink: 0; padding: 10px; }
+.trading-account-error { flex-basis: 100%; color: var(--negative); font-size: 13px; overflow-wrap: anywhere; }
+.trading-account-hint { flex-basis: 100%; color: var(--muted); font-size: 13px; }
+.account-empty-state { border: 1px solid var(--line); padding: 24px; }
+.account-empty-state h2 { font-size: 18px; margin-bottom: 8px; }
+.account-empty-state p { color: var(--muted); font-size: 13px; }
+.journal-form-panel > p { overflow-wrap: anywhere; }
+.account-dialog {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  color: var(--foreground);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+}
+.account-dialog::backdrop { background: rgb(0 0 0 / 75%); }
+.account-dialog-panel { padding: 28px; }
+.account-dialog-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.account-dialog-kicker { font-size: 11px; color: var(--muted); }
+.account-dialog-heading h2 { font-size: 24px; line-height: 1.2; letter-spacing: -.02em; margin-top: 6px; }
+.account-dialog-description { color: var(--muted); font-size: 13px; margin: 14px 0 20px; }
+.account-field { display: block; min-width: 0; font-size: 13px; margin-bottom: 16px; }
+.account-field > input, .account-field > select { margin-top: 7px; }
+.account-field > span, .account-field > small { color: var(--muted); font-size: 12px; }
+.account-field > small { display: block; margin-top: 6px; }
+.account-field-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
+.account-server-details { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.account-server-details summary { min-height: 44px; align-content: center; cursor: pointer; }
+.account-identity-preview { padding: 14px 16px; border: 1px solid var(--line); margin-bottom: 16px; overflow-wrap: anywhere; font-size: 13px; }
+.account-identity-preview > span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+.account-identity-preview > strong { font-weight: 500; }
+.account-dialog-note { font-size: 12px; color: var(--muted); }
+.account-dialog-footer { display: flex; justify-content: end; gap: 10px; margin-top: 24px; }
+@media (max-width: 600px) {
+  .trading-account-picker { flex-basis: 100%; }
+  .trading-account-actions { width: 100%; justify-content: end; }
+  .account-dialog-panel { padding: 20px; }
+  .account-field-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .account-field input, .account-field select { font-size: 16px; }
+}
+/* Trade capture and account funds follow the existing obsidian desk tokens. */
+.trade-capture, .trade-capture-fields, .capture-direction, .capture-tags { min-width: 0; border: 0; margin: 0; padding: 0; }
+.trade-capture-fields:disabled { opacity: .65; }
+.account-dropdown { position: relative; }
+.account-dropdown-trigger { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-panel); background: var(--surface); color: var(--frost); font-size: 14px; text-align: left; cursor: pointer; transition: border-color .15s; }
+.account-dropdown-trigger > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-dropdown-trigger > svg { flex-shrink: 0; color: var(--muted); }
+.account-dropdown-trigger:hover, .account-dropdown-trigger[aria-expanded="true"] { border-color: var(--muted); }
+.account-dropdown-trigger:disabled { opacity: .5; cursor: not-allowed; }
+.account-dropdown-count { flex-shrink: 0; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.account-dropdown-panel { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30; padding: 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / 25%); }
+.account-dropdown-options { max-height: min(320px, 45dvh); overflow-y: auto; overscroll-behavior: contain; }
+.account-dropdown-option { display: flex; align-items: center; gap: 12px; padding: 10px; min-height: 60px; border-radius: 4px; cursor: pointer; transition: background-color .15s; }
+.account-dropdown-option:hover, .account-dropdown-option.is-selected { background: var(--surface-raised); }
+.account-dropdown-option:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+.account-dropdown-option input, .capture-checkbox input { accent-color: var(--frost); width: 18px; height: 18px; flex: 0 0 18px; margin: 0; }
+.account-dropdown-help { padding: 10px; color: var(--muted); font-size: 12px; }
+.account-dropdown-search { width: 100%; min-height: 44px; padding: 10px; margin-bottom: 6px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); color: var(--frost); font-size: 16px; }
+.destination-identity { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.destination-identity strong { color: var(--frost); font-size: 13px; font-weight: 550; overflow-wrap: anywhere; }
+.destination-identity > span, .destination-currency { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.destination-currency { flex-shrink: 0; max-width: 100px; }
+.capture-help { font-size: 12px; line-height: 1.7; color: var(--muted); margin-top: 10px; }
+.capture-section-heading { display: flex; align-items: center; gap: 9px; margin: 24px 0 16px; }
+.capture-section-heading h3 { color: var(--frost); font-size: 14px; font-weight: 550; }
+.capture-step { color: var(--muted); font: 11px var(--font-geist-mono), monospace; }
+.capture-shared { color: var(--muted); font-size: 12px; margin-left: auto; text-align: right; }
+.capture-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.capture-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; color: var(--foreground); font-size: 12px; font-weight: 450; }
+.capture-field small { font-size: 12px; font-weight: 400; color: var(--muted); }
+.capture-field input, .capture-field select, .capture-field textarea, .capture-status-row select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; background: var(--background); color: var(--frost); border: 1px solid var(--line-strong); border-radius: 6px; font-size: 14px; font-weight: 400; }
+.capture-field input::placeholder, .capture-field textarea::placeholder { color: var(--muted); }
+.capture-field input:disabled { color: var(--muted); background: var(--surface-raised); }
+.capture-field textarea { resize: vertical; line-height: 1.7; }
+.capture-direction legend { font-size: 12px; margin-bottom: 8px; }
+.capture-segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.capture-segmented button { min-height: 44px; border: 1px solid var(--line-strong); background: var(--background); border-radius: 6px; font-size: 13px; cursor: pointer; }
+.capture-segmented .is-long { background: var(--bull-fill); color: var(--frost); border-color: var(--positive); }
+.capture-segmented .is-short { background: var(--bear-fill); color: var(--frost); border-color: var(--negative); }
+.capture-status-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding: 18px 0; font-size: 12px; }
+.capture-status-row select { width: auto; min-width: 150px; }
+.capture-execution { border: 1px solid var(--line-strong); border-radius: 6px; margin-bottom: 10px; overflow: clip; }
+.capture-execution > summary { display: flex; align-items: center; gap: 10px; padding: 14px; min-height: 64px; list-style: none; cursor: pointer; }
+.capture-execution > summary::-webkit-details-marker { display: none; }
+.capture-execution > summary > span:first-of-type { min-width: 0; flex: 1; }
+.capture-execution > summary strong { display: block; font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
+.capture-execution > summary small { display: block; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; margin-top: 2px; }
+.execution-status { color: var(--muted); font-size: 12px; }
+.execution-body { padding: 16px; border-top: 1px solid var(--line); }
+.execution-overrides { border-top: 1px solid var(--line); margin-top: 16px; }
+.execution-overrides > summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; font-size: 12px; color: var(--muted); cursor: pointer; list-style: none; }
+.execution-overrides > summary::after { content: '+'; font-size: 16px; }
+.execution-overrides[open] > summary::after { content: '−'; }
+.execution-overrides > summary span { margin-left: auto; color: var(--foreground); font-size: 11px; }
+.execution-overrides > .capture-grid { margin-top: 10px; }
+.capture-execution[open] > summary > svg:last-child { transform: rotate(180deg); }
+.capture-checkbox { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--muted); font-size: 12px; line-height: 1.7; cursor: pointer; }
+.capture-wide { grid-column: 1 / -1; }
+.capture-tags { margin-bottom: 20px; }
+.capture-tags legend { font-size: 12px; margin-bottom: 9px; }
+.capture-tags > div { display: flex; gap: 8px; flex-wrap: wrap; }
+.capture-tags button { padding: 9px 14px; min-height: 44px; font-size: 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); cursor: pointer; }
+.capture-tags button[aria-pressed='true'] { color: var(--background); background: var(--frost); }
+.capture-error { color: var(--negative); font-size: 13px; line-height: 1.7; padding: 12px 0; overflow-wrap: anywhere; }
+.capture-success { display: flex; align-items: start; gap: 8px; color: var(--positive); font-size: 13px; line-height: 1.7; padding: 12px 0; }
+.capture-success svg { flex-shrink: 0; margin-top: 3px; }
+.capture-submit { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); padding-top: 20px; margin-top: 24px; }
+.capture-submit > span { color: var(--muted); font-size: 12px; max-width: 190px; line-height: 1.6; }
+.trade-capture-classic .trade-capture-fields { display: grid; gap: 20px; }
+.capture-logged-at { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-panel); font-size: 12px; color: var(--muted); }
+.capture-logged-at time { color: var(--foreground); font: 12px var(--font-geist-mono), monospace; font-variant-numeric: tabular-nums; text-align: right; }
+.capture-price-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.trade-capture-classic .capture-field input, .trade-capture-classic .capture-field select, .trade-capture-classic .capture-field textarea { border-radius: var(--radius-panel); min-height: 48px; }
+.trade-capture-classic .capture-field textarea { min-height: 88px; }
+.trade-capture-classic .capture-field, .trade-capture-classic legend { color: var(--muted); }
+.capture-optional { font-weight: 400; }
+.capture-pnl-preview { display: flex; align-items: center; min-height: 48px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-panel); color: var(--muted); font: 14px var(--font-geist-mono), monospace; font-variant-numeric: tabular-nums; }
+.capture-pnl-preview.is-positive { color: var(--positive); }
+.capture-pnl-preview.is-negative { color: var(--negative); }
+.capture-result { min-width: 0; border: 0; margin: 0; padding: 0; }
+.capture-result legend { font-size: 12px; margin-bottom: 8px; }
+.capture-result .capture-segmented { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.capture-result-hint { color: var(--caution); font-weight: 400; }
+.capture-cash-result { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px 16px; }
+.capture-cash-result > p { grid-column: 1 / -1; margin-top: 0; }
+.trade-capture-classic .capture-segmented button { color: var(--muted); border-radius: var(--radius-panel); font-size: 14px; font-weight: 600; }
+.trade-capture-classic .capture-segmented button:hover { border-color: var(--muted); }
+.trade-capture-classic .capture-segmented .is-short, .trade-capture-classic .capture-segmented .is-loss { background: #c64224; border-color: #e15a3b; color: #fff; }
+.trade-capture-classic .capture-segmented .is-long, .trade-capture-classic .capture-segmented .is-win { background: var(--bull-fill); border-color: var(--positive); color: var(--frost); }
+.trade-capture-classic .capture-segmented .is-breakeven { background: var(--flat-fill); border-color: var(--muted); color: var(--frost); }
+.trade-capture-classic .capture-tags { margin: 0; }
+.trade-capture-classic .capture-tags button { color: var(--muted); }
+.trade-capture-classic .capture-tags button[aria-pressed='true'] { color: var(--background); }
+.trade-capture-classic .capture-submit { justify-content: start; flex-flow: row wrap; gap: 16px; border: 0; padding: 0; margin-top: 24px; }
+.trade-capture-classic .capture-submit > button { min-width: 128px; font-size: 14px; }
+@media (max-width: 600px) {
+  .capture-price-grid { grid-template-columns: minmax(0, 1fr); }
+  .capture-logged-at { gap: 12px; padding: 12px; }
+  .capture-logged-at time { font-size: 11px; }
+}
+.journal-capture-aside { display: grid; gap: 20px; min-width: 0; }
+.account-funds-card { min-width: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-panel); padding: 24px; background: var(--surface); }
+.funds-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.funds-card-heading > span:first-child { display: flex; align-items: center; gap: 8px; }
+.funds-card-heading > span:last-child { color: var(--muted); font: 11px var(--font-geist-mono), monospace; }
+.funds-card-identity { font-size: 12px; color: var(--muted); line-height: 1.7; margin: 12px 0 22px; overflow-wrap: anywhere; }
+.funds-balance-label { display: block; font-size: 12px; color: var(--muted); }
+.funds-card-balance { font-size: clamp(20px, 2vw, 26px); font-weight: 550; color: var(--frost); letter-spacing: -.04em; line-height: 1.3; margin: 8px 0 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.funds-coverage { display: flex; align-items: start; gap: 7px; font-size: 12px; line-height: 1.7; color: var(--caution); }
+.funds-coverage svg { flex-shrink: 0; margin-top: 3px; }
+.funds-coverage.is-complete { color: var(--muted); }
+.funds-card-breakdown { border-top: 1px solid var(--line); margin: 18px 0 4px; padding-top: 8px; }
+.funds-card-breakdown > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: 12px; }
+.funds-card-breakdown dt { color: var(--muted); }
+.funds-card-breakdown dd { font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+.funds-manage-button { width: 100%; margin-top: 20px; }
+.funds-card-loading, .funds-card-error { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.funds-card-error { color: var(--negative); }
+.account-funds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; margin-bottom: 28px; }
+.funds-dialog { width: min(680px, calc(100% - 32px)); }
+.funds-overview { padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+.funds-dialog-balance { font-size: clamp(28px, 5vw, 36px); letter-spacing: -.04em; color: var(--frost); line-height: 1.3; font-weight: 600; margin: 8px 0 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.funds-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
+.funds-summary-grid dt { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.funds-summary-grid dd { font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.funds-as-of { display: block; color: var(--muted); font-size: 12px; line-height: 1.6; margin-top: 20px; }
+.funds-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0 8px; }
+.funds-section-heading h3, .funds-entry-form h3 { color: var(--frost); font-size: 16px; font-weight: 550; letter-spacing: -.02em; }
+.funds-history-entry { border-bottom: 1px solid var(--line); padding: 18px 0 10px; }
+.funds-entry-top { display: flex; align-items: start; justify-content: space-between; gap: 14px; font-size: 13px; }
+.funds-entry-top > div { min-width: 0; }
+.funds-entry-top strong { font-weight: 500; }
+.funds-entry-top time { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+.funds-entry-top > span { font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; max-width: 52%; }
+.funds-history-entry > p { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.funds-entry-actions { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 0 12px; margin-top: 4px; }
+.funds-entry-actions > div { display: flex; gap: 8px; }
+.funds-entry-actions button, .funds-revisions > summary { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); min-height: 44px; padding: 6px 4px; cursor: pointer; }
+.funds-entry-actions button:hover { color: var(--frost); }
+.funds-revisions > summary { list-style: none; }
+.funds-revisions { min-width: 0; flex: 1; }
+.funds-revisions[open] { flex-basis: 100%; }
+.funds-revisions ol { border-left: 1px solid var(--line-strong); padding: 0 0 0 14px; margin: 8px 0 12px; }
+.funds-revisions li { font-size: 12px; line-height: 1.7; padding: 8px 0; color: var(--muted); overflow-wrap: anywhere; }
+.funds-revisions li > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.funds-revisions strong { color: var(--foreground); font-weight: 500; }
+.funds-void-badge { display: inline-block; margin-left: 8px; padding: 2px 6px; font-size: 11px; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 4px; }
+.funds-history-entry.is-voided > .funds-entry-top > span { text-decoration: line-through; color: var(--muted); }
+.funds-opening-history { padding: 20px 0 0; }
+.funds-empty { padding: 30px 20px; border-bottom: 1px solid var(--line); text-align: center; }
+.funds-empty > svg { margin: 0 auto 12px; color: var(--muted); }
+.funds-empty h4 { font-size: 14px; font-weight: 500; }
+.funds-empty p { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+.funds-entry-form { margin-top: 24px; }
+.funds-entry-form > .capture-help { margin: 10px 0 20px; }
+.funds-entry-form .capture-field { margin-bottom: 16px; }
+.funds-notice { padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--muted); font-size: 12px; line-height: 1.7; margin: 12px 0; }
+.funds-balance-preview { padding: 16px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface-raised); margin-top: 18px; }
+.funds-balance-preview > span { font-size: 12px; color: var(--muted); }
+.funds-balance-preview strong { display: block; color: var(--frost); font-size: 23px; font-weight: 550; letter-spacing: -.03em; margin: 6px 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.funds-balance-preview small { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.trade-history-count { padding: 16px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.trade-history-count > span { color: var(--muted); display: block; font-size: 12px; margin-top: 4px; }
+.trade-history-symbol { min-width: 0; }
+.trade-history-symbol strong { display: block; color: var(--frost); font-size: 13px; }
+.trade-history-symbol small { display: block; color: var(--muted); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; margin-top: 4px; }
+.trade-history-symbol .trade-shared-label { font-size: 11px; }
+.trade-cash-result { font-size: 13px; line-height: 1.7; color: var(--muted); }
+.trade-cash-result strong { color: var(--foreground); font-weight: 500; }
+.trade-record-account { padding: 14px 16px 0; font-size: 12px; line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .capture-grid { grid-template-columns: minmax(0, 1fr); }
+  .capture-field input, .capture-field select, .capture-field textarea, .capture-status-row select { font-size: 16px; }
+  .capture-submit { align-items: stretch; flex-direction: column; }
+  .capture-submit > span { max-width: none; }
+  .capture-shared { max-width: 130px; }
+  .trading-account-actions { flex-wrap: wrap; gap: 8px; justify-content: start; }
+  .funds-section-heading { align-items: start; flex-direction: column; }
+  .account-funds-card { padding: 20px; }
+  .funds-entry-top { gap: 10px; }
 }
 .journal-tabs {
   display: flex;
@@ -1935,11 +2203,15 @@ button:active:not(:disabled),
   .workspace-footer-inner {
     padding: 18px 20px;
   }
+  .journal-main {
+    padding-top: 20px;
+  }
   .journal-heading {
-    margin-bottom: 24px;
+    gap: 12px;
+    margin-bottom: 16px;
   }
   .journal-heading h1 {
-    font-size: 32px;
+    font-size: 24px;
   }
   .journal-heading p {
     font-size: 12px;
@@ -2217,6 +2489,86 @@ button:active:not(:disabled),
 .research-footer a { display: inline-block; padding: .75rem 0; color: var(--frost); }
 .research-empty { padding: 1.5rem 0; color: var(--muted); }
 .research-loading { padding: 1rem 0; }
+
+/* Journal migration: a quiet, bounded workspace inside the existing account dialog. */
+.account-import-choice { display: flex; flex-wrap: wrap; gap: .25rem 1rem; justify-content: space-between; align-items: center; border: 1px solid var(--line); background: var(--surface); padding: .75rem 1rem; border-radius: .625rem; font-size: .8125rem; margin-bottom: 1.25rem; }
+.account-import-choice button { min-height: 2.75rem; }
+.import-dialog { width: min(54rem, calc(100vw - 2rem)); max-width: none; padding: 0; overflow: hidden; }
+.import-shell { display: flex; flex-direction: column; max-height: min(90dvh, 56rem); color: var(--foreground); }
+.import-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.5rem 1.75rem 1rem; }
+.import-header h2 { font-size: 1.65rem; color: var(--frost); letter-spacing: -.035em; text-wrap: balance; }
+.import-header h2:focus { outline: none; }
+.import-steps { display: flex; list-style: none; gap: .75rem; padding: 0 1.75rem 1.25rem; border-bottom: 1px solid var(--line); font-size: .75rem; color: var(--muted); }
+.import-steps li { display: flex; align-items: center; gap: .375rem; flex: 1; }
+.import-steps li > span { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex-shrink: 0; border: 1px solid var(--line); border-radius: 50%; font-variant-numeric: tabular-nums; }
+.import-steps .is-current { color: var(--frost); }
+.import-steps li[aria-current] > span { color: var(--background); background: var(--accent); border-color: var(--accent); }
+.import-body { padding: 1.5rem 1.75rem; overflow-y: auto; overscroll-behavior: contain; min-height: 12rem; }
+.import-body .account-field { margin-bottom: 1rem; min-width: 0; }
+.import-intro { margin-bottom: 1.25rem; font-size: .875rem; text-wrap: pretty; }
+.import-upload { display: grid; justify-items: center; text-align: center; border: 1px dashed var(--muted); border-radius: .875rem; padding: 1.75rem 1rem; background: var(--surface); margin-bottom: 1rem; gap: .75rem; }
+.import-upload .account-field { width: min(100%, 26rem); margin: 0; text-align: left; }
+.import-upload p { font-size: .75rem; color: var(--muted); }
+.import-upload strong { max-width: 100%; overflow-wrap: anywhere; font-size: .875rem; color: var(--frost); }
+.import-help { border-top: 1px solid var(--line); margin-top: 1rem; padding: .25rem 0; font-size: .8125rem; }
+.import-help summary, .import-row summary { min-height: 2.75rem; display: flex; align-items: center; cursor: pointer; color: var(--frost); }
+.import-help summary::before, .import-row summary::before { content: '+'; margin-right: .5rem; }
+.import-help[open] summary::before, .import-row details[open] summary::before { content: '−'; }
+.import-help p { margin-bottom: .75rem; line-height: 1.6; }
+.import-template { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; font-size: .8125rem; }
+.import-mapping, .import-format { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 1rem; }
+.import-format { padding-top: 1.25rem; margin-top: .25rem; border-top: 1px solid var(--line); }
+.import-check { display: flex; align-items: center; gap: .75rem; min-height: 2.75rem; cursor: pointer; font-size: .8125rem; line-height: 1.5; }
+.import-check input { width: 1.125rem; height: 1.125rem; flex-shrink: 0; accent-color: var(--accent); }
+.import-check > span { min-width: 0; }
+.import-check strong, .import-check span > span { display: block; }
+.import-check span > span { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+.import-review-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.import-review-heading h3 { color: var(--frost); font-size: 1.125rem; letter-spacing: -.02em; }
+.import-review-heading p { font-size: .8125rem; margin-top: .25rem; overflow-wrap: anywhere; }
+.import-review-heading button { min-height: 2.75rem; flex-shrink: 0; font-size: .8125rem; }
+.import-counts { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin: 1rem 0; color: var(--muted); font-size: .75rem; font-variant-numeric: tabular-nums; }
+.import-note { border: 1px solid var(--line); background: var(--surface); padding: 1rem; border-radius: .625rem; margin: 1rem 0; font-size: .8125rem; line-height: 1.6; }
+.import-note strong { font-weight: 500; color: var(--frost); font-variant-numeric: tabular-nums; }
+.import-note p + p { margin-top: .5rem; }
+.import-row { padding: .75rem 1rem; border: 1px solid var(--line); border-radius: .625rem; margin-top: .5rem; min-width: 0; }
+.import-row-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.import-row-heading .import-check { flex: 1; }
+.import-status { padding: .375rem .5rem; background: var(--surface-raised); border-radius: .375rem; font-size: .6875rem; color: var(--frost); flex-shrink: 0; }
+.import-row.is-invalid .import-status { color: #fca5a5; }
+.import-row.is-possible .import-status { color: #fcd34d; }
+.import-row-message { margin: .5rem 0 0 1.875rem; font-size: .75rem; line-height: 1.5; color: var(--foreground); }
+.import-row details { font-size: .75rem; }
+.import-row textarea { display: block; width: 100%; min-height: 2.75rem; padding: .625rem .75rem; margin-top: .5rem; border: 1px solid var(--line-strong); border-radius: var(--radius-panel); background: var(--surface); color: var(--frost); font-size: .875rem; resize: vertical; }
+.import-pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; font-size: .75rem; }
+.import-footer { display: flex; justify-content: space-between; flex-shrink: 0; align-items: center; gap: .75rem; padding: 1rem 1.75rem; border-top: 1px solid var(--line); background: var(--surface); }
+.import-footer button { min-height: 2.75rem; }
+.import-success { max-width: 30rem; margin: 1.5rem auto 2rem; text-align: center; }
+.import-success svg { margin: 0 auto 1rem; color: var(--accent); }
+.import-success h3 { color: var(--frost); font-size: 1.5rem; }
+.import-success p { font-size: .875rem; line-height: 1.7; margin-top: .75rem; }
+.import-history { padding: 1.5rem; background: var(--surface); border: 1px solid var(--line); border-radius: .875rem; margin-bottom: 1.5rem; }
+.import-history > .account-dialog-note { margin-top: 1rem; }
+.import-history-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--line); margin-top: 1rem; }
+.import-history-row > div:first-child { min-width: 0; flex: 1; }
+.import-history-row h4 { color: var(--frost); font-size: .875rem; overflow-wrap: anywhere; }
+.import-history-row p { font-size: .75rem; margin-top: .25rem; overflow-wrap: anywhere; }
+.import-undo { flex-basis: 100%; background: var(--surface-raised); padding: 1rem; border-radius: .625rem; }
+.import-undo p { margin: 0 0 1rem; }
+.import-undo button + button { margin-left: .75rem; }
+@media (max-width: 550px) {
+  .import-dialog { width: calc(100vw - 1rem); }
+  .import-shell { max-height: 94dvh; }
+  .import-header, .import-body { padding: 1.125rem; }
+  .import-steps { padding: 0 1.125rem 1rem; gap: .375rem; font-size: .625rem; }
+  .import-steps li { flex-direction: column; align-items: flex-start; gap: .375rem; }
+  .import-mapping, .import-format { grid-template-columns: minmax(0, 1fr); }
+  .import-footer { padding: .875rem 1.125rem; }
+  .import-footer button { font-size: .75rem; }
+  .import-row-heading { flex-direction: column-reverse; }
+  .import-review-heading { align-items: flex-start; flex-wrap: wrap; gap: .5rem; }
+  .import-history { padding: 1.125rem; }
+}
 .research-loading > div { margin-top: .5rem; background: var(--surface-raised); min-height: 4rem; }
 .market-missing { padding-top: 5rem; }
 .market-missing p { margin: 1.5rem 0; max-width: 50ch; }
@@ -2249,4 +2601,130 @@ button:active:not(:disabled),
   .research-history-chart text { font-size: 20px; }
   .research-fact, .market-research .context-panel { padding: 1.25rem; }
   .research-breakdown { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── Journal dashboard ───────────────────────────────────────
+   Charts for the Analytics tab. Green and red keep their market meaning:
+   lines and figures use the canvas-safe tones, fills sit behind light text. */
+.jd { display: grid; gap: 20px; min-width: 0; }
+.jd .is-positive { color: var(--positive); }
+.jd .is-negative { color: var(--negative); }
+.jd-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 16px; }
+.jd-field { flex: 1 1 140px; max-width: 220px; min-width: 0; }
+.jd-toolbar .market-filters { margin-left: auto; }
+.jd-toolbar .market-filters button { padding-inline: 14px; }
+.jd-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+.jd-tile { min-width: 0; display: grid; gap: 10px; align-content: start; padding: 18px 20px; border: 1px solid var(--line-strong); border-radius: var(--radius-panel); background: var(--surface); }
+.jd-label { font-size: 12px; color: var(--muted); }
+.jd-tile-body { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 12px; min-height: 50px; }
+.jd-value { font: 600 clamp(19px, 1.7vw, 24px)/1.15 var(--font-geist-mono), monospace; letter-spacing: -0.04em; color: var(--frost); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jd-sub { font-size: 11px; line-height: 1.5; color: var(--muted); font-variant-numeric: tabular-nums; }
+.jd-gauge { width: 88px; flex-shrink: 0; }
+.jd-gauge path { fill: none; stroke-width: 9; }
+.jd-gauge .track { stroke: var(--line); }
+.jd-gauge .seg-positive { stroke: var(--positive); }
+.jd-gauge .seg-negative { stroke: var(--negative); }
+.jd-gauge .seg-flat { stroke: #5b5b64; }
+.jd-spark { width: 88px; height: 36px; flex-shrink: 0; overflow: visible; }
+.jd-spark path { fill: none; stroke: currentColor; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.jd-spark.is-flat { color: var(--muted); }
+.jd-ratio { display: grid; gap: 6px; }
+.jd-ratio div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; font: 11px var(--font-geist-mono), monospace; font-variant-numeric: tabular-nums; }
+.jd-ratio i { display: block; height: 6px; min-width: 2px; background: currentColor; border-radius: 1px; }
+.jd-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 16px 24px; padding: 16px 0; border-block: 1px solid var(--line); }
+.jd-strip dt { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+.jd-strip dd { font: 500 14px var(--font-geist-mono), monospace; color: var(--frost); font-variant-numeric: tabular-nums; }
+.jd-strip dd small { font-size: 10px; font-weight: 400; color: var(--muted); }
+.jd-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; }
+.jd-row-even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.jd-panel { min-width: 0; padding: 20px; border: 1px solid var(--line-strong); border-radius: var(--radius-panel); background: var(--surface); }
+.jd-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 16px; }
+.jd-panel-head h3 { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; color: var(--frost); }
+.jd-panel-head > span { font: 11px var(--font-geist-mono), monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
+.jd-empty { padding: 28px 0; font-size: 12px; line-height: 1.7; color: var(--muted); }
+.jd-note { font-size: 11px; line-height: 1.7; color: var(--muted); }
+
+.jd-equity { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; }
+.jd-axis { position: relative; height: 220px; min-width: 40px; font: 10px var(--font-geist-mono), monospace; color: var(--muted); }
+.jd-axis span { position: absolute; right: 0; transform: translateY(-50%); white-space: nowrap; }
+.jd-plot { position: relative; height: 220px; touch-action: pan-y; cursor: crosshair; }
+.jd-plot.is-flat { color: var(--muted); }
+.jd-plot-reveal, .jd-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.jd-plot svg { overflow: visible; }
+.jd-plot .line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.jd-plot .area { fill: currentColor; opacity: 0.1; }
+.jd-plot .zero { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.jd-cross { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-strong); pointer-events: none; }
+.jd-dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: currentColor; border: 2px solid var(--surface); transform: translate(-50%, -50%); pointer-events: none; }
+.jd-tip { position: absolute; top: 4px; z-index: 2; display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--line-strong); background: var(--surface-raised); font-size: 11px; color: var(--foreground); white-space: nowrap; pointer-events: none; transform: translateX(12px); }
+.jd-tip.flip { transform: translateX(calc(-100% - 12px)); }
+.jd-tip strong { font-weight: 600; color: var(--frost); }
+.jd-tip span { display: flex; justify-content: space-between; gap: 16px; }
+.jd-tip b { font: 500 11px var(--font-geist-mono), monospace; font-variant-numeric: tabular-nums; }
+.jd-xaxis { grid-column: 2; display: flex; justify-content: space-between; margin-top: 8px; font: 10px var(--font-geist-mono), monospace; color: var(--muted); }
+
+.jd-readout { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; font: 11px var(--font-geist-mono), monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
+.jd-readout b { font-weight: 500; }
+.jd-bars { position: relative; display: flex; gap: 2px; height: 190px; }
+.jd-bars .zero { position: absolute; left: 0; right: 0; height: 1px; background: var(--line-strong); }
+.jd-bar { position: relative; flex: 1; min-width: 2px; }
+.jd-bar.is-flat { color: var(--muted); }
+.jd-bar i { position: absolute; left: 0; right: 0; min-height: 2px; background: currentColor; border-radius: 1px; opacity: 0.8; }
+.jd-bar.is-active i { opacity: 1; }
+
+.jd-cal-nav { display: flex; align-items: center; gap: 8px; }
+.jd-cal-nav button { display: grid; place-items: center; width: 40px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); }
+.jd-cal-nav button:hover { color: var(--frost); border-color: var(--line-strong); }
+.jd-cal-nav strong { min-width: 124px; text-align: center; font-size: 13px; font-weight: 500; color: var(--frost); }
+.jd-cal, .jd-heat { table-layout: fixed; border-collapse: separate; }
+.jd-cal { border-spacing: 4px; margin: -4px; width: calc(100% + 8px); }
+.jd-cal th, .jd-heat th { font: 500 10px var(--font-geist-mono), monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.jd-cal th { padding: 0 2px 4px; text-align: left; }
+.jd-cal td { height: 74px; padding: 7px 8px; vertical-align: top; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--background); }
+.jd-cal td.is-outside, .jd-cal td.week-col { border-color: transparent; background: none; }
+.jd-cal .week-col { width: 13%; }
+.jd-cal td[data-tone="positive"], .jd-heat td[data-tone="positive"], .jd-legend i[data-tone="positive"] { background: color-mix(in srgb, var(--bull-fill) var(--jd-heat, 100%), var(--surface)); border-color: transparent; }
+.jd-cal td[data-tone="negative"], .jd-heat td[data-tone="negative"], .jd-legend i[data-tone="negative"] { background: color-mix(in srgb, var(--bear-fill) var(--jd-heat, 100%), var(--surface)); border-color: transparent; }
+.jd-cal td[data-tone="flat"], .jd-heat td[data-tone="flat"], .jd-legend i[data-tone="flat"] { background: var(--flat-fill); border-color: transparent; }
+.jd-cal .day { display: block; font: 10px var(--font-geist-mono), monospace; color: var(--muted); }
+.jd-cal .net { display: block; margin-top: 7px; font: 600 13px var(--font-geist-mono), monospace; letter-spacing: -0.02em; color: var(--frost); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jd-cal .meta { display: block; margin-top: 3px; font-size: 10px; color: var(--muted); white-space: nowrap; }
+.jd-cal td[data-tone="positive"] :is(.day, .meta) { color: var(--bull-soft); }
+.jd-cal td[data-tone="negative"] :is(.day, .meta) { color: var(--bear-soft); }
+.jd-cal td[data-tone="flat"] :is(.day, .meta) { color: var(--flat-soft); }
+.jd-cal td.week-col .net { margin-top: 21px; }
+
+.jd-heat { border-spacing: 3px; margin: -3px; width: calc(100% + 6px); }
+.jd-heat thead th { padding-bottom: 3px; text-transform: none; letter-spacing: 0; }
+.jd-heat tbody th { width: 34px; text-align: left; }
+.jd-heat tbody td { height: 44px; text-align: center; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--background); font: 600 11px var(--font-geist-mono), monospace; color: var(--frost); font-variant-numeric: tabular-nums; }
+.jd-heat td small { display: block; margin-top: 1px; font-size: 9px; font-weight: 400; color: var(--flat-soft); white-space: nowrap; overflow: hidden; }
+.jd-heat td[data-tone="positive"] small { color: var(--bull-soft); }
+.jd-heat td[data-tone="negative"] small { color: var(--bear-soft); }
+.jd-legend { display: flex; align-items: center; gap: 4px; margin-top: 14px; font-size: 10px; color: var(--muted); }
+.jd-legend i { width: 16px; height: 8px; }
+.jd-legend i:first-of-type { margin-left: 4px; }
+.jd-legend i:last-of-type { margin-right: 4px; }
+
+.jd-breakdown { width: 100%; font-size: 12px; border-collapse: collapse; }
+.jd-breakdown thead th { padding-bottom: 8px; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: right; }
+.jd-breakdown :is(th, td):first-child { text-align: left; padding-right: 16px; }
+.jd-breakdown tbody :is(th, td) { padding: 9px 0 9px 16px; border-top: 1px solid var(--line); text-align: right; font-weight: 400; font-variant-numeric: tabular-nums; }
+.jd-breakdown tbody th { padding-left: 0; color: var(--foreground); }
+.jd-breakdown tbody td { font-family: var(--font-geist-mono), monospace; color: var(--foreground); }
+.jd-breakdown td:nth-child(3) { width: 34%; min-width: 96px; }
+.jd-meter { display: block; height: 3px; margin-top: 5px; background: var(--line); }
+.jd-meter i { display: block; height: 100%; background: currentColor; }
+
+@media (max-width: 960px) {
+  .jd-row, .jd-row-even { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .jd-toolbar .market-filters { margin-left: 0; width: 100%; }
+  .jd-panel { padding: 16px; }
+  .jd-cal { border-spacing: 2px; margin: -2px; width: calc(100% + 4px); }
+  .jd-cal .week-col, .jd-cal .meta { display: none; }
+  .jd-cal td { height: 52px; padding: 5px 4px; }
+  .jd-cal .net { margin-top: 5px; font-size: 10px; }
+  .jd-cal-nav strong { min-width: 104px; }
 }

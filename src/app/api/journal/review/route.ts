@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireJournalAccess } from '@/lib/auth';
 import { listTrades } from '@/lib/journal';
 import { computeWeeklyReview, weekStart } from '@/lib/weekly-review';
+import { TradingAccountError } from '@/lib/trading-account-types';
 
 export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
   }
   try {
     const review = computeWeeklyReview(
-      await listTrades(auth.userId),
+      await listTrades(auth.userId, request.nextUrl.searchParams.get('tradingAccount') ?? undefined),
       date,
       account === null ? undefined : Number(account),
     );
@@ -33,7 +34,8 @@ export async function GET(request: NextRequest) {
       { review },
       { headers: { 'Cache-Control': 'private, no-store' } },
     );
-  } catch {
+  } catch (error) {
+    if (error instanceof TradingAccountError) return NextResponse.json({ error: error.message }, { status: error.status });
     return NextResponse.json(
       { error: 'Weekly review is temporarily unavailable' },
       { status: 503, headers: { 'Cache-Control': 'private, no-store' } },

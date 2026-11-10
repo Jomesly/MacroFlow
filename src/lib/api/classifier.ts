@@ -13,7 +13,21 @@ const COUNTRY_SENSITIVE_CATEGORIES = new Set<EventCategory>([
   'inflation', 'employment', 'gdp', 'pmi', 'retail_sales',
 ]);
 
-const POLICY_CATEGORIES = new Set<EventCategory>(['fed_tone', 'boe_tone']);
+const POLICY_CATEGORIES = new Set<EventCategory>([
+  'fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone',
+]);
+
+/** Named central banks whose policy moves must never be read as the Fed's. */
+const OTHER_CENTRAL_BANKS = "bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc|rbnz|reserve bank of new zealand";
+
+type Rule = { patterns: RegExp[]; category: EventCategory; value: string; impact: EventImpact };
+
+function bankTone(names: string, category: EventCategory): Rule[] {
+  return [
+    { patterns: [new RegExp(`\\b(${names})\\b.{0,40}\\b(dovish|cut|ease|lower)`, 'i')], category, value: 'dovish', impact: 'high' },
+    { patterns: [new RegExp(`\\b(${names})\\b.{0,40}\\b(hawkish|hike|tighten|raise)`, 'i')], category, value: 'hawkish', impact: 'high' },
+  ];
+}
 
 /** Chart commentary describes price, not macro, so it carries no fundamental signal. */
 const TECHNICAL_ARTICLE = /\b(price (forecast|prediction|analysis)|technical (analysis|outlook)|elliott wave)\b/i;
@@ -32,6 +46,7 @@ const FOREIGN_REGIONS: [string, RegExp][] = [
   ['CA', /\b(canada|canadian|bank of canada)\b/i],
   ['AU', /\b(australia|australian|rba)\b/i],
   ['CH', /\b(switzerland|swiss|snb)\b/i],
+  ['NZ', /\b(new zealand|rbnz)\b/i],
   ['OTHER', /\b(india|indian|korea|korean|taiwan|brazil|mexico|turkey|turkish|russia|russian)\b/i],
 ];
 
@@ -47,7 +62,7 @@ function inferCountry(text: string): string | undefined {
   return regions[0];
 }
 
-const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impact: EventImpact }[] = [
+const RULES: Rule[] = [
   // ── Fed Tone ──
   { patterns: [/\bfed\s*(cut|dovish|ease|lower)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
   { patterns: [/\bfed\s*(hike|hawkish|tighten|raise|taper)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
@@ -60,14 +75,22 @@ const RULES: { patterns: RegExp[]; category: EventCategory; value: string; impac
   { patterns: [/\bboe\b.{0,40}\b(dovish|cut|ease)/i], category: 'boe_tone', value: 'dovish', impact: 'medium' },
   { patterns: [/\bboe\b.{0,40}\b(hawkish|hike|tighten)/i], category: 'boe_tone', value: 'hawkish', impact: 'medium' },
 
+  // ── Other major central banks ──
+  ...bankTone('ecb|european central bank', 'ecb_tone'),
+  ...bankTone('boj|bank of japan', 'boj_tone'),
+  ...bankTone('snb|swiss national bank', 'snb_tone'),
+  ...bankTone('rba|reserve bank of australia', 'rba_tone'),
+  ...bankTone('boc|bank of canada', 'boc_tone'),
+  ...bankTone('rbnz|reserve bank of new zealand', 'rbnz_tone'),
+
   // ── Generic Central Bank (defaults to Fed for US-centric assets) ──
   // Only matches when no non-Fed central bank is named in the text
-  { patterns: [/central bank.{0,40}\b(cut|ease|dovish|lower)/i], category: 'fed_tone', value: 'dovish', impact: 'high' },
-  { patterns: [/central bank.{0,40}\b(hike|raise|hawkish|tighten)/i], category: 'fed_tone', value: 'hawkish', impact: 'high' },
-  { patterns: [new RegExp(`^(?!.*\\b(bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc)\\b).*\\brate (cut|ease|lower|dovish)`, 'i')], category: 'fed_tone', value: 'dovish', impact: 'high' },
-  { patterns: [new RegExp(`^(?!.*\\b(bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc)\\b).*\\brate (hike|rise|raise|hawkish|tighten)`, 'i')], category: 'fed_tone', value: 'hawkish', impact: 'high' },
-  { patterns: [new RegExp(`^(?!.*\\b(bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc)\\b).*interest rate.{0,40}\\b(cut|lower|ease)`, 'i')], category: 'fed_tone', value: 'dovish', impact: 'high' },
-  { patterns: [new RegExp(`^(?!.*\\b(bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc)\\b).*interest rate.{0,40}\\b(hike|rise|raise|tighten)`, 'i')], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(${OTHER_CENTRAL_BANKS})\\b).*central bank.{0,40}\\b(cut|ease|dovish|lower)`, 'i')], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(${OTHER_CENTRAL_BANKS})\\b).*central bank.{0,40}\\b(hike|raise|hawkish|tighten)`, 'i')], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(${OTHER_CENTRAL_BANKS})\\b).*\\brate (cut|ease|lower|dovish)`, 'i')], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(${OTHER_CENTRAL_BANKS})\\b).*\\brate (hike|rise|raise|hawkish|tighten)`, 'i')], category: 'fed_tone', value: 'hawkish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(${OTHER_CENTRAL_BANKS})\\b).*interest rate.{0,40}\\b(cut|lower|ease)`, 'i')], category: 'fed_tone', value: 'dovish', impact: 'high' },
+  { patterns: [new RegExp(`^(?!.*\\b(${OTHER_CENTRAL_BANKS})\\b).*interest rate.{0,40}\\b(hike|rise|raise|tighten)`, 'i')], category: 'fed_tone', value: 'hawkish', impact: 'high' },
 
   // ── Inflation ──
   { patterns: [/\bcpi\b.{0,40}\b(high|hot|beat|rise|up\b|surge|climb)/i], category: 'inflation', value: 'high', impact: 'high' },

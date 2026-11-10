@@ -17,14 +17,12 @@ import {
 } from '@phosphor-icons/react';
 import type {
   BiasApiResponse,
-  BiasResult,
   DataSource,
   SourceHealth,
   UpcomingEvent,
 } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import MarketBreadth from '@/components/MarketBreadth';
-import BiasDetail from '@/components/BiasDetail';
 import Disclaimer from '@/components/Disclaimer';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
 import EconomicCalendar from '@/components/market/EconomicCalendar';
@@ -178,7 +176,6 @@ export default function Home() {
   const [response, setResponse] = useState<BiasApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<BiasResult | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const returnPosition = useRef<number | null>(null);
   const mounted = useRef(true);
@@ -280,6 +277,10 @@ export default function Home() {
   const uniqueEvents = [
     ...new Map(data.flatMap((d) => d.events).map((e) => [e.id, e])).values(),
   ];
+  // The full analysis page links back here; restore the filter and scroll on return.
+  const rememberPosition = () => {
+    try { sessionStorage.setItem('mf-market-return', JSON.stringify({ filter, scrollY: window.scrollY })); } catch { /* Optional return-state storage. */ }
+  };
   const drivers = [...uniqueEvents]
     .sort((a, b) => Math.abs(b.scoreChange) - Math.abs(a.scoreChange))
     .slice(0, 3);
@@ -449,7 +450,7 @@ export default function Home() {
                 <MarketCard
                   key={item.symbol}
                   data={item}
-                  onClick={() => setSelected(item)}
+                  onNavigate={rememberPosition}
                   index={index}
                   historyScale={historyScale}
                 />
@@ -556,11 +557,6 @@ export default function Home() {
           <Disclaimer />
         </div>
       </footer>
-      {selected && (
-        <BiasDetail data={selected} onClose={() => setSelected(null)} onOpenFull={() => {
-          try { sessionStorage.setItem('mf-market-return', JSON.stringify({ filter, scrollY: window.scrollY })); } catch { /* Optional return-state storage. */ }
-        }} />
-      )}
     </div>
   );
 }

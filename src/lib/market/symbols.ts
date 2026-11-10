@@ -1,6 +1,6 @@
 import type { AssetSymbol, Direction } from '../types';
 
-export const marketSymbols = ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD'] as const satisfies readonly AssetSymbol[];
+export const marketSymbols = ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD', 'US500', 'EURUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'] as const satisfies readonly AssetSymbol[];
 
 export function isMarketSymbol(value: string): value is AssetSymbol {
   return marketSymbols.some((symbol) => symbol === value);

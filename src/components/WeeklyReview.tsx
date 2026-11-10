@@ -5,25 +5,12 @@ import type { WeeklyReviewData } from '@/lib/weekly-review';
 import type { BucketStats } from '@/lib/analytics';
 import { journalFetch } from '@/lib/journal-fetch';
 
-export default function WeeklyReview() {
+export default function WeeklyReview({ journalAccountId }: { journalAccountId?: string }) {
   const [week, setWeek] = useState(() => new Date().toISOString().slice(0, 10));
-  const [account, setAccount] = useState('');
-  const [accounts, setAccounts] = useState<
-    { id: number; account_login: string; currency: string | null }[]
-  >([]);
   const [data, setData] = useState<WeeklyReviewData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    void journalFetch('/api/journal/accounts', { signal: controller.signal })
-      .then(async (r) => {
-        if (r.ok) setAccounts((await r.json()).accounts ?? []);
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
   const load = useCallback(
     async (signal: AbortSignal) => {
       setLoading(true);
@@ -31,7 +18,7 @@ export default function WeeklyReview() {
       setData(null);
       try {
         const q = new URLSearchParams({ week });
-        if (account) q.set('account', account);
+        if (journalAccountId) q.set('tradingAccount', journalAccountId);
         const res = await journalFetch(`/api/journal/review?${q}`, { signal });
         if (!res.ok) throw new Error('Weekly review could not be loaded.');
         const body = await res.json();
@@ -43,7 +30,7 @@ export default function WeeklyReview() {
         if (!signal.aborted) setLoading(false);
       }
     },
-    [week, account],
+    [week, journalAccountId],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -76,23 +63,6 @@ export default function WeeklyReview() {
             }}
             className="journal-review-field"
           />
-        </label>
-        <label className="text-sm">
-          Account
-          <select
-            aria-label="Review account"
-            value={account}
-            onChange={(e) => setAccount(e.target.value)}
-            className="journal-review-field"
-          >
-            <option value="">All accounts</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.account_login}
-                {a.currency && ` · ${a.currency}`}
-              </option>
-            ))}
-          </select>
         </label>
       </div>
       <p className="text-sm text-zinc-400">
@@ -184,7 +154,7 @@ export default function WeeklyReview() {
                     className="block text-xs text-zinc-400"
                     dateTime={t.closedAt}
                   >
-                    {new Date(t.closedAt).toLocaleString()}
+                    {t.dateLabel ?? new Date(t.closedAt).toLocaleString()}
                   </time>
                   <p className="text-sm whitespace-pre-wrap mt-2">
                     {t.notes || 'No review notes yet.'}

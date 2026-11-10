@@ -19,6 +19,7 @@ MacroFlow brings macroeconomic signals, economic releases, and market sentiment 
 | **Economic calendar** | Filter selected official BLS/BEA/ONS releases by date, currency and MacroFlow priority; inspect source links and the next relevant release. |
 | **Macro context** | Review direct US Treasury 2Y/10Y daily yields and their matched-date spread, with observation dates and cache status. |
 | **Trade journal** | Record entries, exits, direction, results, setup tags, and notes. Retain market-bias context when available. |
+| **Trading accounts** | Choose multiple manual accounts for one shared entry, with independent fills and cash results. Track opening balances, deposits, withdrawals and audited funds corrections. See [setup and behavior](docs/account-funds.md). |
 | **History** | Search and review trades, filter the record, and expand individual decisions. |
 | **Analytics** | Review performance totals, a P&L calendar, and breakdowns by market, setup, session, and weekday. Monetary metrics show their data coverage. |
 | **MT5 connection** | Download the Expert Advisor and manage revocable journal keys for closed-trade synchronization. Broker passwords stay in MT5. |
@@ -131,6 +132,10 @@ flowchart LR
 | Verification | Vitest · Playwright · axe-core |
 
 ## Getting started
+
+Named trading accounts now support broker names, account numbers/IDs, and optional nicknames. Before using this version, apply `supabase/trading-accounts.sql` after the existing journal/auth migrations. See [trading account setup](docs/trading-accounts.md) for migration, account selection, and local verification.
+
+Notion/CSV imports are available from **Add account → Import existing journal** and **Accounts → Import journal**. Apply `supabase/journal-imports.sql` after the funds migration. See [CSV import setup and behavior](docs/journal-imports.md) for mapping, duplicates, capital snapshots and safe batch undo.
 
 ### Prerequisites
 

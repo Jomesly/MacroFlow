@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateBias } from '../engine';
+import { ALL_SYMBOLS, calculateBias } from '../engine';
 import { MacroEvent } from '../types';
 
 function event(overrides: Partial<MacroEvent>): MacroEvent {
@@ -119,40 +119,6 @@ describe('calculateBias', () => {
   });
 
   describe('5-zone direction system', () => {
-    function eventWithScore(score: number): MacroEvent {
-      // Create events that will produce the target score for XAUUSD
-      const events: MacroEvent[] = [];
-      if (score > 0) {
-        // dovish Fed = +30, use multiple to reach target
-        let remaining = score;
-        while (remaining > 0) {
-          const chunk = Math.min(remaining, 25);
-          events.push(event({
-            category: 'dollar_strength',
-            value: 'weak',
-            title: `Weak dollar ${events.length}`,
-          }));
-          // dollar_strength/weak = +25 for XAUUSD, capped at 25
-          // We need to use different categories to avoid cap
-          remaining -= chunk;
-        }
-      } else if (score < 0) {
-        let remaining = Math.abs(score);
-        while (remaining > 0) {
-          const chunk = Math.min(remaining, 25);
-          events.push(event({
-            category: 'dollar_strength',
-            value: 'strong',
-            title: `Strong dollar ${events.length}`,
-          }));
-          remaining -= chunk;
-        }
-      }
-      // This approach is limited by caps. Use fed_tone which has cap 40.
-      // Reset and use a simpler approach.
-      return event({ category: 'fed_tone', value: score >= 0 ? 'dovish' : 'hawkish', title: 'Fed event' });
-    }
-
     it('returns bullish for score > 50', () => {
       // fed_tone/dovish for XAUUSD = +30, but that alone is not > 50.
       // Need multiple categories. Use fed + dollar + yields.
@@ -385,5 +351,43 @@ describe('calculateBias', () => {
       ], 'US100', -1.0);
       expect(result.biasScore).toBe(20); // capped at employment cap
     });
+  });
+});
+
+describe('added markets', () => {
+  const event = (category: MacroEvent['category'], value: string, country?: string): MacroEvent => ({
+    id: `${category}-${value}-${country ?? 'any'}`, category, title: 't', description: 'd',
+    timestamp: '2026-01-05T00:00:00.000Z', impact: 'high', value, country,
+  });
+  const score = (symbol: Parameters<typeof calculateBias>[1], events: MacroEvent[]) => calculateBias(events, symbol)[0].biasScore;
+
+  it('scores every listed market', () => {
+    expect(calculateBias([]).map((r) => r.symbol)).toEqual(ALL_SYMBOLS);
+    expect(ALL_SYMBOLS).toEqual(expect.arrayContaining(['US500', 'EURUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD']));
+  });
+
+  it('moves dollar-base and dollar-quote pairs in opposite directions on dollar strength', () => {
+    const strong = [event('dollar_strength', 'strong')];
+    for (const symbol of ['USDJPY', 'USDCHF', 'USDCAD'] as const) expect(score(symbol, strong)).toBeGreaterThan(0);
+    for (const symbol of ['EURUSD', 'AUDUSD', 'NZDUSD', 'GBPUSD'] as const) expect(score(symbol, strong)).toBeLessThan(0);
+  });
+
+  it('reads each pair from its own central bank and economy only', () => {
+    expect(score('EURUSD', [event('ecb_tone', 'hawkish')])).toBe(30);
+    expect(score('USDJPY', [event('boj_tone', 'hawkish')])).toBe(-30);
+    expect(score('GBPUSD', [event('ecb_tone', 'hawkish')])).toBe(0);
+    expect(score('EURUSD', [event('inflation', 'high', 'EU')])).toBe(15);
+    expect(score('EURUSD', [event('inflation', 'high', 'US')])).toBe(-15);
+    expect(score('EURUSD', [event('inflation', 'high', 'JP')])).toBe(0);
+    expect(score('EURUSD', [event('inflation', 'high')])).toBe(0); // unknown country: no guess
+  });
+
+  it('treats the yen as a haven and the S&P 500 as a risk asset', () => {
+    const riskOff = [event('risk_sentiment', 'risk_off')];
+    expect(score('USDJPY', riskOff)).toBeLessThan(0);
+    expect(score('AUDUSD', riskOff)).toBeLessThan(0);
+    expect(score('USDCAD', riskOff)).toBeGreaterThan(0);
+    expect(score('US500', riskOff)).toBe(-30);
+    expect(score('US500', [event('inflation', 'high', 'JP')])).toBe(0);
   });
 });

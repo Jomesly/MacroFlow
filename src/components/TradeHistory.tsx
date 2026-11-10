@@ -1,10 +1,14 @@
 'use client';
 import { journalFetch } from '@/lib/journal-fetch';
+import { tradeDateLabel, tradeDay } from '@/lib/trade-dates';
+import { useSetupTags } from '@/lib/use-setup-tags';
 
 import { useCallback, useEffect, useState } from 'react';
 import TradeScreenshots from './TradeScreenshots';
 import { journalFeatures } from '@/lib/journal-features';
-import { SETUP_TAGS, Trade, TradeApiResponse, TradeResult, TradesApiResponse } from '@/lib/types';
+import { Trade, TradeApiResponse, TradeResult, TradesApiResponse } from '@/lib/types';
+import { type TradingAccount, tradingAccountLabel } from '@/lib/trading-account-types';
+import { formatMoney, isoDateTime, localDateTime, moneyUnits } from '@/lib/account-money';
 
 const RESULT_BADGES: Record<string, { label: string; classes: string }> = {
   win: { label: 'WIN', classes: 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40' },
@@ -48,7 +52,8 @@ function formatPnl(trade: Trade): { text: string; color: string } {
   };
 }
 
-export default function TradeHistory() {
+export default function TradeHistory({ journalAccountId, accounts = [] }: { journalAccountId?: string; accounts?: TradingAccount[] }) {
+  const setupTags = useSetupTags();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -62,10 +67,15 @@ export default function TradeHistory() {
   const [editResult, setEditResult] = useState<TradeResult | ''>('');
   const [editNotes, setEditNotes] = useState('');
   const [editTags, setEditTags] = useState<string[]>([]);
+  const [editEntry, setEditEntry] = useState('');
+  const [editNet, setEditNet] = useState('');
+  const [editClosedAt, setEditClosedAt] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [editUnknown, setEditUnknown] = useState(false);
 
   const fetchTrades = useCallback(async () => {
     try {
-      const res = await journalFetch('/api/journal/trade');
+      const res = await journalFetch(`/api/journal/trade${journalAccountId ? `?tradingAccount=${encodeURIComponent(journalAccountId)}` : ''}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: TradesApiResponse = await res.json();
       setTrades(json.trades);
@@ -76,7 +86,7 @@ export default function TradeHistory() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [journalAccountId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch; all setState occurs after await resolves
@@ -102,6 +112,11 @@ export default function TradeHistory() {
     setEditResult(trade.result ?? '');
     setEditNotes(trade.notes);
     setEditTags([...trade.setupTags]);
+    setEditEntry(trade.entryPrice === null ? '' : String(trade.entryPrice));
+    setEditNet(trade.pnlAmountExact ?? (trade.pnlAmount == null ? '' : String(trade.pnlAmount)));
+    setEditUnknown(trade.result !== null && trade.pnlAmount === null);
+    setEditClosedAt(trade.closedAt ? localDateTime(new Date(trade.closedAt), true) : trade.result === null ? localDateTime(new Date(), true) : '');
+    setEditOpen(false);
     setActionError('');
     setConfirmDeleteId(null);
   };
@@ -116,6 +131,9 @@ export default function TradeHistory() {
   };
 
   const saveEdit = async (id: string) => {
+    const trade = trades.find(trade => trade.id === id);
+    if (!trade) return;
+    const synced = trade.brokerAccountId !== null;
     const exitFilled = editExit !== '';
     const exitNum = Number(editExit);
 
@@ -123,7 +141,7 @@ export default function TradeHistory() {
       setActionError('Exit price must be a positive number');
       return;
     }
-    if (exitFilled && editResult === '') {
+    if (!editOpen && exitFilled && editResult === '' && !editNet) {
       setActionError('Result is required when exit price is set');
       return;
     }
@@ -131,9 +149,13 @@ export default function TradeHistory() {
     setSaving(true);
     setActionError('');
     try {
+      if (!synced && !editOpen && !editNet && !editUnknown) throw new Error('Enter net P&L or mark the cash result unknown.');
+      const net = editOpen || editUnknown ? null : editNet;
+      const outcome = net !== null && net !== '' ? moneyUnits(net) > 0n ? 'win' : moneyUnits(net) < 0n ? 'loss' : 'breakeven' : editResult || null;
+      const closingTime = trade.closedAt && editClosedAt === localDateTime(new Date(trade.closedAt), true) ? trade.closedAt : editOpen || synced || (trade.importBatchId && !editClosedAt) ? null : isoDateTime(editClosedAt);
       const body = {
-        exitPrice: exitFilled ? exitNum : null,
-        result: editResult !== '' ? editResult : null,
+        ...(!synced ? { entryPrice: editEntry === '' && trade.importBatchId ? null : Number(editEntry), exitPrice: editOpen ? null : exitFilled ? exitNum : null, result: editOpen ? null : outcome, netPnl: net, closedAt: editOpen ? null : closingTime } : {}),
+        expectedRevision: trade.revision ?? 1,
         notes: editNotes,
         setupTags: editTags,
       };
@@ -149,6 +171,7 @@ export default function TradeHistory() {
       const json: TradeApiResponse = await res.json();
       setTrades((prev) => prev.map((t) => (t.id === id ? json.trade : t)));
       setEditingId(null);
+      window.dispatchEvent(new Event('macroflow:journal-updated'));
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to update trade');
     } finally {
@@ -168,6 +191,7 @@ export default function TradeHistory() {
       setTrades((prev) => prev.filter((t) => t.id !== id));
       setExpandedId(null);
       setConfirmDeleteId(null);
+      window.dispatchEvent(new Event('macroflow:journal-updated'));
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to delete trade');
     } finally {
@@ -220,8 +244,10 @@ export default function TradeHistory() {
     );
   }
 
+  const decisions = new Set(trades.map(trade => trade.tradeGroupId || trade.id)).size;
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+    <div className="trade-history-container rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+      <p className="trade-history-count">{trades.length} account trade{trades.length === 1 ? '' : 's'} · {decisions} trading decision{decisions === 1 ? '' : 's'} <span>Shared entries count once per decision.</span></p>
       <div className="trade-history-columns px-4 py-2 border-b border-zinc-800 bg-zinc-900/70">
         <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600 w-16">
           Symbol
@@ -249,9 +275,12 @@ export default function TradeHistory() {
         const pnl = formatPnl(trade);
         const expanded = expandedId === trade.id;
         const editing = editingId === trade.id;
+        const account = accounts.find(account => account.id === trade.journalAccountId);
+        const synced = trade.brokerAccountId !== null;
 
         return (
-          <div key={trade.id} className="border-b border-zinc-800/50 last:border-0">
+          <div key={trade.id} className="trade-record border-b border-zinc-800/50 last:border-0">
+            {!journalAccountId && <p className="trade-record-account">{account ? tradingAccountLabel(account) : 'My journal'}</p>}
             <button
               type="button"
               onClick={() => toggleExpand(trade.id)}
@@ -259,7 +288,7 @@ export default function TradeHistory() {
               aria-controls={`trade-details-${trade.id}`}
               className="trade-history-row w-full px-4 py-3 text-left hover:bg-zinc-800/40 transition-colors cursor-pointer"
             >
-              <span className="text-sm font-bold text-white w-16">{trade.symbol}</span>
+              <span className="trade-history-symbol"><strong>{trade.symbol}</strong>{trade.tradeGroupId && <small className="trade-shared-label">Shared entry</small>}</span>
               <span
                 className={`text-[10px] font-semibold uppercase w-16 ${
                   trade.direction === 'long' ? 'text-emerald-400' : 'text-red-400'
@@ -268,7 +297,7 @@ export default function TradeHistory() {
                 {trade.direction === 'long' ? '▲ Long' : '▼ Short'}
               </span>
               <span className="text-xs font-mono tabular-nums text-zinc-400 w-20">
-                {trade.entryPrice}
+                {trade.entryPrice ?? '—'}
               </span>
               <span
                 className={`text-[10px] font-medium px-1.5 py-0.5 rounded border leading-none w-16 text-center ${badge.classes}`}
@@ -280,10 +309,7 @@ export default function TradeHistory() {
                 {pnl.text}
               </span>
               <span className="text-[10px] text-zinc-600 ml-auto shrink-0">
-                {new Date(trade.timestamp).toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                })}
+                {trade.importInfo?.datePrecision === 'date' ? tradeDay(trade, false) : new Date(trade.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </span>
               <svg
                 className={`w-3.5 h-3.5 text-zinc-600 transition-transform duration-200 shrink-0 ${
@@ -309,10 +335,10 @@ export default function TradeHistory() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">
-                          Logged
+                          {trade.importInfo?.dateMeaning === 'close' ? 'Closing date' : 'Logged'}
                         </p>
                         <p className="text-xs text-zinc-200 font-mono">
-                          {new Date(trade.timestamp).toLocaleString()}
+                          {tradeDateLabel(trade)}
                         </p>
                       </div>
                       <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
@@ -320,7 +346,7 @@ export default function TradeHistory() {
                           Entry
                         </p>
                         <p className="text-xs text-zinc-200 font-mono tabular-nums">
-                          {trade.entryPrice}
+                          {trade.entryPrice ?? '—'}
                         </p>
                       </div>
                       <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
@@ -333,7 +359,7 @@ export default function TradeHistory() {
                       </div>
                       <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">
-                          P&amp;L
+                          Price return
                         </p>
                         <p className={`text-xs font-mono tabular-nums ${pnl.color}`}>
                           {pnl.text}
@@ -370,6 +396,9 @@ export default function TradeHistory() {
                       </p>
                     </div>
 
+                    <p className="trade-cash-result">Net cash P&amp;L: <strong>{trade.pnlAmountExact != null && account?.currency ? formatMoney(trade.pnlAmountExact, account.currency) : 'Unknown'}</strong>{trade.closedAt && <span> · Closed {tradeDateLabel(trade, true)}</span>}</p>
+                    {trade.tradeGroupId && <p className="capture-help">This record belongs to a shared entry. Changes here affect this account only.</p>}
+                    {trade.importInfo && <p className="capture-help">Imported from CSV · Original {trade.importInfo.dateMeaning === 'close' ? 'closing' : 'entry'} date: {trade.importInfo.sourceDate} ({trade.importInfo.timezone}).{trade.importInfo.datePrecision === 'date' ? ' Time unknown.' : ''}{trade.importInfo.dateMeaning === 'close' ? ' Entry date unknown.' : ''}</p>}
                     {journalFeatures.screenshots && <TradeScreenshots tradeId={trade.id} />}
                     {actionError && <p className="text-xs text-red-400">{actionError}</p>}
 
@@ -413,6 +442,14 @@ export default function TradeHistory() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {!synced ? <>
+                      <label className="capture-checkbox"><input type="checkbox" checked={editOpen} onChange={event => setEditOpen(event.target.checked)} />Keep this trade open / reopen it</label>
+                      <div className="capture-grid">
+                        <label className="capture-field">Entry price<input type="number" step="any" value={editEntry} onChange={event => setEditEntry(event.target.value)} /></label>
+                        {!editOpen && <><label className="capture-field">Closing date &amp; time<input type="datetime-local" step="1" required value={editClosedAt} onChange={event => setEditClosedAt(event.target.value)} /></label><label className="capture-field">Net P&amp;L · {account?.currency || 'currency unset'}<input type="text" inputMode="decimal" value={editNet} disabled={editUnknown} onChange={event => setEditNet(event.target.value)} placeholder="After trading fees" /></label><label className="capture-checkbox"><input type="checkbox" checked={editUnknown} onChange={event => setEditUnknown(event.target.checked)} />Cash P&amp;L is unknown</label></>}
+                      </div>
+                    </> : <p className="funds-notice">Execution details are managed by MT5 sync. You can update your notes and tags.</p>}
+                    {!synced && !editOpen && <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor={`edit-exit-${trade.id}`} className={LABEL_CLS}>
@@ -430,6 +467,7 @@ export default function TradeHistory() {
                         />
                       </div>
                       <div>
+                        {editUnknown ? <>
                         <span className={LABEL_CLS}>Result</span>
                         <div className="flex gap-2">
                           <button
@@ -454,13 +492,15 @@ export default function TradeHistory() {
                             BE
                           </button>
                         </div>
+                        </> : <p className="capture-help">The result follows the sign of net cash P&amp;L. Mark cash P&amp;L unknown to choose an outcome manually.</p>}
                       </div>
                     </div>
 
+                    </>}
                     <div>
                       <span className={LABEL_CLS}>Setup Tags</span>
                       <div className="flex flex-wrap gap-2">
-                        {SETUP_TAGS.map((tag) => {
+                        {[...new Set([...setupTags, ...editTags])].map((tag) => {
                           const active = editTags.includes(tag);
                           return (
                             <button

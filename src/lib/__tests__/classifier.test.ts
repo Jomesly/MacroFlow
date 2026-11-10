@@ -130,3 +130,19 @@ describe('createEventFromClassification', () => {
     expect(eventTime).toBeLessThanOrEqual(after);
   });
 });
+
+describe('other central banks', () => {
+  const categories = (text: string) => classifyHeadline(text).map((r) => `${r.category}:${r.value}`);
+
+  it('assigns a named bank move to that bank, never to the Fed', () => {
+    expect(categories('ECB cuts rates as growth stalls')).toContain('ecb_tone:dovish');
+    expect(categories('European Central Bank cuts rates as growth stalls')).not.toContain('fed_tone:dovish');
+    expect(categories('Bank of Japan hikes rates for the first time this year')).toContain('boj_tone:hawkish');
+    expect(categories('RBA raises cash rate again')).toContain('rba_tone:hawkish');
+    expect(categories('Reserve Bank of New Zealand cuts official cash rate')).toEqual(['rbnz_tone:dovish']);
+  });
+
+  it('ignores a move that is being ruled out', () => {
+    expect(categories('ECB unlikely to cut rates this year')).not.toContain('ecb_tone:dovish');
+  });
+});

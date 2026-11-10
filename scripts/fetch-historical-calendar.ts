@@ -152,14 +152,6 @@ function classifyValue(
   return 'neutral';
 }
 
-function getImpact(eventName: string): string {
-  const name = eventName.toLowerCase();
-  if (name.includes('cpi') || name.includes('payroll') || name.includes('nfp') || name.includes('gdp')) {
-    return 'high';
-  }
-  return 'medium';
-}
-
 async function main() {
   if (!API_KEY) {
     console.error('FRED_API_KEY not set');
@@ -186,8 +178,6 @@ async function main() {
     console.log(`  Found ${relevantDates.length} vintage dates in range`);
 
     // For each vintage date, get observations as they were known then
-    let previousObservations: Map<string, number> = new Map();
-
     for (let i = 0; i < relevantDates.length; i++) {
       const vintageDate = relevantDates[i];
 
@@ -217,7 +207,6 @@ async function main() {
       // Check if this is a new data release (not just a revision)
       // A new release happens when the observation date changes
       const obsDateKey = `${config.seriesId}:${latest.date}`;
-      const prevKey = `${config.seriesId}:${prevObs.date}`;
 
       // Skip if we already processed this exact observation pair
       if (seenIds.has(obsDateKey)) continue;

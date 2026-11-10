@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import {
   ArrowDownRight,
@@ -45,12 +46,13 @@ function BiasHistory({ data, scale }: { data: BiasResult; scale: number }) {
 
 export default function MarketCard({
   data,
-  onClick,
+  onNavigate,
   index = 0,
   historyScale = 100,
 }: {
   data: BiasResult;
-  onClick: () => void;
+  /** Runs just before the card opens the market's full analysis page. */
+  onNavigate?: () => void;
   index?: number;
   historyScale?: number;
 }) {
@@ -98,9 +100,9 @@ export default function MarketCard({
       className={`market-card tone-${tone}`}
       data-conviction={data.conviction}
     >
-      <button
-        type="button"
-        onClick={onClick}
+      <Link
+        href={`/markets/${data.symbol}`}
+        onClick={onNavigate}
         className="market-card-main"
         aria-label={`View ${data.symbol} analysis`}
       >
@@ -134,19 +136,19 @@ export default function MarketCard({
           className="market-card-caret"
           aria-hidden="true"
         />
-      </button>
+      </Link>
       {flip && (
-        <button
-          type="button"
+        <Link
+          href={`/markets/${data.symbol}`}
           className="flip-notice"
           onClick={() => {
             setFlip(null);
-            onClick();
+            onNavigate?.();
           }}
         >
           <TrendUp size={15} aria-hidden="true" />
           <span>Bias changed from {flip}. View analysis.</span>
-        </button>
+        </Link>
       )}
     </motion.article>
   );

@@ -1,4 +1,47 @@
-import { BiasRule } from './types';
+import { AssetSymbol, BiasRule, EventCategory } from './types';
+
+/**
+ * Rules for a dollar pair, built from one template so every pair treats the
+ * two economies symmetrically. `usd` is +1 when the dollar is the base
+ * currency (USDJPY rises with a stronger dollar) and -1 when it is the quote.
+ * Weights mirror the hand-written GBPUSD rules.
+ */
+function dollarPairRules(
+  symbol: AssetSymbol,
+  usd: 1 | -1,
+  country: string,
+  bankTone: EventCategory,
+  weights: { yields: number; riskOn: number; riskOff: number },
+): BiasRule[] {
+  const rules: BiasRule[] = [
+    { eventCategory: 'fed_tone', eventValue: 'hawkish', symbol, scoreChange: 15 * usd },
+    { eventCategory: 'fed_tone', eventValue: 'dovish', symbol, scoreChange: -15 * usd },
+    { eventCategory: bankTone, eventValue: 'hawkish', symbol, scoreChange: -30 * usd },
+    { eventCategory: bankTone, eventValue: 'dovish', symbol, scoreChange: 30 * usd },
+    { eventCategory: 'dollar_strength', eventValue: 'strong', symbol, scoreChange: 20 * usd },
+    { eventCategory: 'dollar_strength', eventValue: 'weak', symbol, scoreChange: -20 * usd },
+    { eventCategory: 'yields', eventValue: 'rising', symbol, scoreChange: weights.yields * usd },
+    { eventCategory: 'yields', eventValue: 'falling', symbol, scoreChange: -weights.yields * usd },
+    { eventCategory: 'risk_sentiment', eventValue: 'risk_on', symbol, scoreChange: weights.riskOn },
+    { eventCategory: 'risk_sentiment', eventValue: 'risk_off', symbol, scoreChange: weights.riskOff },
+  ];
+  const data: [EventCategory, string, string, number][] = [
+    ['inflation', 'high', 'low', 15],
+    ['employment', 'strong', 'weak', 10],
+    ['gdp', 'beat', 'miss', 15],
+    ['pmi', 'beat', 'miss', 10],
+    ['retail_sales', 'beat', 'miss', 10],
+  ];
+  for (const [eventCategory, strong, weak, weight] of data) {
+    rules.push(
+      { eventCategory, eventValue: strong, symbol, scoreChange: weight * usd, country: 'US' },
+      { eventCategory, eventValue: weak, symbol, scoreChange: -weight * usd, country: 'US' },
+      { eventCategory, eventValue: strong, symbol, scoreChange: -weight * usd, country },
+      { eventCategory, eventValue: weak, symbol, scoreChange: weight * usd, country },
+    );
+  }
+  return rules;
+}
 
 export const biasRules: BiasRule[] = [
   // ── XAUUSD (Gold) ──────────────────────────────────────
@@ -114,4 +157,37 @@ export const biasRules: BiasRule[] = [
   { eventCategory: 'employment', eventValue: 'weak', symbol: 'BTCUSD', scoreChange: -10 },
   { eventCategory: 'gdp', eventValue: 'beat', symbol: 'BTCUSD', scoreChange: 5 },
   { eventCategory: 'gdp', eventValue: 'miss', symbol: 'BTCUSD', scoreChange: -10 },
+
+  // ── US500 (S&P 500) ────────────────────────────────────
+  // Broad market: rate sensitivity sits between the Nasdaq and the Dow.
+  { eventCategory: 'fed_tone', eventValue: 'hawkish', symbol: 'US500', scoreChange: -35 },
+  { eventCategory: 'fed_tone', eventValue: 'dovish', symbol: 'US500', scoreChange: 35 },
+  { eventCategory: 'dollar_strength', eventValue: 'strong', symbol: 'US500', scoreChange: -10 },
+  { eventCategory: 'dollar_strength', eventValue: 'weak', symbol: 'US500', scoreChange: 10 },
+  { eventCategory: 'yields', eventValue: 'rising', symbol: 'US500', scoreChange: -25 },
+  { eventCategory: 'yields', eventValue: 'falling', symbol: 'US500', scoreChange: 25 },
+  { eventCategory: 'inflation', eventValue: 'high', symbol: 'US500', scoreChange: -25 },
+  { eventCategory: 'inflation', eventValue: 'low', symbol: 'US500', scoreChange: 25 },
+  { eventCategory: 'risk_sentiment', eventValue: 'risk_off', symbol: 'US500', scoreChange: -30 },
+  { eventCategory: 'risk_sentiment', eventValue: 'risk_on', symbol: 'US500', scoreChange: 25 },
+  { eventCategory: 'employment', eventValue: 'strong', symbol: 'US500', scoreChange: 10 },
+  { eventCategory: 'employment', eventValue: 'weak', symbol: 'US500', scoreChange: -10 },
+  { eventCategory: 'earnings', eventValue: 'positive', symbol: 'US500', scoreChange: 20 },
+  { eventCategory: 'earnings', eventValue: 'negative', symbol: 'US500', scoreChange: -20 },
+  { eventCategory: 'gdp', eventValue: 'beat', symbol: 'US500', scoreChange: 10 },
+  { eventCategory: 'gdp', eventValue: 'miss', symbol: 'US500', scoreChange: -20 },
+  { eventCategory: 'pmi', eventValue: 'beat', symbol: 'US500', scoreChange: 10 },
+  { eventCategory: 'pmi', eventValue: 'miss', symbol: 'US500', scoreChange: -10 },
+  { eventCategory: 'retail_sales', eventValue: 'beat', symbol: 'US500', scoreChange: 10 },
+  { eventCategory: 'retail_sales', eventValue: 'miss', symbol: 'US500', scoreChange: -10 },
+
+  // ── Major dollar pairs ─────────────────────────────────
+  // Risk weights: the yen and franc are havens, the Australian, New Zealand
+  // and Canadian dollars trade with risk appetite and commodities.
+  ...dollarPairRules('EURUSD', -1, 'EU', 'ecb_tone', { yields: 10, riskOn: 10, riskOff: -10 }),
+  ...dollarPairRules('USDJPY', 1, 'JP', 'boj_tone', { yields: 25, riskOn: 15, riskOff: -20 }),
+  ...dollarPairRules('USDCHF', 1, 'CH', 'snb_tone', { yields: 10, riskOn: 10, riskOff: -15 }),
+  ...dollarPairRules('AUDUSD', -1, 'AU', 'rba_tone', { yields: 10, riskOn: 20, riskOff: -20 }),
+  ...dollarPairRules('USDCAD', 1, 'CA', 'boc_tone', { yields: 10, riskOn: -15, riskOff: 15 }),
+  ...dollarPairRules('NZDUSD', -1, 'NZ', 'rbnz_tone', { yields: 10, riskOn: 20, riskOff: -20 }),
 ];

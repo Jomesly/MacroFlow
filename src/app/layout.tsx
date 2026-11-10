@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'MacroFlow — Fundamental Trading Bias',
   description:
-    'Real-time fundamental bias dashboard for XAUUSD, GBPUSD, US100, DJ30, and BTCUSD. Align your technical analysis with macro fundamentals.',
+    'Real-time fundamental bias dashboard for gold, the S&P 500, Nasdaq, Dow, Bitcoin, and the major currency pairs. Align your technical analysis with macro fundamentals.',
 };
 
 export default function RootLayout({

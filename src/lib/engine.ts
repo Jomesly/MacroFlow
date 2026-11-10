@@ -56,7 +56,7 @@ function getEmploymentModulation(
 ): number {
   if (regime === 'neutral') return 1.0;
 
-  if (symbol === 'US100' || symbol === 'DJ30') {
+  if (symbol === 'US100' || symbol === 'DJ30' || symbol === 'US500') {
     // Flip: weak → bullish, strong → bearish
     return (eventValue === 'weak' || eventValue === 'strong') ? -1.0 : 1.0;
   }
@@ -74,6 +74,12 @@ function getEmploymentModulation(
 const CATEGORY_CAPS: Partial<Record<MacroEvent['category'], number>> = {
   fed_tone: 40,
   boe_tone: 40,
+  ecb_tone: 40,
+  boj_tone: 40,
+  snb_tone: 40,
+  rba_tone: 40,
+  boc_tone: 40,
+  rbnz_tone: 40,
   dollar_strength: 25,
   yields: 30,
   inflation: 25,
@@ -100,7 +106,13 @@ const COUNTRY_HOME_SYMBOLS: Partial<Record<AssetSymbol, string>> = {
   US100: 'US',
   DJ30: 'US',
   BTCUSD: 'US',
+  US500: 'US',
 };
+
+/** Currency pairs have two economies, so macro data only counts once its country is known. */
+const TWO_LEG_SYMBOLS = new Set<AssetSymbol>([
+  'GBPUSD', 'EURUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
+]);
 
 export const ASSET_NAMES: Record<AssetSymbol, string> = {
   XAUUSD: 'Gold',
@@ -108,6 +120,13 @@ export const ASSET_NAMES: Record<AssetSymbol, string> = {
   US100: 'Nasdaq 100',
   DJ30: 'Dow Jones 30',
   BTCUSD: 'Bitcoin',
+  US500: 'S&P 500',
+  EURUSD: 'Euro / US Dollar',
+  USDJPY: 'US Dollar / Japanese Yen',
+  USDCHF: 'US Dollar / Swiss Franc',
+  AUDUSD: 'Australian Dollar / US Dollar',
+  USDCAD: 'US Dollar / Canadian Dollar',
+  NZDUSD: 'New Zealand Dollar / US Dollar',
 };
 
 export const ALL_SYMBOLS: AssetSymbol[] = [
@@ -116,6 +135,13 @@ export const ALL_SYMBOLS: AssetSymbol[] = [
   'US100',
   'DJ30',
   'BTCUSD',
+  'US500',
+  'EURUSD',
+  'USDJPY',
+  'USDCHF',
+  'AUDUSD',
+  'USDCAD',
+  'NZDUSD',
 ];
 
 function clamp(value: number, min: number, max: number): number {
@@ -140,8 +166,7 @@ function ruleMatchesEvent(
 
   if (ruleCountry) return eventCountry === ruleCountry;
 
-  // GBPUSD has two legs, so macro data only counts once its country is known.
-  if (symbol === 'GBPUSD' && COUNTRY_SENSITIVE_CATEGORIES.has(event.category)) {
+  if (TWO_LEG_SYMBOLS.has(symbol) && COUNTRY_SENSITIVE_CATEGORIES.has(event.category)) {
     return false;
   }
 
