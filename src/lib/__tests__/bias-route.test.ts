@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { buildMacroInputs } from '../macro-context';
 import { contextFixture } from './fixtures/macro';
 import { scoreMacroAlignment } from '../alignment';
+import { maxBiasPoints } from '../engine';
 import { getEvents } from '../events';
 import { GET } from '../../app/api/bias/route';
 
@@ -22,7 +23,8 @@ describe('live bias route', () => {
     const body = await response.json();
     expect(body.data).toMatchObject(scoreMacroAlignment(inputs.events, inputs.context, asOf, 'US100'));
     expect(body.data[0].probability).toMatchObject({ status: 'unavailable', value: null });
-    expect(body.data[0].biasPercent).toBe(body.data[0].biasScore);
+    // Percentage = net news points / most points the market's news can add.
+    expect(body.data[0].biasPercent).toBe(Math.round((100 * body.data[0].biasScore) / maxBiasPoints('US100')));
     expect(body.data[0].alignment.context.regime).toBe('growth_sensitive');
     expect(body.data[0].signal).toBe('neutral');
     expect(body.sourceHealth.economic_calendar).toBe('failed');
@@ -39,7 +41,8 @@ describe('live bias route', () => {
     vi.setSystemTime(new Date(nextEvent.date));
     expect((await (await GET(new NextRequest('http://localhost/api/bias'))).json()).nextEvent).toBeNull();
   });
-  it.each([['dovish', 'low', 'weak', 70, 'strong_buy'], ['hawkish', 'high', 'strong', -70, 'strong_sell']] as const)(
+  // 70 net points of Gold's 260 possible => 27%.
+  it.each([['dovish', 'low', 'weak', 27, 'strong_buy'], ['hawkish', 'high', 'strong', -27, 'strong_sell']] as const)(
     'preserves the aligned %s macro signal without a fitted probability model', async (policy, inflation, dollar, expected, signal) => {
       const asOf = '2026-11-10T12:00:00.000Z';
       vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));

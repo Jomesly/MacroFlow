@@ -246,6 +246,12 @@ function getSignal(direction: Direction, strength: Strength, conviction: Convict
   return 'neutral';
 }
 
+/** Most points one direction can reach for a market: the sum of its rule categories' caps. */
+export function maxBiasPoints(symbol: AssetSymbol): number {
+  const categories = new Set(biasRules.filter((r) => r.symbol === symbol).map((r) => r.eventCategory));
+  return [...categories].reduce((sum, category) => sum + categoryCap(category), 0);
+}
+
 function countCategoriesForSymbol(symbol: AssetSymbol): number {
   return new Set(biasRules.filter((r) => r.symbol === symbol).map((r) => r.eventCategory)).size;
 }
@@ -325,6 +331,10 @@ export function calculateBias(
       const cap = categoryCap(category as MacroEvent['category']);
       totalScore += clamp(score, -cap, cap);
     }
+    // Percentage = net news points as a share of the most points this market's news can add.
+    // Taken before the ±100 score limit so a large one-sided news pile is not flattened.
+    const maxPoints = maxBiasPoints(sym);
+    const biasPercent = maxPoints > 0 ? clamp(Math.round((100 * totalScore) / maxPoints), -100, 100) : 0;
     totalScore = clamp(totalScore, -100, 100);
     const direction = getDirection(totalScore);
     const strength = getStrength(totalScore);
@@ -362,7 +372,7 @@ export function calculateBias(
       symbol: sym,
       name: ASSET_NAMES[sym],
       biasScore: totalScore,
-      biasPercent: Math.round(totalScore),
+      biasPercent,
       direction,
       strength,
       conviction,

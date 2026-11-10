@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { scoreMacroAlignment } from '../alignment';
+import { maxBiasPoints } from '../engine';
 import { buildMacroInputs } from '../macro-context';
 import { buildMarketEvents, priceDatasetIssues, type PriceDataset } from '../market-evidence';
 import { isFullCashIndexHour } from '../api/intraday';
@@ -39,6 +40,22 @@ describe('four-hour alignment evidence gates', () => {
       expect(result.conviction).toBe('high');
       expect(Math.abs(result.biasScore)).toBe(70);
     }
+  });
+  it('expresses the bias as net news points over the most points the market can receive', () => {
+    expect(maxBiasPoints('XAUUSD')).toBe(260);
+    for (const [inputs, sign] of [[bullish(), 1], [[event('fed_tone', 'hawkish'), event('inflation', 'high', 'surprise'), event('dollar_strength', 'strong', 'market')], -1]] as const) {
+      const [result] = scoreMacroAlignment([...inputs], context, asOf, 'XAUUSD');
+      expect(result.biasScore).toBe(sign * 70);
+      expect(result.biasPercent).toBe(sign * Math.round((100 * 70) / 260));
+    }
+  });
+  it('uses the uncapped category total so a large news pile is not clipped at 100 points', () => {
+    const pile = [event('fed_tone', 'dovish'), event('inflation', 'low', 'surprise'), event('employment', 'weak', 'surprise'), event('gdp', 'miss', 'surprise'),
+      event('dollar_strength', 'weak', 'market'), event('yields', 'falling', 'market'), event('risk_sentiment', 'risk_off'), event('geopolitical', 'escalation')];
+    const [result] = scoreMacroAlignment(pile, context, asOf, 'XAUUSD');
+    expect(result.biasScore).toBe(100);
+    expect(result.biasPercent).toBeGreaterThan(Math.round((100 * 100) / 260));
+    expect(result.biasPercent).toBeLessThanOrEqual(100);
   });
   it('blocks headline-only alignment even with a large score', () => {
     const [result] = scoreMacroAlignment(bullish().map(row => ({ ...row, evidenceType: row.evidenceType === 'surprise' ? 'headline' : row.evidenceType })), context, asOf, 'XAUUSD');

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildMacroInputs, MODEL_VERSION } from '../macro-context';
+import { maxBiasPoints } from '../engine';
 import { scoreMacroAlignment } from '../alignment';
 import { contextFixture } from './fixtures/macro';
 import { estimateProbability, probabilityKey, TARGET, type ProbabilityModel } from '../probability/model';
@@ -28,7 +29,7 @@ describe('empirical four-hour probability', () => {
   it('never converts points to a probability or supplies a default 50%', () => {
     const r = { ...reading(), biasScore:98 };
     expect(estimateProbability(r,null,now,health)).toMatchObject({status:'unavailable',value:null,interval95:null});
-    expect(r.biasPercent).toBe(reading().biasScore);
+    expect(r.biasPercent).toBe(Math.round((100 * reading().biasScore) / maxBiasPoints('XAUUSD')));
     expect(probabilityText(r)).toBe('—');
   });
   it('estimates from calibration outcomes, independently of the later validation count', () => {
