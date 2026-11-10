@@ -10,7 +10,9 @@ import {
   Minus,
   TrendUp,
 } from "@phosphor-icons/react";
+import type { CSSProperties } from "react";
 import type { BiasResult } from "@/lib/types";
+import type { BoardTile } from "@/lib/market-board";
 import { marketIsOpen } from "@/lib/marketIsOpen";
 
 /** Every row shares one scale, so a small move never looks like a large one. */
@@ -46,11 +48,14 @@ function BiasHistory({ data, scale }: { data: BiasResult; scale: number }) {
 
 export default function MarketCard({
   data,
+  tile,
   onNavigate,
   index = 0,
   historyScale = 100,
 }: {
   data: BiasResult;
+  /** Board placement; on wide screens the tile's size follows its conviction. */
+  tile?: BoardTile;
   /** Runs just before the card opens the market's full analysis page. */
   onNavigate?: () => void;
   index?: number;
@@ -99,6 +104,15 @@ export default function MarketCard({
       }}
       className={`market-card tone-${tone}`}
       data-conviction={data.conviction}
+      data-size={tile?.size}
+      style={
+        tile
+          ? ({
+              "--tile-col": `${tile.col} / span ${tile.colSpan}`,
+              "--tile-row": `${tile.row} / span ${tile.rowSpan}`,
+            } as CSSProperties)
+          : undefined
+      }
     >
       <Link
         href={`/markets/${data.symbol}`}
@@ -130,6 +144,9 @@ export default function MarketCard({
           </span>
           <span className="market-conviction">{conviction} conviction</span>
         </span>
+        {tile?.size === "lg" && data.drivers[0] && (
+          <span className="market-driver">{data.drivers[0]}</span>
+        )}
         <BiasHistory data={data} scale={historyScale} />
         <CaretRight
           size={16}
@@ -141,13 +158,15 @@ export default function MarketCard({
         <Link
           href={`/markets/${data.symbol}`}
           className="flip-notice"
+          aria-label={`${data.symbol} bias changed from ${flip}. View analysis.`}
           onClick={() => {
             setFlip(null);
             onNavigate?.();
           }}
         >
           <TrendUp size={15} aria-hidden="true" />
-          <span>Bias changed from {flip}. View analysis.</span>
+          <span className="flip-text">Bias changed from {flip}. View analysis.</span>
+          <span className="flip-short">Changed</span>
         </Link>
       )}
     </motion.article>

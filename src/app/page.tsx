@@ -22,6 +22,7 @@ import type {
   UpcomingEvent,
 } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
+import { packBoard } from '@/lib/market-board';
 import WeeklyEconomicCalendar from '@/components/calendar/EconomicCalendar';
 import MarketBreadth from '@/components/MarketBreadth';
 import Disclaimer from '@/components/Disclaimer';
@@ -256,6 +257,8 @@ export default function Home() {
           : item.direction.includes(filter)),
     )
     .sort((a, b) => Math.abs(b.biasPercent) - Math.abs(a.biasPercent) || a.symbol.localeCompare(b.symbol));
+  // Conviction sets each tile's size; packBoard also orders the narrow-screen list.
+  const tiles = packBoard(visible);
   const historyScale = Math.max(
     20,
     ...data.flatMap((item) =>
@@ -450,10 +453,11 @@ export default function Home() {
                 </div>
               ))}
             <AnimatePresence initial={false}>
-              {visible.map((item, index) => (
+              {tiles.map((tile, index) => (
                 <MarketCard
-                  key={item.symbol}
-                  data={item}
+                  key={tile.item.symbol}
+                  data={tile.item}
+                  tile={tile}
                   onNavigate={rememberPosition}
                   index={index}
                   historyScale={historyScale}
@@ -483,7 +487,7 @@ export default function Home() {
           )}
           <p className="market-footnote">
             <span className="legend-dot" />
-            Percentages show macro bias strength. Readings at +50% or higher, or −50% or lower, rank first. Open a market to explore its conviction and alignment.
+            Tile size shows conviction and percentages show macro bias strength. High-conviction markets lead. Open a market to explore its conviction and alignment.
           </p>
         </section>
 

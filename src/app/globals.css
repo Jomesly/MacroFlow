@@ -2728,3 +2728,94 @@ button:active:not(:disabled),
   .jd-cal .net { margin-top: 5px; font-size: 10px; }
   .jd-cal-nav strong { min-width: 104px; }
 }
+
+/* Conviction tile board. From 900px the market grid becomes twelve columns and
+   each card spans the area packBoard gives it: high conviction is a half-width,
+   double-height tile, medium a half-width tile, low a quarter. Narrower screens
+   keep the ladder rows above, in the same conviction order. */
+.market-driver,
+.flip-short {
+  display: none;
+}
+@media (min-width: 900px) {
+  .market-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-rows: 176px;
+  }
+  .market-card[data-size] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    grid-column: var(--tile-col);
+    grid-row: var(--tile-row);
+  }
+  .market-card[data-size] .market-card-main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: space-between;
+    gap: 10px;
+    padding: 20px 24px;
+  }
+  .market-card[data-size] .market-card-caret {
+    display: none;
+  }
+  .market-card[data-size='lg'] .market-score {
+    font-size: 88px;
+  }
+  .market-card[data-size='md'] .market-card-main {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'id id' 'score history' 'read history';
+    column-gap: 32px;
+    row-gap: 8px;
+  }
+  .market-card[data-size='md'] .market-id { grid-area: id; }
+  .market-card[data-size='md'] .market-score { grid-area: score; font-size: 56px; }
+  .market-card[data-size='md'] .market-read { grid-area: read; }
+  .market-card[data-size='md'] .bias-history,
+  .market-card[data-size='md'] .bias-history-empty {
+    grid-area: history;
+    align-self: end;
+  }
+  .market-card[data-size='sm'] .bias-history,
+  .market-card[data-size='sm'] .bias-history-empty {
+    display: none;
+  }
+  .market-card[data-size='lg'] .market-driver {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    max-width: 44ch;
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--frost);
+  }
+  .market-card[data-size] .flip-notice {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: auto;
+    min-height: 32px;
+    padding: 4px 12px;
+    border: 1px solid var(--card-soft);
+    border-radius: var(--radius-pill);
+  }
+  .market-card[data-size] .flip-text {
+    display: none;
+  }
+  .market-card[data-size] .flip-short {
+    display: inline;
+  }
+  .market-skeleton {
+    grid-column: span 6;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 24px;
+  }
+  .market-skeleton:first-child {
+    grid-row: span 2;
+  }
+}
