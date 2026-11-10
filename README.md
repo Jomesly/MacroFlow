@@ -108,6 +108,17 @@ Next.js App Router provides pages and server routes. Market data is aggregated a
 
 Calendar and macro-context panels load independently through `/api/calendar` and `/api/macro-context`. They provide informational context and do not introduce new bias-scoring inputs. Provider validation, cache limits, build-time feature switches, and remaining release prerequisites are documented in [market context provider validation](docs/market-context-provider-validation.md).
 
+The weekly forecast calendar uses `/api/calendar/consensus`. Its verified pre-release consensus archive and mapped FRED actuals supply structured surprise evidence to the four-hour alignment engine. Official BLS/BEA/ONS schedules remain on `/api/calendar` for the existing market context panels. See [macro alignment](docs/macro-alignment-v3.md) and the [production merge review](docs/production-merge-2026-11-10.md).
+
+To run the weekly-calendar failure and recovery regressions against a built app on port 3130:
+
+```powershell
+$env:CALENDAR_TEST_URL = 'http://localhost:3130'
+npx playwright test --config playwright.calendar.config.ts
+```
+
+The forecast archive uses `supabase/calendar-forecasts.sql`; installations that already applied it need no further SQL for this merge.
+
 ```mermaid
 flowchart LR
   Providers[Market and economic data sources] --> Scoring[Server aggregation and bias scoring]
@@ -218,7 +229,7 @@ The runner creates a disposable local Supabase stack and a separate app on port 
 
 Browser captures are written to the ignored `.artifacts/ui-review/` directory. Curated, compressed screenshots used here live in [docs/images](docs/images). They are documentation assets, not visual regression baselines.
 
-Repository-wide lint has existing findings in historical-calendar and market-data code and an engine test. Inspect its output; passing a scoped lint check does not establish that the whole repository is lint-clean.
+The production integration passes repository-wide lint. See the [integration report](docs/production-merge-2026-11-10.md) for the current verification scope and remaining validation limits.
 
 ## Deployment
 

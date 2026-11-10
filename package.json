@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:ui": "playwright test --config playwright.ui.config.ts"
+    "test:ui": "playwright test --config playwright.ui.config.ts",
+    "backtest:fetch-context": "tsx scripts/fetch-historical-calendar.ts",
+    "backtest:fetch-prices": "tsx scripts/fetch-historical-prices.ts",
+    "backtest:replay": "tsx scripts/backtest-replay.ts",
+    "backtest:returns": "tsx scripts/calculate-forward-returns.ts",
+    "backtest:report": "tsx scripts/generate-backtest-report.ts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -18,7 +23,7 @@
     "csv-parse": "^7.0.3",
     "luxon": "^3.7.2",
     "motion": "^14.9.0",
-    "next": "16.2.9",
+    "next": "16.4.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "rss-parser": "^3.13.0",
@@ -34,7 +39,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.4.6",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.9"

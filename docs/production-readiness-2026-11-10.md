@@ -1,74 +1,76 @@
-# Production readiness — 10 November 2026
+> Historical feature-branch checkpoint. The [production integration report](production-merge-2026-11-10.md) supersedes its release status, API paths, dependency versions, and current test counts. The five-asset backtest remains historical evidence and does not validate the expanded twelve-asset dashboard.
 
-**Updated verdict: local release validation passes; the missing-schema blocker is resolved.** After the user applied the three migrations, a read-only recheck confirmed the required tables and columns are available in the configured hosted Supabase project. Production environment values and a hosted preview smoke test remain unverified. No deployment, Git push, or hosted database write was performed by the agent.
+# Production readiness — macro dashboard and calendar
 
-## Release scope
+**Decision: the reviewed dashboard/calendar changes are ready for review and commit. No unresolved C1–C7 software blockers were found after the repairs and checks below.** This is a local production-build assessment, not a deployment certification or evidence of a profitable trading model.
 
-Audited the uncommitted working tree on `journal-ui-functionaly`, based on `b1fa916`: broker accounts, multi-account trade entry, funds and corrections, CSV/Notion imports and undo, analytics, expanded dashboard instruments, and direct market-analysis navigation. Commit all intended new files, including SQL migrations; `git diff` alone does not include untracked files.
+Verified on 2026-11-10 on `feature/dashboard`, based on HEAD `5137e8d48842b14bbc819f239ab1d3ddcd23d591` plus the current uncommitted changes. This supersedes the earlier [commit-readiness review](commit-readiness-2026-11-10.md) and [pre-production review](pre-production-review-2026-11-10.md). No staging, commit, push, or deployment was performed.
 
-## Database migration status
+## Repairs
 
-The initial read-only audit of `.env.local` Supabase (`soirhqcxyfaloowadoph.supabase.co`) found the missing schema below. **A subsequent recheck after the user ran the migrations confirms all these tables and columns are now available.**
+| Finding | Resolution |
+|---|---|
+| C1: revised feed forecast changes the surprise | Scoring uses the frozen first numeric consensus from the archive. Feed revisions/removal cannot replace it; null forecasts do not create earlier evidence. |
+| C2: request-start time backdates late evidence | Inserts omit `first_seen_at`; the database timestamps receipt. Forecasts must precede release strictly. Legacy rows are preserved but excluded through the `consensus-v2:` namespace. |
+| C3: failed refresh looks current | Saved events remain visible with a refresh-failed warning, last-success date/time and time zone, and Retry. Initial failure, malformed responses, and stalled requests recover through Retry. Requests time out after 20 seconds. |
+| C4: filters fail with blocked browser storage | Filter state updates in memory before optional persistence. Currency, impact, and date controls remain usable when storage reads/writes throw. Normal persistence is preserved. |
+| C5: archive failures look like no eligible events | The archive returns explicit health. `/api/calendar` exposes `archiveStatus`; `/api/bias` exposes `calendar_archive` and marks economic-calendar scoring failed when its archive is unavailable. Calendar events remain visible with an archive warning. Private database errors are not returned. |
+| C6: duplicate database work | Concurrent archive requests for identical content share work within a process. Successful results are reused for 60 seconds in bounded local memory and optional Redis; failed results are retried rather than cached. The bias route reuses ingestion's next event instead of fetching the calendar again. |
+| C7: stale documentation | The implementation guide now describes model v3.2 and the ForexFactory/FRED archive path. Earlier reviews are marked historical and point to this report. README includes the calendar test command and SQL requirements. |
 
-- Existing profiles and journal-access tables are available.
-- The new journal accounts, trade groups, funds, cash entries, trade revisions, import batches/rows, and setup-tag tables are absent (`PGRST205`).
-- `trades.journal_account_id` is absent (`42703`).
-- There are zero trades and broker-account records with a null owner. This is only one migration precondition, not a complete backfill guarantee.
+The previously repaired regime-boundary, regional-Fed classification, future-bar replay, provenance, Redis-expiry, and shared-threshold defects remain covered by the passing source suite. Absolute bias >=50 continues to apply symmetrically to bullish and bearish dashboard ordering.
 
-The Vercel production project's environment-variable **names** were verified without decrypting values. This does not prove that its database is the same as `.env.local`. Confirm the actual target before applying SQL. A push alone does not apply these migrations.
-
-## Fixes made during this audit
-
-- Analytics now treats imported tag names such as `__proto__` and `constructor` as ordinary keys, without inherited-object collisions.
-- Monetary analytics uses the account currency's precision; crypto results down to eight decimal places survive totals, buckets, and equity calculations. The dashboard identifies the currency and preserves small values in formatting.
-- Analytics ignores responses from superseded filter requests.
-- Modern trade rows use the transactional revision-checked update even when an older client omits `expectedRevision`.
-- Drawdown is labeled as daily-close drawdown, with the missing-close-date fallback explained.
-- Removed unused code and excluded generated local assistant/build artifacts from ESLint.
-- Login accessibility checks wait for the entrance animation, matching the existing signup check. The initial contrast failures were transient animation states; no contrast exemption was added.
-- Corrected the stale account documentation that described imports as unimplemented.
-
-## Verification evidence
-
-Recheck after the user's hosted migrations: production build and lint passed; all 290 unit tests, 7 production-mode journal tests, and 28 production-mode market/UI tests passed again. The auth-only rerun passed 8 tests with 2 CAPTCHA tests skipped; the five-minute expiry test was excluded from this rerun and retains its earlier passing result. Hosted database verification was read-only and confirmed schema availability, not authenticated write behavior. No hosted deployment preview was created or tested in this recheck.
+## Verification
 
 | Check | Result |
-| --- | --- |
-| `npm test` | 290 tests passed across 30 files |
-| `npm run lint` | Passed |
-| Production Next.js build, Node 24.21.0 | Passed, including TypeScript |
-| Full local auth/journal Playwright suite | 16 passed; 2 CAPTCHA tests skipped without a test site key |
-| Final production-mode funds/import/dashboard suite | 7 passed, including new crypto-precision and legacy-edit revision assertions |
-| Final production-mode market/UI suite | 28 passed |
-| Fresh SQL migration rehearsal | Passed, including auth/backfill assertions and repeated account/funds/import migrations |
-| Existing production `/login` HTTP smoke | HTTP 200, expected login heading |
+|---|---|
+| `npm test` | **264 passed / 36 files** |
+| `npx tsc --noEmit` | Passed |
+| `npx eslint src scripts tests/e2e/calendar.spec.ts vitest.config.ts` | Passed with 0 errors; one pre-existing unused-variable warning in `engine.test.ts:122` |
+| `npm run build` | Passed, including `/api/calendar`, `/api/bias`, and TypeScript |
+| Calendar browser suite against the production build | **6 passed** |
+| `git diff --check` | Passed; existing line-ending conversion notices only |
+| Live local `/api/calendar` using configured upstream services | HTTP 200; **105 events**; `archiveStatus: ok`; ForexFactory source |
+| Live local `/api/bias` | HTTP 200; **5 assets**; model `macro-v3.2-4h-2026-11-10`; news/market/RSS/FRED/archive healthy; calendar surprises empty; next high event Core CPI m/m |
+| Read-only Supabase v2-archive check after natural API ingestion | **45 rows**, no null forecasts or malformed timestamps; 31 recorded before scheduled release |
+| Existing backtest artifact provenance | Replay/evaluation model and hash match; no changed price inputs; 8,335 rows in each; report contains current model/evaluation hash |
 
-The complete auth suite includes user isolation, confirmation/recovery, logout, concurrent refresh beyond the original five-minute token lifetime, MT5 ingestion, and private screenshots. Journal tests cover concurrent writes, duplicate prevention, cross-owner rejection, capital snapshots, import corrections, rollback on rejected transactions, and undo retaining edited trades. Browser checks cover responsive layouts, keyboard use, and automated accessibility.
+The two principal UI regressions were first run against the previous build: blocked-storage controls did not update, and failed refreshes had no stale warning. They pass against the repaired production build. The final browser suite covers blocked storage, stale-data/retry recovery, archive outage/retry recovery, normal persistence, desktop/mobile page overflow, initial failure, malformed refresh responses, and request timeout/retry. Normal browser checks recorded no runtime errors.
 
-The final production build and browser tests use disposable local Supabase, not hosted customer data. Public market tests use controlled feed fixtures; they do not certify live provider freshness or production quotas. No CI run, external vulnerability scan, or hosted authenticated smoke test is claimed.
+The collaborative browser snapshot timed out twice with `Preview automation snapshot timed out after 15000ms.` Browser verification used the repository's Playwright setup as the fallback. API fixtures isolate the UI cases from provider availability; separate live endpoint and archive checks establish actual connectivity. No synthetic records, schema changes, or destructive operations were performed against the connected database. Ordinary live API requests populated the repaired archive.
 
-The fresh migration rehearsal used a separate database in the disposable local Supabase container; it did not reset the developer's preview database. Local logs and scripts are in ignored `.artifacts/`.
+## Reproduce
 
-## Required release sequence
+```powershell
+npm test
+npx tsc --noEmit
+npx eslint src scripts tests/e2e/calendar.spec.ts vitest.config.ts
+npm run build
+```
 
-1. Confirm Vercel Production's Supabase project, Node 24.x, public/server Supabase URL agreement, and production `NEXT_PUBLIC_APP_URL`. Verify Supabase auth redirect URLs and production email delivery. Do not copy the local test configuration.
-2. Capture a restorable database backup and record the currently deployed application version. Rehearse restoring it in an isolated project before the release. No hosted backup/restore was tested during this audit.
-3. Apply the existing schema/auth/autosync prerequisites if absent. Then apply, in order:
-   - `supabase/trading-accounts.sql`
-   - `supabase/journal-account-funds.sql`
-   - `supabase/journal-imports.sql`
-4. Run the migrations first in a staging copy of the target database. Check owner mappings, broker identities, row counts, balances, RLS/grants, and import functions. The clean local rehearsal does not replace checking real legacy data. Do not run SQL test fixtures against production.
-5. After a successful target migration, deploy a preview from the exact release commit. Test sign-in, account selection, a win/loss and balance update, two-account logging, a small CSV import, undo, and market navigation with a designated test user. Verify no journal requests return schema errors.
-6. Promote only after the above pass. Monitor journal errors, auth failures, ingestion failures, and funds/import requests immediately after release.
+In one terminal, start the built application:
 
-## Rollback and feature limits
+```powershell
+npm run start -- --port 3130
+```
 
-- Preserve the additive schema on an application rollback; do not drop account/funds/import tables or audit history to restore the old UI.
-- Before accepting new account/import writes, verify the previous version against the migrated schema. After accepting those writes, the old version is **not a proven safe rollback**: imported prices may be null and old screens may combine multiple accounts. Prefer a forward fix; if necessary restrict journal access using the existing access controls while recovering. Do not restore an old database over new trades without reconciling those writes.
-- Keep screenshots disabled for this release. The production environment inventory has no screenshot-enable flag. Import undo currently treats revision 1 as untouched; attaching a screenshot does not revise the trade, so undo can remove the parent trade and leave an inaccessible storage object. Fix and test this interaction before enabling screenshots with imports.
-- CAPTCHA-enabled flows were not exercised because no local test site key was supplied. If CAPTCHA is enabled in the target environment, its two skipped checks must pass before release.
-- New S&P 500 and FX instruments are available on the market dashboard. Journal/import trade symbols remain the existing five; do not advertise the expanded dashboard list as new journal symbol support.
-- Economic-calendar feeds remain US/UK-focused. New currency markets do not gain complete domestic-calendar coverage from this change.
-- Funds accounting uses exact decimal values. Analytics uses JavaScript numbers for visualization and is not a replacement for the exact ledger at very large magnitudes.
+In another terminal:
 
-**Go criteria:** target database migrations applied and verified, exact release preview passes its hosted smoke test, production configuration confirmed, and a recovery route rehearsed. The missing-schema requirement is now satisfied for the configured project; production environment verification and a hosted preview smoke test remain outstanding.
+```powershell
+$env:CALENDAR_TEST_URL = 'http://localhost:3130'
+npx playwright test tests/e2e/calendar.spec.ts
+```
+
+Without that environment override the calendar browser tests target the existing local integration runner on port 3137. They use controlled API responses and do not need hosted database writes.
+
+## Readiness boundaries
+
+- No additional SQL is required if `supabase/calendar-forecasts.sql` was already applied. Preserve its database timestamp default and server-only access. Existing legacy archive rows are not proof of pre-release knowledge; new trustworthy coverage starts with v2. Genuine consensus revisions before release are ignored under the documented first-numeric-forecast policy.
+- Feed cache freshness remains one hour, with browser polling every 15 minutes. Archive health/results are cached up to 60 seconds; merged bias results add their own 60-second cache. Health changes may therefore take roughly two minutes to reach a fresh bias request, plus the browser's polling interval. Separate server processes can perform duplicate cold-cache archive operations; immutable database conflicts preserve correctness.
+- The live check had no eligible released surprise. Its 31 pre-release forecast records do not establish that actuals have arrived or that scoring has occurred. Timing, revision, and missing-consensus correctness are established by regression tests, not by an observed live release in this run.
+- Trading probability remains **unvalidated**. Existing historical evidence is trend/market-only, with one qualified non-overlapping holdout position, no complete historical news/consensus archive, and illustrative costs. These software repairs do not create the samples needed to claim a high win probability.
+- This pass covers the changed macro dashboard/calendar paths. Unchanged journal/auth flows and hosted SMTP, production deployment configuration, permissions, and broker execution were not re-certified here. No production environment was deployed or tested in this pass.
+
+## Commit guidance
+
+Commit the intended source, tests, SQL, dependency changes, and updated documentation together after reviewing the diff. Several required modules are still untracked; a tracked-files-only commit would omit them. Stage explicit paths and preserve unrelated plans, `.artifacts`, `.hallmark`, `.playwright-mcp`, and pre-existing `tsconfig.json` changes. Never include `.env.local`, credentials, raw validation datasets, or browser artifacts. The local verification server was stopped after the checks.

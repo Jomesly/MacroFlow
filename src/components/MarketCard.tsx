@@ -75,7 +75,7 @@ export default function MarketCard({
 
   useEffect(() => {
     try {
-      const key = `mf-direction-${data.symbol}`;
+      const key = `mf-direction-${data.alignment?.modelVersion ?? "legacy"}-${data.symbol}`;
       const previous = sessionStorage.getItem(key);
       if (previous && previous !== data.direction) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- compare the previous session snapshot after hydration
@@ -85,7 +85,7 @@ export default function MarketCard({
     } catch {
       /* The card remains usable when browser storage is unavailable. */
     }
-  }, [data.symbol, data.direction]);
+  }, [data.symbol, data.direction, data.alignment?.modelVersion]);
 
   return (
     <motion.article

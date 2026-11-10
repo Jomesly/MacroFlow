@@ -1,223 +1,24 @@
-/**
- * Calculate forward returns and MAE for each score snapshot.
- *
- * For each snapshot at time T:
- * - Price at T (entry)
- * - Price at T+4h, T+1d, T+3d (exit)
- * - Forward return = (exit - entry) / entry
- * - MAE = worst adverse move within window
- *
- * Outputs: data/backtest-joined/{symbol}.json
- *
- * Usage: npx tsx scripts/calculate-forward-returns.ts
- */
+import fs from 'node:fs';
+import path from 'node:path';
+import { evaluateFourHours, type ReplaySnapshot } from '../src/lib/backtest';
+import { MODEL_VERSION } from '../src/lib/macro-context';
+import type { PriceDataset } from '../src/lib/market-evidence';
+import { changedPriceInputs, PRICE_INSTRUMENTS, readPriceFile, sha256 } from './lib/provenance';
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { AssetSymbol } from '../src/lib/types';
-
-interface ScoreSnapshot {
-  timestamp: string;
-  symbol: AssetSymbol;
-  score: number;
-  biasPercent: number;
-  direction: string;
-  strength: string;
-  conviction: string;
-  signal: string;
-  eventCount: number;
-  confirmationRatio: number;
-  categoryBreakdown: Record<string, number>;
-}
-
-interface PriceBar {
-  datetime: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
-
-interface JoinedRecord {
-  timestamp: string;
-  symbol: AssetSymbol;
-  score: number;
-  direction: string;
-  conviction: string;
-  signal: string;
-  eventCount: number;
-  confirmationRatio: number;
-  categoryBreakdown: Record<string, number>;
-  entryPrice: number;
-  entryTime: string;
-  return_4h: number | null;
-  return_1d: number | null;
-  return_3d: number | null;
-  mae_4h: number | null;
-  mae_1d: number | null;
-  mae_3d: number | null;
-  price_4h: number | null;
-  price_1d: number | null;
-  price_3d: number | null;
-  crossedWeekend: boolean;
-}
-
-const SYMBOLS: AssetSymbol[] = ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD'];
-
-// Weekend check (for US100/DJ30 which don't trade on weekends)
-function isWeekend(date: Date): boolean {
-  const day = date.getUTCDay();
-  return day === 0 || day === 6;
-}
-
-function isEquityIndex(symbol: AssetSymbol): boolean {
-  return symbol === 'US100' || symbol === 'DJ30';
-}
-
-function findPriceAtOrAfter(bars: PriceBar[], targetTime: Date): { price: number; time: string } | null {
-  const targetMs = targetTime.getTime();
-
-  for (const bar of bars) {
-    const barTime = new Date(bar.datetime).getTime();
-    if (barTime >= targetMs) {
-      return { price: bar.close, time: bar.datetime };
-    }
-  }
-
-  return null;
-}
-
-function calculateMAE(
-  bars: PriceBar[],
-  startTime: Date,
-  endTime: Date,
-  direction: string,
-  entryPrice: number
-): number {
-  const startMs = startTime.getTime();
-  const endMs = endTime.getTime();
-  let worstAdverse = 0;
-
-  for (const bar of bars) {
-    const barTime = new Date(bar.datetime).getTime();
-    if (barTime < startMs || barTime > endMs) continue;
-
-    let adverseMove: number;
-    if (direction === 'bullish') {
-      // For bullish: worst move is the lowest low
-      adverseMove = (bar.low - entryPrice) / entryPrice;
-    } else if (direction === 'bearish') {
-      // For bearish: worst move is the highest high
-      adverseMove = (entryPrice - bar.high) / entryPrice;
-    } else {
-      // Neutral: max drawdown in either direction
-      const downMove = (entryPrice - bar.high) / entryPrice;
-      const upMove = (bar.low - entryPrice) / entryPrice;
-      adverseMove = Math.min(downMove, upMove);
-    }
-
-    if (adverseMove < worstAdverse) {
-      worstAdverse = adverseMove;
-    }
-  }
-
-  return worstAdverse;
-}
-
-function calculateForwardReturns(): void {
-  console.log('Loading data...');
-
-  // Load snapshots and prices for each symbol
-  const snapshotsDir = path.join(process.cwd(), 'data', 'backtest-snapshots');
-  const pricesDir = path.join(process.cwd(), 'data', 'historical-prices');
-  const outDir = path.join(process.cwd(), 'data', 'backtest-joined');
-  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-
-  for (const symbol of SYMBOLS) {
-    const snapshotPath = path.join(snapshotsDir, `${symbol}.json`);
-    const pricePath = join(pricesDir, `${symbol}.json`);
-
-    if (!fs.existsSync(snapshotPath) || !fs.existsSync(pricePath)) {
-      console.log(`Skipping ${symbol} — missing data`);
-      continue;
-    }
-
-    const snapshots: ScoreSnapshot[] = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
-    const bars: PriceBar[] = JSON.parse(fs.readFileSync(pricePath, 'utf8'));
-
-    console.log(`\n${symbol}: ${snapshots.length} snapshots, ${bars.length} price bars`);
-
-    const joined: JoinedRecord[] = [];
-
-    for (const snap of snapshots) {
-      const snapTime = new Date(snap.timestamp);
-
-      // Find entry price (price at or just after snapshot time)
-      const entry = findPriceAtOrAfter(bars, snapTime);
-      if (!entry) continue;
-
-      // Define forward windows
-      const t4h = new Date(snapTime.getTime() + 4 * 60 * 60 * 1000);
-      const t1d = new Date(snapTime.getTime() + 24 * 60 * 60 * 1000);
-      const t3d = new Date(snapTime.getTime() + 3 * 24 * 60 * 60 * 1000);
-
-      // Find exit prices
-      const p4h = findPriceAtOrAfter(bars, t4h);
-      const p1d = findPriceAtOrAfter(bars, t1d);
-      const p3d = findPriceAtOrAfter(bars, t3d);
-
-      // Calculate returns
-      const return_4h = p4h ? (p4h.price - entry.price) / entry.price : null;
-      const return_1d = p1d ? (p1d.price - entry.price) / entry.price : null;
-      const return_3d = p3d ? (p3d.price - entry.price) / entry.price : null;
-
-      // Calculate MAE
-      const mae_4h = calculateMAE(bars, snapTime, t4h, snap.direction, entry.price);
-      const mae_1d = calculateMAE(bars, snapTime, t1d, snap.direction, entry.price);
-      const mae_3d = calculateMAE(bars, snapTime, t3d, snap.direction, entry.price);
-
-      // Check if forward window crosses weekend (for equity indices)
-      const crossedWeekend = isEquityIndex(symbol) && (
-        isWeekend(t4h) || isWeekend(t1d) || isWeekend(t3d)
-      );
-
-      joined.push({
-        timestamp: snap.timestamp,
-        symbol,
-        score: snap.score,
-        direction: snap.direction,
-        conviction: snap.conviction,
-        signal: snap.signal,
-        eventCount: snap.eventCount,
-        confirmationRatio: snap.confirmationRatio,
-        categoryBreakdown: snap.categoryBreakdown,
-        entryPrice: entry.price,
-        entryTime: entry.time,
-        return_4h,
-        return_1d,
-        return_3d,
-        mae_4h,
-        mae_1d,
-        mae_3d,
-        price_4h: p4h?.price ?? null,
-        price_1d: p1d?.price ?? null,
-        price_3d: p3d?.price ?? null,
-        crossedWeekend,
-      });
-    }
-
-    const outFile = path.join(outDir, `${symbol}.json`);
-    fs.writeFileSync(outFile, JSON.stringify(joined, null, 2));
-    console.log(`  Saved ${joined.length} joined records`);
-  }
-
-  console.log('\nDone.');
-}
-
-// Fix for join path
-function join(...parts: string[]): string {
-  return path.join(...parts);
-}
-
-calculateForwardReturns();
+const root=path.join('data','validation-v3');
+const replayContents=fs.readFileSync(path.join(root,'replay.json'),'utf8');
+const input=JSON.parse(replayContents);
+if(input.schemaVersion!==1||input.modelVersion!==MODEL_VERSION)throw new Error('Replay schema/model mismatch; rerun the current replay.');
+if(input.provenance?.schemaVersion!==1)throw new Error('Replay has no input provenance; rerun npm run backtest:replay.');
+const costBps=Number(process.argv.find(arg=>arg.startsWith('--cost-bps='))?.split('=')[1]??5);
+if(!Number.isFinite(costBps)||costBps<0)throw new Error('Invalid cost-bps');
+const priceFiles=PRICE_INSTRUMENTS.map(symbol=>readPriceFile(root,symbol));
+const changed=changedPriceInputs(input.provenance.prices,priceFiles.map(file=>file.input));
+if(changed.length)throw new Error(`Price files changed since replay (${changed.join(', ')}); rerun npm run backtest:replay first.`);
+const prices:Record<string,PriceDataset>={};
+for(const file of priceFiles)if(file.dataset)prices[file.input.instrument]=file.dataset;
+const records=(input.snapshots as ReplaySnapshot[]).map(snapshot=>evaluateFourHours(snapshot,prices[snapshot.result.symbol]??null,costBps));
+const output={schemaVersion:1,modelVersion:MODEL_VERSION,generatedAt:new Date().toISOString(),horizonHours:4,costBps,costsVerified:false,
+ inputProfile:input.inputProfile,completeLiveArchive:input.completeLiveArchive,replaySha256:sha256(replayContents),provenance:input.provenance,records};
+fs.writeFileSync(path.join(root,'evaluation.json'),JSON.stringify(output,null,2)+'\n');
+console.log(JSON.stringify({records:records.length,valid:records.filter(record=>record.netReturn!==null).length,qualified:records.filter(record=>record.qualified&&record.netReturn!==null).length,costBps}));

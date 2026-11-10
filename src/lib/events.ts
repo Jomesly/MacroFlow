@@ -1,4 +1,5 @@
-import { MacroEvent, DataSource, SourceHealth } from './types';
+import { MacroEvent, DataSource, SourceHealth, MacroContext, UpcomingEvent } from './types';
+import { unknownContext } from './macro-context';
 import { fetchAllEvents } from './api';
 
 export const baselineEvents: MacroEvent[] = [
@@ -18,14 +19,17 @@ export async function getEvents(): Promise<{
   source: DataSource;
   cachedAt: string;
   sourceHealth: SourceHealth;
+  context: MacroContext;
   stale?: boolean;
+  nextEvent: UpcomingEvent | null;
 }> {
   try {
-    const { events: liveEvents, cachedAt, sourceHealth, stale } = await fetchAllEvents();
+    const { events: liveEvents, cachedAt, sourceHealth, stale, context, nextEvent } = await fetchAllEvents();
 
     if (liveEvents.length > 0) {
-      return { events: liveEvents, source: 'live', cachedAt, sourceHealth, stale };
+      return { events: liveEvents, source: 'live', cachedAt, sourceHealth, stale, context, nextEvent };
     }
+    return { events: baselineEvents.map(e => ({ ...e, timestamp: cachedAt })), source: 'baseline', cachedAt, sourceHealth, context, nextEvent };
   } catch {
     // fall through
   }
@@ -35,11 +39,15 @@ export async function getEvents(): Promise<{
     events: baselineEvents.map((e) => ({ ...e, timestamp: cachedAt })),
     source: 'baseline',
     cachedAt,
+    context: unknownContext(cachedAt),
+    nextEvent: null,
     sourceHealth: {
       finnhub: 'failed',
       market_data: 'failed',
       rss: 'failed',
       fred: 'failed',
+      economic_calendar: 'failed',
+      calendar_archive: 'failed',
     },
   };
 }

@@ -22,6 +22,7 @@ import type {
   UpcomingEvent,
 } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
+import WeeklyEconomicCalendar from '@/components/calendar/EconomicCalendar';
 import MarketBreadth from '@/components/MarketBreadth';
 import Disclaimer from '@/components/Disclaimer';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
@@ -252,7 +253,7 @@ export default function Home() {
           ? item.direction === 'neutral'
           : item.direction.includes(filter)),
     )
-    .sort((a, b) => b.biasScore - a.biasScore);
+    .sort((a, b) => Math.abs(b.biasPercent) - Math.abs(a.biasPercent));
   const historyScale = Math.max(
     20,
     ...data.flatMap((item) =>
@@ -309,6 +310,7 @@ export default function Home() {
         }
       />
       <main id="main-content" className="workspace-main">
+        {marketFeatures.calendar && <PanelErrorBoundary name="Weekly economic releases"><WeeklyEconomicCalendar /></PanelErrorBoundary>}
         <div className="overview-summary">
           <div className="summary-reading">
             <span className="summary-label">The current read</span>

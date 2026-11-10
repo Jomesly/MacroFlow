@@ -19,6 +19,7 @@ async function mockBias(page: Page, body = detailFixture, status = 200) {
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.route('**/api/calendar/consensus', route => route.fulfill({ json: { events: [], fetchedAt: new Date().toISOString(), archiveStatus: 'ok' } }));
   await page.clock.setFixedTime(new Date('2026-11-09T06:00:00Z'));
   await page.route('**/api/calendar', (route) => route.fulfill({ json: calendarFixture }));
   await page.route('**/api/macro-context', (route) => route.fulfill({ json: macroFixture }));

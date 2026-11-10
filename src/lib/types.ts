@@ -36,6 +36,31 @@ export type EventImpact = 'high' | 'medium' | 'low';
 
 export type DataSource = 'live' | 'hybrid' | 'baseline';
 
+export type EvidenceType = 'headline' | 'surprise' | 'trend' | 'market';
+
+export interface MacroContext {
+  asOf: string;
+  regime: 'rates_sensitive' | 'growth_sensitive' | 'mixed' | 'unknown';
+  rateSpread: number | null;
+  rateObservationDate: string | null;
+  inflation: 'accelerating' | 'cooling' | 'stable' | 'unknown';
+  growth: 'expanding' | 'contracting' | 'unknown';
+  labor: 'improving' | 'weakening' | 'mixed' | 'unknown';
+  complete: boolean;
+  reasons: string[];
+}
+
+export interface AlignmentAssessment {
+  modelVersion: string;
+  horizonHours: 4;
+  status: 'aligned' | 'conflicted' | 'insufficient_evidence';
+  reasons: string[];
+  context: MacroContext;
+  /** Rule alignment is not an estimated win probability. */
+  probability: null;
+  validation: 'unvalidated';
+}
+
 export interface MacroEvent {
   id: string;
   category: EventCategory;
@@ -47,6 +72,11 @@ export interface MacroEvent {
   country?: string;
   url?: string;
   sourceName?: string;
+  evidenceType?: EvidenceType;
+  /** Underlying series/release identity; newer observations replace older ones. */
+  seriesId?: string;
+  observationDate?: string;
+  expiresAt?: string;
 }
 
 export interface BiasRule {
@@ -67,10 +97,14 @@ export interface ScoredEvent {
   title: string;
   description: string;
   impact: EventImpact;
+  /** Rule contribution before category caps and the final score cap. */
   scoreChange: number;
   country?: string;
   url?: string;
   sourceName?: string;
+  evidenceType?: EvidenceType;
+  timestamp?: string;
+  observationDate?: string;
 }
 
 export interface BiasResult {
@@ -85,12 +119,16 @@ export interface BiasResult {
   dailyLabel: string;
   drivers: string[];
   events: ScoredEvent[];
+  /** Percentage of scored events supporting the net score; zero for a zero score. */
   confirmationRatio: number;
   eventCount: number;
+  /** Distinct categories with a nonzero net contribution. */
   confidenceCount: number;
+  /** Distinct rule categories available for this asset. */
   totalPossibleSignals: number;
   history: HistoryEntry[];
   lastUpdated: string;
+  alignment?: AlignmentAssessment;
 }
 
 export interface DxyContext {
@@ -98,6 +136,21 @@ export interface DxyContext {
   percentChange: number;
   status: 'strengthening' | 'weakening';
   summary: string;
+}
+
+export type CalendarImpact = 'high' | 'medium' | 'low' | 'holiday';
+
+/** One scheduled release from the economic calendar, times in ISO UTC. */
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  currency: string;
+  time: string;
+  impact: CalendarImpact;
+  forecast: string | null;
+  previous: string | null;
+  actual: string | null;
+  affects: string[];
 }
 
 export interface UpcomingEvent {

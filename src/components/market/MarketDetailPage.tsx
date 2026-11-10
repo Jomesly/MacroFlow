@@ -65,6 +65,12 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             <p>Source mode: {response!.source}. {error || response!.stale ? 'Outdated read.' : 'Latest available read.'}{degraded && ' Some providers are unavailable.'}{response!.source === 'baseline' && ' Baseline inputs; live confirmation is unavailable.'}</p>
             <p>Inputs fetched <time dateTime={response!.timestamp}>{new Date(response!.timestamp).toLocaleString()}</time></p>
           </div>
+          {data.alignment && <section className="research-fact" aria-labelledby="alignment-title">
+            <h2 id="alignment-title">Four-hour macro alignment</h2>
+            <p>{data.alignment.status.replaceAll('_', ' ')} · probability unvalidated</p>
+            <p className="research-note">Regime: {data.alignment.context.regime.replaceAll('_', ' ')}. This rule score is not an estimated win rate.</p>
+            {data.alignment.reasons.length > 0 && <ul>{data.alignment.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>}
+          </section>}
           <nav className="research-section-links" aria-label="Analysis sections"><a href="#market-drivers">Drivers</a><a href="#market-history">History</a>{marketFeatures.calendar && <a href="#economic-calendar">Upcoming releases</a>}</nav>
           <MarketDrivers data={data} />
           <MarketBiasHistory data={data} />

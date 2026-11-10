@@ -10,6 +10,7 @@ mkdirSync(artifactDir, { recursive: true });
 
 
 test.beforeEach(async ({ page }) => {
+  await page.route('**/api/calendar/consensus', route => route.fulfill({ json: { events: [], fetchedAt: new Date().toISOString(), archiveStatus: 'ok' } }));
   await page.route('**/api/calendar', (route) => route.fulfill({ json: calendarFixture }));
   await page.route('**/api/macro-context', (route) => route.fulfill({ json: macroFixture }));
 });
@@ -120,10 +121,10 @@ test('filters, history, source status and keyboard-accessible market analysis wo
   await prepare(page);
   expect(await page.locator('.market-card h3').allTextContents()).toEqual([
     'US100',
-    'XAUUSD',
-    'DJ30',
-    'GBPUSD',
     'BTCUSD',
+    'XAUUSD',
+    'GBPUSD',
+    'DJ30',
   ]);
   await page.getByRole('button', { name: 'Bullish', exact: true }).click();
   await expect(page.locator('.market-card')).toHaveCount(2);

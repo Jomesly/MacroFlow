@@ -266,6 +266,7 @@ export function createEventFromClassification(
     country: classified.country,
     url,
     sourceName: source,
+    evidenceType: 'headline',
   };
 }
 
@@ -274,39 +275,43 @@ export function classifyEconomicEvent(
   actual: number | null,
   forecast: number | null
 ): { category: EventCategory; value: string } | null {
-  // Skip events with no actual data — they haven't occurred yet
-  if (actual === null) return null;
+  // A directional surprise requires a finite actual and consensus, and a
+  // nonzero difference. Trend data without consensus is a separate input.
+  if (actual === null || forecast === null || !Number.isFinite(actual) || !Number.isFinite(forecast) || actual === forecast) return null;
 
   const name = eventName.toLowerCase();
 
-  const isBeat = forecast !== null ? actual >= forecast : null;
+  const isBeat = actual > forecast;
 
-  if (/cpi|inflation|core/i.test(name)) {
-    return { category: 'inflation', value: isBeat === true ? 'high' : isBeat === false ? 'low' : 'high' };
+  // Regional Fed surveys name their publisher, not a policy action: score them as activity data.
+  if (/\b(philadelphia|philly|richmond|kansas city|dallas|new york|ny|chicago)\s+fed\b|empire state/i.test(name)) {
+    return /manufacturing|services|business|activity/i.test(name) ? { category: 'pmi', value: isBeat ? 'beat' : 'miss' } : null;
+  }
+  if (/interest rate decision|rate decision|fomc|federal funds|fed funds|\bbank rate\b/i.test(name)) {
+    const category = /\bboe\b|bank of england|\bbank rate\b/i.test(name) ? 'boe_tone'
+      : /\bfed\b|federal reserve|fomc|federal funds|fed funds/i.test(name) ? 'fed_tone' : null;
+    return category ? { category, value: isBeat ? 'hawkish' : 'dovish' } : null;
+  }
+  // Any other central-bank release (balance sheet, votes, nowcasts) has no reliable tone mapping.
+  if (/\bfed\b|federal reserve|central bank|\bboe\b|bank of england|\bmpc\b/i.test(name)) return null;
+
+  if (/\bcpi\b|inflation|\bppi\b|\bpce\b.*price|personal consumption expenditures.*price/i.test(name)) {
+    return { category: 'inflation', value: isBeat ? 'high' : 'low' };
   }
   if (/nonfarm|payroll|employment|unemployment|jobless|jobs/i.test(name)) {
     if (/unemployment|jobless/i.test(name)) {
-      return { category: 'employment', value: isBeat === true ? 'weak' : isBeat === false ? 'strong' : 'strong' };
+      return { category: 'employment', value: isBeat ? 'weak' : 'strong' };
     }
-    return { category: 'employment', value: isBeat === true ? 'strong' : isBeat === false ? 'weak' : 'strong' };
+    return { category: 'employment', value: isBeat ? 'strong' : 'weak' };
   }
   if (/gdp/i.test(name)) {
-    return { category: 'gdp', value: isBeat === true ? 'beat' : isBeat === false ? 'miss' : 'beat' };
+    return { category: 'gdp', value: isBeat ? 'beat' : 'miss' };
   }
   if (/pmi|manufacturing|services/i.test(name)) {
-    return { category: 'pmi', value: isBeat === true ? 'beat' : isBeat === false ? 'miss' : 'beat' };
+    return { category: 'pmi', value: isBeat ? 'beat' : 'miss' };
   }
-  if (/retail sales|consumer|spending/i.test(name)) {
-    return { category: 'retail_sales', value: isBeat === true ? 'beat' : isBeat === false ? 'miss' : 'beat' };
-  }
-  if (/fed|interest rate|central bank/i.test(name)) {
-    if (/cut|lower|ease|dovish|hold/i.test(name)) {
-      return { category: 'fed_tone', value: 'dovish' };
-    }
-    if (/hike|raise|tighten|hawkish/i.test(name)) {
-      return { category: 'fed_tone', value: 'hawkish' };
-    }
-    return { category: 'fed_tone', value: 'dovish' };
+  if (/retail sales|consumer spending|personal spending/i.test(name)) {
+    return { category: 'retail_sales', value: isBeat ? 'beat' : 'miss' };
   }
 
   return null;

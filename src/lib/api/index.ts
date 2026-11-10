@@ -1,81 +1,79 @@
-import { MacroEvent, SourceHealth } from '../types';
+import type { MacroEvent, MacroContext, SourceHealth, UpcomingEvent } from '../types';
 import { z } from 'zod';
+import { unknownContext } from '../macro-context';
 import { fetchNews } from './finnhub';
 import { fetchMarketData } from './twelvedata';
 import { fetchRssFeeds } from './rss';
-import { fetchFredEvents } from './fred';
+import { fetchFredInputs } from './fred';
+import { getCalendar, nextHighEvent } from '../calendar';
 import { coalesce, getCacheEntry, setCache } from './cache';
 
-const CACHE_KEY = 'merged_events';
-const CACHE_TTL = 900_000;
-
+const CACHE_KEY = 'merged_events_v6';
 const eventSchema = z.object({
   id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'other']),
   title: z.string(), description: z.string(), timestamp: z.iso.datetime(),
   impact: z.enum(['high', 'medium', 'low']), value: z.string(),
   country: z.string().optional(), url: z.string().optional(), sourceName: z.string().optional(),
+  evidenceType: z.enum(['headline', 'surprise', 'trend', 'market']).optional(),
+  seriesId: z.string().optional(), observationDate: z.string().optional(), expiresAt: z.iso.datetime().optional(),
+});
+const contextSchema = z.object({
+  asOf: z.iso.datetime(), regime: z.enum(['rates_sensitive', 'growth_sensitive', 'mixed', 'unknown']),
+  rateSpread: z.number().nullable(), rateObservationDate: z.string().nullable(),
+  inflation: z.enum(['accelerating', 'cooling', 'stable', 'unknown']), growth: z.enum(['expanding', 'contracting', 'unknown']),
+  labor: z.enum(['improving', 'weakening', 'mixed', 'unknown']), complete: z.boolean(), reasons: z.array(z.string()),
 });
 const cachedEventsSchema = z.object({
-  events: z.array(eventSchema), cachedAt: z.iso.datetime(),
+  events: z.array(eventSchema), context: contextSchema, cachedAt: z.iso.datetime(),
   sourceHealth: z.record(z.string(), z.enum(['ok', 'empty', 'failed'])),
+  nextEvent: z.object({ name: z.string(), country: z.string(), date: z.iso.datetime(), impact: z.enum(['high', 'medium']), affects: z.array(z.string()) }).nullable(),
 });
 
-export async function fetchAllEvents(): Promise<{ events: MacroEvent[]; cachedAt: string; sourceHealth: SourceHealth; stale?: boolean }> {
+interface CachedEvents {
+  events: MacroEvent[];
+  context: MacroContext;
+  cachedAt: string;
+  sourceHealth: SourceHealth;
+  nextEvent: UpcomingEvent | null;
+}
+
+export async function fetchAllEvents(): Promise<CachedEvents & { stale?: boolean }> {
   return coalesce(CACHE_KEY, async () => {
-    const entry = await getCacheEntry<unknown>(CACHE_KEY);
-    const parsed = cachedEventsSchema.safeParse(entry?.data);
-    const cached = parsed.success ? parsed.data : null;
-    if (cached && entry && Date.now() < entry.freshUntil) return cached;
-
-    const sourceNames = ['finnhub', 'market_data', 'rss', 'fred'] as const;
-
-    const rawResults = await Promise.allSettled([
-      fetchNews(),
-      fetchMarketData(),
-      fetchRssFeeds(),
-      fetchFredEvents(),
-    ]);
-    const results = rawResults.map((result) => {
-      if (result.status === 'rejected') return result;
-      const valid = z.array(eventSchema).safeParse(result.value);
-      return valid.success
-        ? { status: 'fulfilled' as const, value: valid.data }
-        : { status: 'rejected' as const, reason: new Error('Invalid provider events') };
-    });
-
-    const allEvents: MacroEvent[] = [];
-    const seenIds = new Set<string>();
-    const sourceHealth: SourceHealth = {};
-
-    results.forEach((result, index) => {
-      const sourceName = sourceNames[index];
-      sourceHealth[sourceName] = result.status === 'rejected'
-        ? 'failed'
-        : result.value.length > 0
-          ? 'ok'
-          : 'empty';
-    });
-
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        for (const event of result.value) {
-          if (!seenIds.has(event.id)) {
-            seenIds.add(event.id);
-            allEvents.push(event);
-          }
-        }
-      }
-    }
-
-    if (allEvents.length === 0) {
-      if (cached) {
-        return { ...cached, sourceHealth, stale: true };
-      }
-      return { events: [], cachedAt: new Date().toISOString(), sourceHealth };
-    }
-
-    const cachedAt = new Date().toISOString();
-    await setCache(CACHE_KEY, { events: allEvents, cachedAt, sourceHealth }, CACHE_TTL, 3_600_000);
-    return { events: allEvents, cachedAt, sourceHealth };
+  const entry = await getCacheEntry<unknown>(CACHE_KEY);
+  const parsed = cachedEventsSchema.safeParse(entry?.data);
+  const cached = parsed.success ? parsed.data : null;
+  if (cached && entry && Date.now() < entry.freshUntil) return cached;
+  const asOf = new Date().toISOString();
+  const names = ['finnhub', 'market_data', 'rss'] as const;
+  const [rawResults, fred, calendar] = await Promise.all([
+    Promise.allSettled([fetchNews(), fetchMarketData(), fetchRssFeeds()]),
+    fetchFredInputs(asOf).catch(() => ({ context: unknownContext(asOf), events: [] as MacroEvent[], failed: true })),
+    getCalendar(asOf).catch(() => null),
+  ]);
+  const results = rawResults.map(result => {
+    if (result.status === 'rejected') return result;
+    const valid = z.array(eventSchema).safeParse(result.value);
+    return valid.success ? { status: 'fulfilled' as const, value: valid.data }
+      : { status: 'rejected' as const, reason: new Error('Invalid provider events') };
+  });
+  const events: MacroEvent[] = [...fred.events];
+  const sourceHealth: SourceHealth = {};
+  results.forEach((result, index) => {
+    sourceHealth[names[index]] = result.status === 'rejected' ? 'failed' : result.value.length ? 'ok' : 'empty';
+    if (result.status === 'fulfilled') events.push(...result.value);
+  });
+  sourceHealth.fred = fred.failed ? 'failed' : fred.context.complete ? 'ok' : 'empty';
+  sourceHealth.calendar_archive = calendar?.archiveStatus ?? 'failed';
+  sourceHealth.economic_calendar = !calendar || calendar.archiveStatus === 'failed' ? 'failed' : calendar.surprises.length ? 'ok' : 'empty';
+  if (calendar && calendar.archiveStatus === 'ok') events.push(...calendar.surprises);
+  const nextEvent = nextHighEvent(calendar?.events ?? [], asOf);
+  if (!events.length && cached) {
+    return { ...cached, events: cached.events.filter(event => sourceHealth.calendar_archive !== 'failed'
+      || event.sourceName !== 'ForexFactory + FRED' || event.evidenceType !== 'surprise'),
+      sourceHealth, nextEvent, stale: true };
+  }
+  const data: CachedEvents = { events: [...new Map(events.map(event => [event.id, event])).values()], context: fred.context, cachedAt: asOf, sourceHealth, nextEvent };
+  if (data.events.length) await setCache(CACHE_KEY, data, 60_000, 3_600_000);
+  return data;
   });
 }

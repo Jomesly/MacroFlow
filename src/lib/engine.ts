@@ -4,6 +4,7 @@ import {
   Conviction,
   Direction,
   MacroEvent,
+  MacroContext,
   Strength,
   TradeSignal,
 } from './types';
@@ -92,6 +93,24 @@ const CATEGORY_CAPS: Partial<Record<MacroEvent['category'], number>> = {
   crypto_regulation: 40,
   earnings: 25,
 };
+
+function macroModulation(symbol: AssetSymbol, event: MacroEvent, context: MacroContext): number {
+  if ((symbol === 'US100' || symbol === 'DJ30' || symbol === 'US500') && ['employment', 'gdp', 'pmi', 'retail_sales'].includes(event.category)) {
+    if (context.regime === 'rates_sensitive') return -1;
+    if (context.regime === 'growth_sensitive') return 1;
+    return 0; // Unresolved growth/rate channels must not manufacture direction.
+  }
+  return 1;
+}
+
+function ruleValue(event: MacroEvent): string {
+  if (event.evidenceType !== 'trend') return event.value;
+  const mapping: Record<string, string> = {
+    accelerating: 'high', cooling: 'low', improving: 'strong', weakening: 'weak',
+    expanding: 'beat', contracting: 'miss',
+  };
+  return mapping[event.value] ?? 'neutral';
+}
 
 const COUNTRY_SENSITIVE_CATEGORIES = new Set<MacroEvent['category']>([
   'inflation',
@@ -187,26 +206,6 @@ function categoryCap(category: MacroEvent['category']): number {
   return CATEGORY_CAPS[category] ?? 30;
 }
 
-/**
- * Caps a category's net score, trimming only the dominant side so opposing
- * evidence still counts. The result does not depend on event arrival order.
- */
-function applyCategoryCap(scores: number[], cap: number): number[] {
-  const net = scores.reduce((sum, score) => sum + score, 0);
-  if (Math.abs(net) <= cap) return scores;
-
-  const side = Math.sign(net);
-  const dominant = scores.filter((score) => Math.sign(score) === side).reduce((sum, score) => sum + score, 0);
-  const factor = (side * cap - (net - dominant)) / dominant;
-  const capped = scores.map((score) => (Math.sign(score) === side ? Math.round(score * factor) : score));
-
-  // Rounding must not move the net off the cap.
-  const drift = side * cap - capped.reduce((sum, score) => sum + score, 0);
-  const largest = capped.reduce((best, score, index) => (score * side > capped[best] * side ? index : best), 0);
-  capped[largest] += drift;
-  return capped;
-}
-
 function absPercent(score: number): number {
   return Math.round(Math.abs(score));
 }
@@ -228,14 +227,14 @@ function getStrength(score: number): Strength {
 
 function getConviction(
   absScore: number,
-  eventCount: number,
-  highImpactCount: number,
+  supportingCategoryCount: number,
+  supportingHighImpactCount: number,
   agreementRatio: number
 ): Conviction {
-  if (absScore > 40 && eventCount >= 3 && highImpactCount >= 1 && agreementRatio >= 0.6) {
+  if (absScore > 40 && supportingCategoryCount >= 3 && supportingHighImpactCount >= 1 && agreementRatio >= 0.6) {
     return 'high';
   }
-  if (absScore > 25 && eventCount >= 2 && highImpactCount >= 1) {
+  if (absScore > 25 && supportingCategoryCount >= 2 && supportingHighImpactCount >= 1 && agreementRatio > 0.5) {
     return 'medium';
   }
   return 'low';
@@ -251,8 +250,8 @@ function getSignal(direction: Direction, strength: Strength, conviction: Convict
   return 'neutral';
 }
 
-function countRulesForSymbol(symbol: AssetSymbol): number {
-  return biasRules.filter((r) => r.symbol === symbol).length;
+function countCategoriesForSymbol(symbol: AssetSymbol): number {
+  return new Set(biasRules.filter((r) => r.symbol === symbol).map((r) => r.eventCategory)).size;
 }
 
 function getLabel(score: number, direction: Direction): string {
@@ -268,85 +267,87 @@ function getLabel(score: number, direction: Direction): string {
 export function calculateBias(
   events: MacroEvent[],
   symbol?: AssetSymbol,
-  rateSpread?: number | null
+  rateSpread?: number | MacroContext | null
 ): BiasResult[] {
   const symbols = symbol ? [symbol] : ALL_SYMBOLS;
-  const regime = getRateRegime(rateSpread ?? null);
+  const context = typeof rateSpread === 'object' && rateSpread !== null ? rateSpread : null;
+  const regime = getRateRegime(typeof rateSpread === 'number' ? rateSpread : null);
 
   return symbols.map((sym) => {
     let totalScore = 0;
     const scoredEvents: BiasResult['events'] = [];
-    const contributions: { event: MacroEvent; score: number }[] = [];
+    const categoryTotals: Partial<Record<MacroEvent['category'], number>> = {};
+    const seenEvents = new Set<string>();
+    const seenArticles = new Set<string>();
 
     for (const event of events) {
+      const signalKey = `${event.category}:${event.value}:${normalizeCountry(event.country) ?? ''}`;
+      const eventKey = `${event.id}:${signalKey}`;
+      const articleKey = event.url ? `${event.url}:${event.timestamp.slice(0, 10)}:${signalKey}` : undefined;
+      if (seenEvents.has(eventKey) || (articleKey && seenArticles.has(articleKey))) continue;
+      seenEvents.add(eventKey);
+      if (articleKey) seenArticles.add(articleKey);
       const matchingRules = biasRules.filter(
         (r) =>
           r.symbol === sym &&
           r.eventCategory === event.category &&
-          r.eventValue === event.value &&
+          r.eventValue === ruleValue(event) &&
           ruleMatchesEvent(r, event, sym)
       );
 
       for (const rule of matchingRules) {
         // Apply regime modulation to employment category only
-        const modulation = event.category === 'employment'
+        const modulation = context ? macroModulation(sym, event, context) : event.category === 'employment'
           ? getEmploymentModulation(sym, event.value, regime)
           : 1.0;
 
-        contributions.push({ event, score: Math.round(rule.scoreChange * modulation) });
+        const weight = event.evidenceType === 'trend' ? 0.5 : 1;
+        const modulatedScore = Math.sign(rule.scoreChange * modulation) * Math.round(Math.abs(rule.scoreChange * modulation * weight));
+
+        if (modulatedScore === 0) continue;
+        categoryTotals[event.category] = (categoryTotals[event.category] ?? 0) + modulatedScore;
+        scoredEvents.push({
+          id: event.id,
+          category: event.category,
+          title: event.title,
+          description: event.description,
+          impact: event.impact,
+          // Preserve the rule input so opposing evidence remains visible.
+          // Category and final score caps are applied after aggregation.
+          scoreChange: modulatedScore,
+          country: event.country,
+          url: event.url,
+          sourceName: event.sourceName,
+          evidenceType: event.evidenceType ?? 'headline',
+          timestamp: event.timestamp,
+          observationDate: event.observationDate,
+        });
       }
     }
 
-    const appliedScores = new Map<(typeof contributions)[number], number>();
-    for (const category of new Set(contributions.map(({ event }) => event.category))) {
-      const inCategory = contributions.filter(({ event }) => event.category === category);
-      const capped = applyCategoryCap(inCategory.map(({ score }) => score), categoryCap(category));
-      inCategory.forEach((contribution, index) => appliedScores.set(contribution, capped[index]));
+    for (const [category, score] of Object.entries(categoryTotals)) {
+      const cap = categoryCap(category as MacroEvent['category']);
+      totalScore += clamp(score, -cap, cap);
     }
-
-    for (const contribution of contributions) {
-      const { event } = contribution;
-      const appliedScore = appliedScores.get(contribution) ?? 0;
-      if (appliedScore === 0) continue;
-
-      totalScore += appliedScore;
-      scoredEvents.push({
-        id: event.id,
-        category: event.category,
-        title: event.title,
-        description: event.description,
-        impact: event.impact,
-        scoreChange: appliedScore,
-        country: event.country,
-        url: event.url,
-        sourceName: event.sourceName,
-      });
-    }
-
     totalScore = clamp(totalScore, -100, 100);
     const direction = getDirection(totalScore);
     const strength = getStrength(totalScore);
 
-    const bullishCount = scoredEvents.filter((e) => e.scoreChange > 0).length;
-    const bearishCount = scoredEvents.filter((e) => e.scoreChange < 0).length;
     const totalRelevant = scoredEvents.length;
-    const alignedCount = totalScore > 0
-      ? bullishCount
-      : totalScore < 0
-        ? bearishCount
-        : Math.max(bullishCount, bearishCount);
-    const confirmationRatio = totalRelevant > 0
-      ? Math.round((alignedCount / totalRelevant) * 100)
-      : 0;
-
-    const highImpactCount = scoredEvents.filter((e) => e.impact === 'high').length;
-    const totalPossibleSignals = countRulesForSymbol(sym);
+    const supportingEvents = scoredEvents.filter((e) => e.scoreChange * totalScore > 0);
+    const agreementRatio = totalRelevant > 0 ? supportingEvents.length / totalRelevant : 0;
+    const confirmationRatio = Math.round(agreementRatio * 100);
+    const supportingCategories = new Set(
+      Object.entries(categoryTotals).filter(([, score]) => score * totalScore > 0).map(([category]) => category)
+    );
+    const highImpactCount = supportingEvents.filter((e) => e.impact === 'high' && supportingCategories.has(e.category)).length;
+    const totalPossibleSignals = countCategoriesForSymbol(sym);
 
     const conviction = getConviction(
       Math.abs(totalScore),
-      totalRelevant,
+      supportingCategories.size,
       highImpactCount,
-      confirmationRatio / 100
+      agreementRatio
     );
 
     const signal = getSignal(direction, strength, conviction);
@@ -375,7 +376,7 @@ export function calculateBias(
       events: scoredEvents,
       confirmationRatio,
       eventCount: totalRelevant,
-      confidenceCount: totalRelevant,
+      confidenceCount: Object.values(categoryTotals).filter((score) => score !== 0).length,
       totalPossibleSignals,
       history: [],
       lastUpdated: new Date().toISOString(),
