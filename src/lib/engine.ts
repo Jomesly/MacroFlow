@@ -10,6 +10,8 @@ import {
   ScoredEvent,
 } from './types';
 import { biasRules } from './rules';
+import { HIGH_CONVICTION_PERCENT } from './bias-reading';
+export { HIGH_CONVICTION_PERCENT } from './bias-reading';
 
 // ── Rate-regime types and helpers ──────────────────────────────────
 
@@ -213,8 +215,6 @@ export function cappedCategoryPoints(events: Pick<ScoredEvent, 'category' | 'sco
   for (const event of events) totals.set(event.category, (totals.get(event.category) ?? 0) + event.scoreChange);
   return new Map([...totals].map(([category, score]) => [category, clamp(score, -categoryCap(category), categoryCap(category))]));
 }
-
-export const HIGH_CONVICTION_PERCENT = 50;
 
 function getDirection(score: number): Direction {
   if (score > 50) return 'bullish';

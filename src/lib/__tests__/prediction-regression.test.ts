@@ -4,6 +4,7 @@ import { scoreMacroAlignment } from '../alignment';
 import { buildMacroInputs } from '../macro-context';
 import { classifyHeadline } from '../api/classifier';
 import { contextFixture } from './fixtures/macro';
+import { consistentBiasReading } from '../bias-reading';
 import type { MacroEvent } from '../types';
 
 const asOf = '2026-11-10T12:00:00.000Z';
@@ -35,6 +36,21 @@ function gold(sign: number, points: 128 | 130 | 133): MacroEvent[] {
 }
 
 describe('production prediction regression', () => {
+  it.each([20, 26, 28, 49, -20, -26, -28, -49, NaN])('safely presents an older inconsistent API payload at %s percent', percent => {
+    const result = scoreMacroAlignment(gold(1, 130), context, asOf, 'XAUUSD')[0];
+    const legacy = { ...result, biasPercent: percent };
+    const guarded = consistentBiasReading(legacy);
+    expect(guarded.biasPercent).toBe(percent);
+    expect(guarded.conviction).toBe('low');
+    expect(guarded.signal).toBe('neutral');
+    expect(guarded.alignment?.status).toBe('conflicted');
+    expect(legacy.conviction).toBe('high'); // Retained state is not mutated.
+    expect(consistentBiasReading(guarded)).toBe(guarded);
+  });
+  it.each([50, 51, -50, -51])('preserves a consistent API payload at %s percent', percent => {
+    const result = { ...scoreMacroAlignment(gold(1, 130), context, asOf, 'XAUUSD')[0], biasPercent: percent };
+    expect(consistentBiasReading(result)).toBe(result);
+  });
   it.each([1, -1])('uses displayed magnitude at 49/50/51 percent for side %s', sign => {
     for (const [points, percent] of [[128, 49], [130, 50], [133, 51]] as const) {
       const inputs = gold(sign, points);

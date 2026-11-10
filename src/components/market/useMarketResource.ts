@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** Visible tabs poll only at the dataset cadence; unmounts abort pending work. */
-export function useMarketResource<T>(url: string, intervalMs = 300_000) {
+export function useMarketResource<T>(url: string, intervalMs = 300_000, cache: RequestCache = 'default') {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -17,7 +17,7 @@ export function useMarketResource<T>(url: string, intervalMs = 300_000) {
     lastAttempt.current = Date.now();
     setLoading(true);
     try {
-      const response = await fetch(url, { signal: AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]) });
+      const response = await fetch(url, { cache, signal: AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]) });
       if (!response.ok) throw new Error('Request failed');
       const result: T = await response.json();
       if (!request.signal.aborted) { setData(result); setError(false); }
@@ -27,7 +27,7 @@ export function useMarketResource<T>(url: string, intervalMs = 300_000) {
       if (!request.signal.aborted) setLoading(false);
       if (controller.current === request) controller.current = null;
     }
-  }, [url]);
+  }, [url, cache]);
 
   useEffect(() => {
     const initial = setTimeout(() => void refresh(), 0);

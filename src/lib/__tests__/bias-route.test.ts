@@ -20,6 +20,7 @@ describe('live bias route', () => {
     const inputs = buildMacroInputs(contextFixture(), asOf);
     vi.mocked(getEvents).mockResolvedValue({ ...inputs, source: 'live', cachedAt: asOf, sourceHealth: { economic_calendar: 'failed', fred: 'ok' }, nextEvent: null });
     const response = await GET(new NextRequest('http://localhost/api/bias?symbol=US100'));
+    expect(response.headers.get('cache-control')).toBe('no-store');
     const body = await response.json();
     expect(body.data).toMatchObject(scoreMacroAlignment(inputs.events, inputs.context, asOf, 'US100'));
     expect(body.data[0].probability).toMatchObject({ status: 'unavailable', value: null });

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Minus } from '@phosphor-icons/react';
 import type { AssetSymbol, BiasApiResponse } from '@/lib/types';
+import { consistentBiasReading } from '@/lib/bias-reading';
 import { referenceCharts } from '@/lib/market/instruments';
 import { directionLabel, marketSymbols, signed } from '@/lib/market/symbols';
 import { marketIsOpen } from '@/lib/marketIsOpen';
@@ -17,9 +18,9 @@ import PanelErrorBoundary from './PanelErrorBoundary';
 
 export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
   const [technicalSide, setTechnicalSide] = useState('none');
-  const { data: response, loading, error, refresh } = useMarketResource<BiasApiResponse>(`/api/bias?symbol=${symbol}`, 300_000);
+  const { data: response, loading, error, refresh } = useMarketResource<BiasApiResponse>(`/api/bias?symbol=${symbol}`, 300_000, 'no-store');
   const now = useMarketClock();
-  const data = response?.data.find((entry) => entry.symbol === symbol);
+  const data = response?.data.map(consistentBiasReading).find((entry) => entry.symbol === symbol);
   const reference = referenceCharts[symbol];
   const degraded = response?.sourceHealth && Object.values(response.sourceHealth).some((status) => status === 'failed');
   const tone = data?.direction.includes('bullish') ? 'positive' : data?.direction.includes('bearish') ? 'negative' : 'neutral';

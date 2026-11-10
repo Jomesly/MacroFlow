@@ -23,6 +23,7 @@ import type {
 } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import { packBoard } from '@/lib/market-board';
+import { consistentBiasReading } from '@/lib/bias-reading';
 import WeeklyEconomicCalendar from '@/components/calendar/EconomicCalendar';
 import MarketBreadth from '@/components/MarketBreadth';
 import Disclaimer from '@/components/Disclaimer';
@@ -212,7 +213,7 @@ export default function Home() {
     inFlight.current = true;
     setLoading(true);
     try {
-      const result = await fetch('/api/bias');
+      const result = await fetch('/api/bias', { cache: 'no-store' });
       if (!result.ok)
         throw new Error('Market data could not be loaded. Please try again.');
       const json: BiasApiResponse = await result.json();
@@ -247,7 +248,7 @@ export default function Home() {
     };
   }, [fetchBias]);
 
-  const data = response?.data ?? [];
+  const data = response?.data.map(consistentBiasReading) ?? [];
   const visible = data
     .filter(
       (item) =>

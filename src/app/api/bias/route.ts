@@ -66,5 +66,5 @@ export async function GET(request: NextRequest) {
       'This is not financial advice. Use this dashboard for informational purposes only. Always conduct your own research before trading.',
   };
 
-  return NextResponse.json(response);
+  return NextResponse.json(response, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -33,7 +33,8 @@ for (const width of [1440, 375]) {
     let conviction: BiasResult['conviction'] = 'low';
     await page.route('**/api/bias*', (route) => {
       const symbol = new URL(route.request().url()).searchParams.get('symbol');
-      return route.fulfill({ json: { ...detailFixture, data: detailFixture.data.filter((entry) => !symbol || entry.symbol === symbol).map((entry) => ({ ...entry, conviction })) } });
+      return route.fulfill({ json: { ...detailFixture, data: detailFixture.data.filter((entry) => !symbol || entry.symbol === symbol).map((entry) => ({ ...entry,
+        biasPercent: entry.symbol === 'DJ30' ? 0 : Math.sign(entry.biasPercent) * 60, conviction })) } });
     });
     const paints: Record<string, Record<string, number[]>> = {};
     for (const level of ['low', 'medium', 'high'] as const) {
@@ -44,7 +45,7 @@ for (const width of [1440, 375]) {
       paints[level] = {};
       for (const symbol of ['XAUUSD', 'BTCUSD', 'DJ30']) {
         const row = page.locator('.market-card').filter({ has: page.getByRole('heading', { name: symbol, exact: true }) });
-        await expect(row).toHaveAttribute('data-conviction', level);
+        await expect(row).toHaveAttribute('data-conviction', symbol === 'DJ30' && level === 'high' ? 'low' : level);
         paints[level][symbol] = await readColor(row);
         expect(contrast(await readColor(row.locator('.market-score'), 'color'), paints[level][symbol])).toBeGreaterThanOrEqual(4.5);
         expect(contrast(await readColor(row.locator('.market-conviction'), 'color'), paints[level][symbol])).toBeGreaterThanOrEqual(4.5);
@@ -63,7 +64,7 @@ for (const width of [1440, 375]) {
       }
       for (const symbol of ['XAUUSD', 'BTCUSD', 'DJ30']) {
         await page.goto(`/markets/${symbol}`);
-        await expect(page.locator('.market-research')).toHaveAttribute('data-conviction', level);
+        await expect(page.locator('.market-research')).toHaveAttribute('data-conviction', symbol === 'DJ30' && level === 'high' ? 'low' : level);
         const hero = page.locator('.research-hero');
         expect(await readColor(hero)).toEqual(paints[level][symbol]);
         expect(contrast(await readColor(page.locator('.research-bias strong'), 'color'), await readColor(hero))).toBeGreaterThanOrEqual(4.5);
@@ -97,7 +98,7 @@ test('refresh changes conviction colors while the score and direction stay the s
   await page.emulateMedia({ reducedMotion: 'reduce' });
   let conviction: BiasResult['conviction'] = 'low';
   await page.route('**/api/bias*', (route) => route.fulfill({
-    json: { ...detailFixture, data: detailFixture.data.map((entry) => ({ ...entry, conviction })) },
+    json: { ...detailFixture, data: detailFixture.data.map((entry) => ({ ...entry, biasPercent: Math.sign(entry.biasPercent) * 60, conviction })) },
   }));
   for (const url of ['/', '/markets/XAUUSD']) {
     conviction = 'low';

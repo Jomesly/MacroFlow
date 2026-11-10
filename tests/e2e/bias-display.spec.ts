@@ -27,6 +27,21 @@ test('signed bias percentages and low conviction remain visible without calibrat
 });
 
 for (const sign of [1, -1]) {
+  test(`an older high-conviction payload at ${sign * 26}% is guarded on both surfaces`, async ({ page }) => {
+    body.data = body.data.map(r => ({ ...r, biasPercent: sign * 26, conviction: 'high' }));
+    await page.goto('/');
+    await expect(page.locator('.market-card')).toHaveCount(5);
+    await expect(page.locator('.market-conviction').first()).toHaveText('Low conviction');
+    await expect(page.locator('.market-card[data-conviction="high"]')).toHaveCount(0);
+    await expect(page.locator('.market-score').first()).toHaveText(`${sign > 0 ? '+' : '-'}26%`);
+    await page.goto('/markets/XAUUSD');
+    await expect(page.locator('.research-bias strong')).toHaveText(`${sign > 0 ? '+' : '-'}26%`);
+    await expect(page.locator('.market-research')).toHaveAttribute('data-conviction', 'low');
+    await page.route('**/api/bias*', route => route.fulfill({ status: 503, json: {} }));
+    await page.getByRole('button', {name: 'Refresh analysis', exact: true}).click();
+    await expect(page.getByRole('main').getByRole('alert')).toBeVisible();
+    await expect(page.locator('.market-research')).toHaveAttribute('data-conviction', 'low');
+  });
   test(`refresh updates the percentage and conviction together for sign ${sign}`, async ({ page }) => {
     body.data = body.data.map(r => ({ ...r, biasPercent: sign * 49, conviction: 'low' }));
     await page.goto('/markets/XAUUSD');

@@ -1,5 +1,7 @@
 # Production prediction regression investigation — 2026-11-10
 
+Follow-up: the user identified `e52443bff3b65df86d7568c40c68175517db11ef` as the November 1 portfolio reference. See [the exact-reference comparison and full production/cache/rendering audit](portfolio-reference-comparison-2026-11-10.md) for that additional investigation, shared-input comparisons, rendering safeguards and updated validation counts.
+
 ## Finding and scope
 
 Production was inspected at `https://macro-flow-ecru.vercel.app`. Vercel identified deployment `dpl_7QT2ka2UYSABVkPdbrdXxL6bn7CH`, commit `178457f05e7f45e90353230af0612a6fa144f200`. The API reproduced high conviction below 50%, including Bitcoin −26%, GBPUSD −35%, and Nasdaq −42%. Source health reported healthy inputs for that read.

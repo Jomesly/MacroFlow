@@ -5,13 +5,14 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { scoreMacroAlignment } from '../src/lib/alignment';
-import { buildMacroInputs, MODEL_VERSION, type FredSnapshot } from '../src/lib/macro-context';
+import { buildMacroInputs, MODEL_VERSION, selectEventsAsOf, type FredSnapshot } from '../src/lib/macro-context';
 import { buildMarketEvents, type PriceDataset } from '../src/lib/market-evidence';
 import { classifyHeadline } from '../src/lib/api/classifier';
 import { evaluateFourHours, nonOverlapping, type EvaluationRecord } from '../src/lib/backtest';
 import type { AssetSymbol, BiasResult, MacroContext, MacroEvent } from '../src/lib/types';
 
 const revisions = ['02bd9e5', '178457f']; // Immediately before normalization; inspected production.
+const referenceRevision = 'e52443bff3b65df86d7568c40c68175517db11ef';
 const symbols: AssetSymbol[] = ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD'];
 const files = ['engine.ts', 'alignment.ts', 'macro-context.ts', 'rules.ts', 'types.ts'];
 type Scorer = typeof scoreMacroAlignment;
@@ -39,8 +40,53 @@ async function main() {
     sources[revision] = { sha, sourceHashes };
   }
   scorers.corrected = scoreMacroAlignment;
-  sources.corrected = { modelVersion: MODEL_VERSION, sourceHashes: Object.fromEntries([...files, 'api/classifier.ts']
+  sources.corrected = { modelVersion: MODEL_VERSION, sourceHashes: Object.fromEntries([...files, 'api/classifier.ts', 'bias-reading.ts']
     .map(file => [file, hash(read(path.join('src/lib', file)))])) };
+
+  // The portfolio engine predates alignment.ts and the modern trend vocabulary.
+  // Execute its exact source with the null spread used by its actual API route.
+  const referenceDir = path.resolve('.artifacts', 'prediction-baselines', referenceRevision);
+  fs.mkdirSync(referenceDir, { recursive: true });
+  const referenceHashes: Record<string, string> = {};
+  for (const file of ['engine.ts', 'rules.ts', 'types.ts']) {
+    const source = execFileSync('git', ['show', `${referenceRevision}:src/lib/${file}`], { encoding: 'utf8' });
+    fs.writeFileSync(path.join(referenceDir, file), source);
+    referenceHashes[file] = hash(source);
+  }
+  const referenceEngine = await import(pathToFileURL(path.join(referenceDir, 'engine.ts')).href);
+  sources[referenceRevision] = { sha: referenceRevision, sourceHashes: referenceHashes,
+    scope: 'Exact calculateBias with no spread, matching the reference API. Shared inputs exclude unsupported modern trend labels and are selected as-of before either engine runs.' };
+  const compareReference = (events: MacroEvent[], context: MacroContext, asOf: string, symbol?: AssetSymbol) => {
+    const inputs = selectEventsAsOf(events.filter(event => event.evidenceType !== 'trend'), asOf);
+    const reference: BiasResult[] = referenceEngine.calculateBias(inputs, symbol);
+    return { asOf, inputs, readings: {
+      reference: reference.map(pick),
+      production: scorers['178457f'](inputs, context, asOf, symbol).filter(result => symbols.includes(result.symbol)).map(pick),
+      corrected: scorers.corrected(inputs, context, asOf, symbol).filter(result => symbols.includes(result.symbol)).map(pick),
+    } };
+  };
+
+  const testTime = '2026-11-10T12:00:00.000Z';
+  const caseContext: MacroContext = { asOf: testTime, regime: 'rates_sensitive', rateSpread: -0.8,
+    rateObservationDate: '2026-11-09', inflation: 'accelerating', growth: 'expanding', labor: 'improving', complete: true, reasons: ['Constructed comparison fixture'] };
+  const caseEvent = (category: MacroEvent['category'], value: string, evidenceType: MacroEvent['evidenceType'] = 'surprise'): MacroEvent => ({
+    id: `${category}:${value}`, category, value, evidenceType, country: 'US', impact: 'high', title: value, description: value, timestamp: testTime,
+  });
+  const goldInputs = [caseEvent('fed_tone', 'dovish', 'headline'), caseEvent('dollar_strength', 'weak', 'market'), caseEvent('inflation', 'low')];
+  const opposing = goldInputs.map(event => ({ ...event, value: ({ dovish: 'hawkish', weak: 'strong', low: 'high' } as Record<string, string>)[event.value] }));
+  const fed = caseEvent('fed_tone', 'dovish', 'headline');
+  const fedOpposed = caseEvent('fed_tone', 'hawkish', 'headline');
+  const futureCpi = goldInputs.map(event => event.category === 'inflation' ? { ...event, timestamp: '2026-11-10T12:30:00.000Z' } : event);
+  const referenceCases = [
+    { name: 'Gold bullish 70-point reading', ...compareReference(goldInputs, caseContext, testTime, 'XAUUSD') },
+    { name: 'Gold bearish 70-point reading', ...compareReference(opposing, caseContext, testTime, 'XAUUSD') },
+    { name: 'Before the constructed CPI release', ...compareReference(futureCpi, caseContext, testTime, 'XAUUSD') },
+    { name: 'At the constructed CPI release', ...compareReference(futureCpi, caseContext, '2026-11-10T12:30:00.000Z', 'XAUUSD') },
+    { name: 'Conflicting Fed reports, same signal repeated', ...compareReference([fed, { ...fed, id: 'another-report' }, fedOpposed], caseContext, testTime, 'US100') },
+    { name: 'Exact duplicate article, no new evidence', ...compareReference([fed, { ...fed }], caseContext, testTime, 'XAUUSD') },
+    { name: 'Stronger activity under rates-sensitive context', ...compareReference([caseEvent('employment', 'strong'), caseEvent('pmi', 'beat')], caseContext, testTime, 'US100') },
+    { name: 'Stronger activity under growth-sensitive context', ...compareReference([caseEvent('employment', 'strong'), caseEvent('pmi', 'beat')], { ...caseContext, regime: 'growth_sensitive' }, testTime, 'US100') },
+  ];
 
   const fredFiles = fs.readdirSync(path.join(root, 'fred')).filter(file => file.endsWith('.json')).sort();
   const vintages: FredSnapshot[] = fredFiles.map(file => JSON.parse(read(path.join(root, 'fred', file))));
@@ -60,11 +106,21 @@ async function main() {
   const evaluated: Record<string, EvaluationRecord[]> = Object.fromEntries(Object.keys(scorers).map(key => [key, []]));
   let changedScores = 0, changedDirections = 0, changedPercentages = 0;
   const examples: unknown[] = [];
+  const sharedMarketCounts = { rows: 0, differentRawPoints: 0, differentDirection: 0 };
   for (const asOf of times) {
     const vintage = vintages.findLast(snapshot => snapshot.availableAt <= asOf) ?? null;
     const { context, events } = buildMacroInputs(vintage, asOf);
     const inputs = [...events, ...buildMarketEvents({ DXY: prices.DXY, US10Y: prices.US10Y }, asOf)];
     if (inputs.some(event => Date.parse(event.timestamp) > Date.parse(asOf))) throw new Error('Future input');
+    // The only historical archive inputs natively understood by both engines are
+    // the measured market observations. No relabeling of trends as surprises.
+    const shared = compareReference(inputs.filter(event => event.evidenceType === 'market'), context, asOf);
+    for (const old of shared.readings.reference) {
+      const current = shared.readings.corrected.find(result => result.symbol === old.symbol)!;
+      sharedMarketCounts.rows++;
+      sharedMarketCounts.differentRawPoints += Number(old.score !== current.score);
+      sharedMarketCounts.differentDirection += Number(old.direction !== current.direction);
+    }
     const readings: Record<string, BiasResult[]> = {};
     for (const [key, score] of Object.entries(scorers)) {
       readings[key] = score(inputs, context, asOf).filter(result => symbols.includes(result.symbol));
@@ -122,10 +178,16 @@ async function main() {
     });
     const readings = Object.fromEntries(Object.entries(scorers).map(([key, score]) => [key,
       score(key === 'corrected' ? correctedInputs : frozen.events, frozen.context, asOf).map(pick)]));
+    const referenceComparison = compareReference(frozen.events, frozen.context, asOf);
     capture = { capturedAt: asOf, sha256: hash(content), readings,
+      referenceComparison: { ...referenceComparison, inputs: undefined,
+        inputCount: referenceComparison.inputs.length, inputSha256: hash(JSON.stringify(referenceComparison.inputs)) },
       scope: 'Captured post-release inputs only; reclassification cannot recover discarded feed articles. No pre-release performance claim.' };
   }
-  const report = { sources, historical: { profile: 'trend-market-only', archivedNewsUsed: 0,
+  const report = { sources, referenceCases,
+    referenceHistorical: { ...sharedMarketCounts, profile: 'identical measured-market inputs only',
+      limitation: 'Reference lacks the modern trend schema. No historical reference-feed archive or consensus/news archive was reconstructed; this does not validate relative forecast accuracy.' },
+    historical: { profile: 'trend-market-only', archivedNewsUsed: 0,
     policy: 'Prior-day ALFRED vintage; completed market bars; shared as-of input selection. No forecast consensus or news invented.',
     fredSnapshots: vintages.length, fredSha256: hash(fredFiles.map(file => read(path.join(root, 'fred', file))).join('\n')),
     priceHashes, times: times.length, first: times[0], last: times.at(-1), counts,
