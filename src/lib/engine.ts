@@ -362,7 +362,7 @@ export function calculateBias(
       symbol: sym,
       name: ASSET_NAMES[sym],
       biasScore: totalScore,
-      biasPercent: null,
+      biasPercent: Math.round(totalScore),
       direction,
       strength,
       conviction,

@@ -1,6 +1,14 @@
-# Four-hour macro probability
+# Macro bias display and optional probability research
 
-Status: implemented locally on `feature/macro-probability`, based on production commit `ea20062`. No fitted model has been approved. `src/lib/probability/registry.json` intentionally contains `null`.
+The signed macro bias display has been restored following the user's correction. Cards and market details show the original -100% to +100% strength scale with conviction and macro alignment. No fitted outcome-probability model has been approved; `src/lib/probability/registry.json` intentionally contains `null`. That research state no longer hides the dashboard percentage or disables otherwise qualified macro signals.
+
+## Dashboard percentage
+
+`biasPercent` is the rounded signed macro score. Positive readings are bullish and negative readings bearish. Markets sort by absolute strength, putting both +50% and -50% ahead of weaker readings. Conviction remains a separate assessment of evidence breadth, agreement and live market confirmation. A large directional reading can therefore still have low conviction.
+
+The numeric display is available without a fitted probability model. The API preserves the macro scorer's qualified signals when live inputs are healthy and fresh; stale or failed-provider inputs keep the last bias visible with source warnings but suppress the trade signal. The headline, structured economic evidence, release timing and market-confirmation fixes remain in place.
+
+The following sections document the optional outcome-probability research pipeline. It does not replace the signed dashboard percentage.
 
 ## What the percentage means
 
@@ -8,14 +16,14 @@ A displayed 62% rise probability would estimate the chance of a higher close aft
 
 This is not the probability of hitting a technical target before a stop, and it excludes spreads, fees and slippage. Comparing a selected Long/Short technical direction with the macro lean does not change the probability or validate the combined strategy.
 
-The old signed percentage was a capped sum of rules. It was not a probability. Internal rule scores remain as diagnostic inputs and in explicitly labeled history/methodology. `biasPercent` now returns `null`; clients should use `probability` and handle its unavailable state. No substitute 50% is generated when data is missing.
+The signed dashboard percentage is a capped sum of macro rules, not an empirically calibrated win probability. The separate `probability` field can remain unavailable without affecting `biasPercent`. No substitute 50% outcome probability is generated when data is missing.
 
 ## Current behavior
 
-- Cards show an unsigned probability only for a supported, validated condition; otherwise they show an em dash and “Probability unavailable.” Macro direction remains visible.
-- Validated probabilities at or above 50% appear first, regardless of bullish/bearish direction, followed by lower probabilities and unavailable readings.
-- Failed refreshes, stale inputs, expired estimates and incompatible models hide the percentage. A live estimate expires no later than five minutes after its original reading or model expiry.
-- A probability-backed signal also requires its approximate interval's lower bound to exceed 50%, in addition to the existing alignment checks. A 50% sorting threshold is not a trade qualification threshold.
+- Cards and details show signed macro strength and conviction. Optional outcome probability is retained in the API for research.
+- Ranking uses the absolute signed macro percentage, independently of optional probability availability.
+- Failed refreshes retain the last macro percentage with an outdated-read warning. Optional probability estimates still expire no later than five minutes after their original reading or model expiry.
+- Macro trade signals follow evidence/alignment gates and feed freshness. The absent probability artifact does not force all signals to neutral. The 50% sorting threshold alone does not qualify a trade signal.
 - Economic news mentions are excluded from measured economic evidence. Headlines about unrelated prices or individual stocks no longer satisfy the reproduced inflation/broad-risk patterns. Invalid or future news publication times are rejected.
 - Flat market observations are labeled unconfirmed; opposing observations are labeled opposing. Neither is silently treated as confirming.
 
@@ -64,7 +72,7 @@ npm run probability:audit -- --evaluation=data/validation-v3/evaluation.json
 
 The existing 8,335-row legacy evaluation was rejected for this model: it uses an older version and incomplete `trend-market-only` inputs. It cannot establish the new live predictor's probability or accuracy.
 
-## Verification on 2026-11-10
+## Historical probability-release verification on 2026-11-10
 
 - 415 unit tests passed across 46 files, including chronology, overlapping labels, incompatible/expired models, separate holdout checks, stale display suppression, company-headline regressions and a synthetic fit-to-inference round trip.
 - Optimized production build and TypeScript checks passed.
@@ -74,4 +82,4 @@ The existing 8,335-row legacy evaluation was rejected for this model: it uses an
 - Fitting that single capture against the legacy prices produced zero eligible observations and no groups. Missing, invalid or out-of-date prices were rejected. The registry stayed empty.
 - The smoke capture also exposed an unlisted company's share decline being treated as broad risk; the generalized company-share guard was corrected and covered by regression tests afterward. That earlier capture is diagnostic and must not be promoted as calibration data.
 
-No current accuracy, high-probability edge or production readiness of a fitted predictor is claimed. Local implementation checks do not establish financial performance. Production has not been changed by this work.
+No current accuracy, high-probability edge or production readiness of a fitted predictor is claimed. Implementation checks do not establish financial performance. The initial probability-only display was deployed and subsequently superseded by the signed-strength restoration described above.

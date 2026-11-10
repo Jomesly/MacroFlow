@@ -28,7 +28,7 @@ describe('empirical four-hour probability', () => {
   it('never converts points to a probability or supplies a default 50%', () => {
     const r = { ...reading(), biasScore:98 };
     expect(estimateProbability(r,null,now,health)).toMatchObject({status:'unavailable',value:null,interval95:null});
-    expect(r.biasPercent).toBeNull();
+    expect(r.biasPercent).toBe(reading().biasScore);
     expect(probabilityText(r)).toBe('—');
   });
   it('estimates from calibration outcomes, independently of the later validation count', () => {

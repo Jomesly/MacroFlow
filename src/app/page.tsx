@@ -23,7 +23,6 @@ import type {
 } from '@/lib/types';
 import MarketCard from '@/components/MarketCard';
 import WeeklyEconomicCalendar from '@/components/calendar/EconomicCalendar';
-import { compareProbabilities, currentProbabilityReading, displayedProbability } from '@/lib/probability/presentation';
 import MarketBreadth from '@/components/MarketBreadth';
 import Disclaimer from '@/components/Disclaimer';
 import WorkspaceHeader from '@/components/WorkspaceHeader';
@@ -175,7 +174,6 @@ function UpcomingRelease({
 }
 
 export default function Home() {
-  const now = useMarketClock();
   const [response, setResponse] = useState<BiasApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -248,8 +246,7 @@ export default function Home() {
     };
   }, [fetchBias]);
 
-  const probabilityBlocked = !!error || !!response?.stale || response?.source !== 'live' || Object.values(response?.sourceHealth ?? {}).includes('failed');
-  const data = (response?.data ?? []).map(result => currentProbabilityReading(result, probabilityBlocked, now));
+  const data = response?.data ?? [];
   const visible = data
     .filter(
       (item) =>
@@ -258,7 +255,7 @@ export default function Home() {
           ? item.direction === 'neutral'
           : item.direction.includes(filter)),
     )
-    .sort(compareProbabilities);
+    .sort((a, b) => Math.abs(b.biasPercent) - Math.abs(a.biasPercent) || a.symbol.localeCompare(b.symbol));
   const historyScale = Math.max(
     20,
     ...data.flatMap((item) =>
@@ -324,10 +321,10 @@ export default function Home() {
               <span>
                 <strong>
                   {data.length
-                    ? `${data.filter((d) => displayedProbability(d) !== null).length}/${data.length}`
+                    ? `${data.filter((d) => d.conviction === 'high').length}/${data.length}`
                     : '—'}
                 </strong>{' '}
-                validated probabilities
+                high conviction
               </span>
               <span>
                 <strong>{response ? uniqueEvents.length : '—'}</strong> distinct
@@ -384,7 +381,7 @@ export default function Home() {
                 Market overview
                 <span className="section-count">{data.length || '—'}</span>
               </h2>
-              <p>Macro direction and validated four-hour probabilities to compare with your technical setup.</p>
+              <p>Macro bias strength, conviction, and the drivers behind it.</p>
             </div>
             <button
               onClick={() => void fetchBias()}
@@ -486,8 +483,7 @@ export default function Home() {
           )}
           <p className="market-footnote">
             <span className="legend-dot" />
-            A percentage is shown only for a validated four-hour probability. Open a market to
-            explore its full analysis.
+            Percentages show macro bias strength. Readings at +50% or higher, or −50% or lower, rank first. Open a market to explore its conviction and alignment.
           </p>
         </section>
 

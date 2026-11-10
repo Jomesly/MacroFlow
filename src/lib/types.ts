@@ -112,8 +112,8 @@ export interface BiasResult {
   symbol: AssetSymbol;
   name: string;
   biasScore: number;
-  /** Deprecated: rule points are never a percentage. New responses return null. */
-  biasPercent: number | null;
+  /** Signed macro bias strength on a -100% to +100% scale; not a calibrated win probability. */
+  biasPercent: number;
   probability?: import('./probability/types').ProbabilityEstimate;
   direction: Direction;
   strength: Strength;

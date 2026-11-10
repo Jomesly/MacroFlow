@@ -46,9 +46,11 @@ export async function GET(request: NextRequest) {
       const probability = estimateProbability(r, probabilityModel, asOf, {
         source, sourceHealth, stale: stale || !Number.isFinite(inputAge) || inputAge < 0 || inputAge > 5 * 60_000,
       });
-      // A rule-only reading cannot advertise an actionable probability-backed signal.
-      const qualified = probability.status === 'validated' && probability.interval95 !== null && probability.interval95[0] > 0.5;
-      return { ...r, history, probability, signal: qualified ? r.signal : 'neutral' as const };
+      // Macro signals follow the scorer's evidence and market-alignment gates.
+      // Optional outcome calibration must not disable the working macro engine.
+      const inputsHealthy = source === 'live' && !stale && !Object.values(sourceHealth).includes('failed')
+        && Number.isFinite(inputAge) && inputAge >= 0 && inputAge <= 5 * 60_000;
+      return { ...r, history, probability, signal: inputsHealthy ? r.signal : 'neutral' as const };
     })
   );
 

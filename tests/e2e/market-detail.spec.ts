@@ -127,7 +127,7 @@ for (const [label, width, height] of [['desktop', 1440, 1000], ['tablet', 768, 1
   test(`market analysis ${label}: readable evidence, history and accessible controls`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/markets/XAUUSD');
-    await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('62.0%');
+    await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('+42%');
     await expect(page.getByRole('heading', { name: 'Supporting drivers (1)' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Opposing drivers (1)' })).toBeVisible();
     const evidence = page.locator('.research-drivers summary').first();
@@ -203,8 +203,7 @@ test('unknown symbols return a helpful 404 without fetching all-market bias', as
 test('neutral baseline and empty drivers or history have explicit states', async ({ page }) => {
   await mockBias(page, { ...detailFixture, source: 'baseline', stale: true, sourceHealth: { feed: 'failed' }, data: [{ ...market, direction: 'neutral', biasScore: 0, biasPercent: 0, events: [], history: [] }] });
   await page.goto('/markets/XAUUSD');
-  await expect(page.locator('.research-direction')).toHaveText('neutral');
-  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('Probability unavailable');
+  await expect(page.getByText('No dominant fundamental direction in this read.')).toBeVisible();
   await expect(page.getByText('No bullish drivers in this read.')).toBeVisible();
   await expect(page.getByText('No bearish drivers in this read.')).toBeVisible();
   await expect(page.getByText('No daily snapshots yet.', { exact: false })).toBeVisible();
@@ -237,11 +236,11 @@ test('initial bias failure retries and a failed refresh retains the last read', 
   await expect(page.getByText('Analysis for XAUUSD is unavailable.', { exact: false })).toBeVisible();
   await mockBias(page);
   await page.getByRole('button', { name: 'Refresh analysis', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('62.0%');
+  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('+42%');
   await mockBias(page, detailFixture, 503);
   await page.getByRole('button', { name: 'Refresh analysis', exact: true }).click();
   await expect(page.getByRole('main').getByRole('alert')).toContainText('last successful read');
-  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('Probability unavailable');
+  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('+42%');
 });
 
 test('missing selected result never displays a different market', async ({ page }) => {
@@ -266,7 +265,7 @@ test('calendar and macro errors leave healthy bias evidence usable and recover i
   await page.route('**/api/calendar', (route) => route.fulfill({ status: 503, json: {} }));
   await page.route('**/api/macro-context', (route) => route.fulfill({ status: 503, json: {} }));
   await page.goto('/markets/BTCUSD');
-  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('68.0%');
+  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('-55%');
   await expect(page.getByText('Context refresh failed.', { exact: false })).toBeVisible();
   await expect(page.getByText('Calendar refresh failed.', { exact: false })).toBeVisible();
   await page.route('**/api/macro-context', (route) => route.fulfill({ json: macroFixture }));
@@ -286,8 +285,8 @@ test('a symbol change abandons a slow prior request and reduced motion keeps con
   await page.goto('/markets/XAUUSD');
   await expect(page.getByText('Loading XAUUSD analysis')).toBeVisible();
   await page.getByRole('navigation', { name: 'Choose a market' }).getByRole('link', { name: 'BTCUSD', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('68.0%');
+  await expect(page.getByRole('region', { name: 'Current market bias' })).toContainText('-55%');
   release();
   await expect(page.getByRole('heading', { level: 1, name: 'BTCUSD', exact: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Current market bias' })).not.toContainText('62.0%');
+  await expect(page.getByRole('region', { name: 'Current market bias' })).not.toContainText('+42%');
 });

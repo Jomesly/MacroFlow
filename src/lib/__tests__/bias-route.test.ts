@@ -22,7 +22,7 @@ describe('live bias route', () => {
     const body = await response.json();
     expect(body.data).toMatchObject(scoreMacroAlignment(inputs.events, inputs.context, asOf, 'US100'));
     expect(body.data[0].probability).toMatchObject({ status: 'unavailable', value: null });
-    expect(body.data[0].biasPercent).toBeNull();
+    expect(body.data[0].biasPercent).toBe(body.data[0].biasScore);
     expect(body.data[0].alignment.context.regime).toBe('growth_sensitive');
     expect(body.data[0].signal).toBe('neutral');
     expect(body.sourceHealth.economic_calendar).toBe('failed');
@@ -39,4 +39,23 @@ describe('live bias route', () => {
     vi.setSystemTime(new Date(nextEvent.date));
     expect((await (await GET(new NextRequest('http://localhost/api/bias'))).json()).nextEvent).toBeNull();
   });
+  it.each([['dovish', 'low', 'weak', 70, 'strong_buy'], ['hawkish', 'high', 'strong', -70, 'strong_sell']] as const)(
+    'preserves the aligned %s macro signal without a fitted probability model', async (policy, inflation, dollar, expected, signal) => {
+      const asOf = '2026-11-10T12:00:00.000Z';
+      vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
+      const { context } = buildMacroInputs(contextFixture(), asOf);
+      const common = { title: 'Test evidence', description: 'Test evidence', country: 'US', impact: 'high' as const, timestamp: asOf };
+      const events = [
+        { ...common, id: 'fed', category: 'fed_tone' as const, value: policy, evidenceType: 'headline' as const },
+        { ...common, id: 'cpi', category: 'inflation' as const, value: inflation, evidenceType: 'surprise' as const },
+        { ...common, id: 'dxy', category: 'dollar_strength' as const, value: dollar, evidenceType: 'market' as const },
+      ];
+      const input = { events, context, source: 'live' as const, cachedAt: asOf, sourceHealth: { fred: 'ok' as const }, nextEvent: null };
+      vi.mocked(getEvents).mockResolvedValue(input);
+      const body = await (await GET(new NextRequest('http://localhost/api/bias?symbol=XAUUSD'))).json();
+      expect(body.data[0]).toMatchObject({ biasPercent: expected, conviction: 'high', signal, alignment: { status: 'aligned' }, probability: { value: null } });
+      vi.mocked(getEvents).mockResolvedValue({ ...input, stale: true });
+      const stale = await (await GET(new NextRequest('http://localhost/api/bias?symbol=XAUUSD'))).json();
+      expect(stale.data[0]).toMatchObject({ biasPercent: expected, signal: 'neutral' });
+    });
 });
