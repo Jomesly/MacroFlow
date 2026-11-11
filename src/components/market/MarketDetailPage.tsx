@@ -11,6 +11,8 @@ import { marketIsOpen } from '@/lib/marketIsOpen';
 import { marketFeatures } from '@/lib/market/features';
 import { useMarketResource } from './useMarketResource';
 import { useMarketClock } from './useMarketClock';
+import { chanceHeadline, currentDirectionChance } from '@/lib/direction-chance';
+import DirectionChanceChart from './DirectionChanceChart';
 import { MarketBiasAxis, MarketBiasHistory, MarketDrivers, MarketMethodology } from './MarketAnalysis';
 import EconomicCalendar from './EconomicCalendar';
 import MacroContext from './MacroContext';
@@ -23,7 +25,11 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
   const data = response?.data.map(consistentBiasReading).find((entry) => entry.symbol === symbol);
   const reference = referenceCharts[symbol];
   const degraded = response?.sourceHealth && Object.values(response.sourceHealth).some((status) => status === 'failed');
-  const tone = data?.direction.includes('bullish') ? 'positive' : data?.direction.includes('bearish') ? 'negative' : 'neutral';
+  const chance = data ? currentDirectionChance(data, now, !!error || !!response?.stale || response?.source === 'baseline') : null;
+  const headline = chanceHeadline(chance);
+  const tone = data?.forecast
+    ? headline.direction === 'up' ? 'positive' : headline.direction === 'down' ? 'negative' : 'neutral'
+    : data?.direction.includes('bullish') ? 'positive' : data?.direction.includes('bearish') ? 'negative' : 'neutral';
   const DirectionIcon = tone === 'positive' ? ArrowUpRight : tone === 'negative' ? ArrowDownRight : Minus;
   return (
     <div className={`market-research research-tone-${tone}`} data-conviction={data?.conviction}>
@@ -43,13 +49,15 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
           </header>
           {data && <section className="research-read" aria-label="Current market bias">
             <div className="research-bias">
-              <p>{data.forecast ? "Four-hour forecast score" : "Macro bias strength"}</p>
-              <strong aria-label={`${signed(data.biasPercent)}${data.forecast ? " out of 100 forecast score" : "% macro bias strength"}`}>{signed(data.biasPercent)}<span>{data.forecast ? "/100" : "%"}</span></strong>
-              <p className="research-direction"><DirectionIcon size={24} weight="bold" aria-hidden="true" />{directionLabel(data.direction)}</p>
+              <p>{data.forecast ? "Estimated direction chance / next 4h" : "Macro bias strength"}</p>
+              <strong aria-label={data.forecast ? headline.percent === null ? 'Direction chance unavailable' : `${headline.percent}% estimated ${headline.direction} chance over four hours` : `${signed(data.biasPercent)}% macro bias strength`}>
+                {data.forecast ? headline.percent ?? '\u2014' : signed(data.biasPercent)}{(!data.forecast || headline.percent !== null) && <span>%</span>}
+              </strong>
+              <p className="research-direction"><DirectionIcon size={24} weight="bold" aria-hidden="true" />{data.forecast ? headline.direction === 'up' ? 'Chance up' : headline.direction === 'down' ? 'Chance down' : headline.direction === 'balanced' ? 'Even chance' : 'Awaiting estimate' : directionLabel(data.direction)}</p>
             </div>
             <div className="research-assessment">
               <p>{data.forecast ? data.forecast.summary : data.direction === 'neutral' ? 'No dominant fundamental direction in this read.' : `The scored evidence is ${directionLabel(data.direction)} with ${data.conviction} conviction.`}</p>
-              <p className="research-note">{data.forecast ? "The next-four-hour prediction combines the current price trend, relevant news and macro background. Confidence describes agreement between these inputs; it is not a win probability." : "The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation."}</p>
+              <p className="research-note">{data.forecast ? "The percentage estimates the chance of price direction over four hours using price trends, relevant news and macro background. It is an uncalibrated model estimate, not the size of the expected price move or a measured trade win rate." : "The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation."}</p>
               <dl>
                 <div><dt>{data.forecast ? "Confidence" : "Conviction"}</dt><dd>{data.conviction}</dd></div>
                 <div><dt>Agreement</dt><dd>{data.confirmationRatio}%</dd></div>
@@ -57,7 +65,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
                 <div><dt>Session</dt><dd>{marketIsOpen(symbol, new Date(now)) ? 'Market open' : 'Market closed'}</dd></div>
               </dl>
             </div>
-            <MarketBiasAxis data={data} />
+            {data.forecast ? <DirectionChanceChart chance={chance} /> : <MarketBiasAxis data={data} />}
           </section>}
         </div>
         {loading && !response && <div className="research-loading" role="status"><span>Loading {symbol} analysis</span><div /><div /><div /></div>}
@@ -95,7 +103,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             <p role="status">{technicalSide === 'none' ? 'Choose the direction from your chart analysis.'
               : data.direction === 'neutral' ? 'Macro evidence has no directional lean to compare.'
               : (technicalSide === 'long') === data.direction.includes('bullish') ? 'Your technical direction matches the forecast lean.' : 'Your technical direction opposes the forecast lean.'}</p>
-            <p className="research-note">Compare the forecast direction and its inputs with your chart setup. The score does not estimate a trade win rate.</p>
+            <p className="research-note">Compare the forecast direction and its inputs with your chart setup. Direction chance does not account for your entry, stop loss or profit target.</p>
           </section>
           <nav className="research-section-links" aria-label="Analysis sections"><a href="#market-drivers">Drivers</a><a href="#market-history">History</a>{marketFeatures.calendar && <a href="#economic-calendar">Upcoming releases</a>}</nav>
           <MarketDrivers data={data} />

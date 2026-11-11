@@ -14,6 +14,9 @@ import type { CSSProperties } from "react";
 import type { BiasResult } from "@/lib/types";
 import { leadDriver, type BoardTile } from "@/lib/market-board";
 import { marketIsOpen } from "@/lib/marketIsOpen";
+import { currentDirectionChance, chanceHeadline } from "@/lib/direction-chance";
+import { useMarketClock } from "@/components/market/useMarketClock";
+import DirectionChanceChart from "@/components/market/DirectionChanceChart";
 
 /** Every row shares one scale, so a small move never looks like a large one. */
 function BiasHistory({ data, scale }: { data: BiasResult; scale: number }) {
@@ -52,6 +55,7 @@ export default function MarketCard({
   onNavigate,
   index = 0,
   historyScale = 100,
+  chanceBlocked = false,
 }: {
   data: BiasResult;
   /** Board placement; on wide screens the tile's size follows its conviction. */
@@ -60,11 +64,15 @@ export default function MarketCard({
   onNavigate?: () => void;
   index?: number;
   historyScale?: number;
+  chanceBlocked?: boolean;
 }) {
   const [flip, setFlip] = useState<string | null>(null);
   const reduce = useReducedMotion();
-  const positive = data.direction.includes("bullish");
-  const negative = data.direction.includes("bearish");
+  const now = useMarketClock();
+  const chance = currentDirectionChance(data, now, chanceBlocked);
+  const headline = chanceHeadline(chance);
+  const positive = data.forecast ? headline.direction === 'up' : data.direction.includes("bullish");
+  const negative = data.forecast ? headline.direction === 'down' : data.direction.includes("bearish");
   const tone = positive ? "positive" : negative ? "negative" : "neutral";
   const open = marketIsOpen(data.symbol);
   const driver = leadDriver(data);
@@ -128,10 +136,11 @@ export default function MarketCard({
             {!open && <span>Closed</span>}
           </span>
         </span>
-        <span className="market-score" aria-label={`${data.biasPercent > 0 ? '+' : ''}${data.biasPercent}${data.forecast ? " out of 100 forecast score" : "% macro bias strength"}`}>
-          {data.biasPercent > 0 ? "+" : ""}
-          {data.biasPercent}
-          <small>{data.forecast ? "/100" : "%"}</small>
+        <span className="market-score" aria-label={data.forecast
+          ? headline.percent === null ? 'Direction chance unavailable' : `${headline.percent}% estimated ${headline.direction} chance over four hours`
+          : `${data.biasPercent}% macro bias strength`}>
+          {data.forecast ? headline.percent ?? '—' : `${data.biasPercent > 0 ? '+' : ''}${data.biasPercent}`}
+          {(!data.forecast || headline.percent !== null) && <small>%</small>}
         </span>
         <span className="market-read">
           <span className="market-direction">
@@ -141,14 +150,14 @@ export default function MarketCard({
               className="score-direction-icon"
               aria-hidden="true"
             />
-            {direction}
+            {data.forecast ? headline.direction === "up" ? "Estimated chance up" : headline.direction === "down" ? "Estimated chance down" : headline.direction === "balanced" ? "Even chance" : "Awaiting estimate" : direction}
           </span>
           <span className="market-conviction">{conviction} {data.forecast ? "confidence / 4h" : "conviction"}</span>
         </span>
         {tile?.size === "lg" && driver && (
           <span className="market-driver">{driver}</span>
         )}
-        <BiasHistory data={data} scale={historyScale} />
+        {data.forecast ? <DirectionChanceChart chance={chance} compact /> : <BiasHistory data={data} scale={historyScale} />}
         <CaretRight
           size={16}
           className="market-card-caret"

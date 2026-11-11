@@ -143,6 +143,7 @@ export interface BiasResult {
   lastUpdated: string;
   alignment?: AlignmentAssessment;
   forecast?: {
+    directionChance?: import('./direction-chance').DirectionChance;
     modelVersion: string;
     horizonHours: 4;
     issuedAt: string;

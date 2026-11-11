@@ -1,10 +1,11 @@
 import { scoreMacroAlignment } from './alignment';
 import { calculateBias } from './engine';
 import { momentumScore } from './asset-momentum';
+import { estimateDirectionChance } from './direction-chance';
 import { selectEventsAsOf } from './macro-context';
 import type { AssetSymbol, BiasResult, Direction, MacroContext, MacroEvent, ScoredEvent } from './types';
 
-export const FORECAST_VERSION = 'market-news-v2-4h-2026-11-12';
+export const FORECAST_VERSION = 'market-news-v2.1-4h-2026-11-12';
 
 function articleKey(event: MacroEvent): string {
   if (event.url) {
@@ -101,7 +102,7 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
     const supporting = allContributions.filter(({ scored }) => scored.scoreChange * score > 0);
     const confirmationRatio = score && allContributions.length ? Math.round(supporting.length / allContributions.length * 100) : 0;
     const basis = !allContributions.length ? 'unavailable' : price ? (contributions.length ? 'mixed' : 'market') : !news.length ? 'macro' : news.length === contributions.length ? 'news' : 'mixed';
-    const limitations = ['Experimental forecast; the score is not a win probability.'];
+    const limitations = ['Direction percentages are uncalibrated model estimates, not measured success rates.'];
     if (basis === 'news') limitations.push('Based on news narratives without structured confirmation.');
     if (news.length && sourceCount < 2) limitations.push('Fewer than two identified news sources.');
     if (macro.alignment?.status !== 'aligned') limitations.push('Macro alignment is unconfirmed.');
@@ -124,7 +125,7 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
       drivers: scoredEvents.map(event => `${event.scoreChange > 0 ? 'Bullish' : event.scoreChange < 0 ? 'Bearish' : 'Neutral'}: ${event.title}`),
       forecast: { modelVersion: FORECAST_VERSION, horizonHours: 4, issuedAt: asOf,
         expiresAt: new Date(Date.parse(asOf) + 4 * 3_600_000).toISOString(), basis, summary: label, limitations, sourceCount,
-        components, marketMove: price?.marketMove, macroSignal: macro.signal,
+        components, directionChance: estimateDirectionChance(components, sourceCount, asOf), marketMove: price?.marketMove, macroSignal: macro.signal,
         latestEvidenceAt: allContributions.map(({ event }) => event.timestamp).sort().at(-1) ?? null,
         macroBiasScore: macro.biasScore, probability: null },
     };

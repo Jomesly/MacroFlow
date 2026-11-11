@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ALL_SYMBOLS } from '../src/lib/engine';
 import { FORECAST_VERSION } from '../src/lib/forecast';
+import { currentDirectionChance, estimateDirectionChance } from '../src/lib/direction-chance';
 import type { BiasApiResponse } from '../src/lib/types';
 
 async function main() {
@@ -39,6 +40,11 @@ async function main() {
       throw new Error(`${result.symbol}: no fresh own-market price quote.`);
     }
     if (!Number.isFinite(result.biasScore) || Math.abs(result.biasScore) > 100 || forecast.probability !== null) throw new Error(`${result.symbol}: invalid forecast score or probability claim.`);
+    const chance = currentDirectionChance(result, Date.parse(checkedAt));
+    const expected = estimateDirectionChance(forecast.components!, forecast.sourceCount, forecast.issuedAt);
+    if (!chance || chance.issuedAt !== forecast.issuedAt || chance.upPercent !== expected.upPercent || chance.downPercent !== expected.downPercent) {
+      throw new Error(`${result.symbol}: missing or inconsistent estimated direction percentages.`);
+    }
   }
   const outputDirectory = path.resolve('.artifacts', 'forecasts');
   await mkdir(outputDirectory, { recursive: true });
@@ -49,6 +55,7 @@ async function main() {
   console.log(JSON.stringify({ status: 'passed', model: FORECAST_VERSION, markets: symbols.size,
     marketsWithPrice: body.data.filter(result => result.forecast?.marketMove).length,
     directionalForecasts: body.data.filter(result => result.direction !== 'neutral').length,
+    directionChances: body.data.map(result => ({ symbol: result.symbol, up: result.forecast!.directionChance!.upPercent, down: result.forecast!.directionChance!.downPercent })),
     checkedAt, sourceHealth: body.sourceHealth, snapshot: outputFile, accuracyValidated: false }, null, 2));
 }
 

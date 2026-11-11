@@ -100,8 +100,8 @@ export function MarketBiasHistory({ data }: { data: BiasResult }) {
   const latest = entries.at(-1);
   return (
     <section id="market-history" className="research-section" aria-labelledby="market-history-title">
-      <h2 id="market-history-title">Bias history</h2>
-      <p className="research-note">Seven daily snapshots on a fixed score scale. This tracks directional scores, not market price.</p>
+      <h2 id="market-history-title">{data.forecast ? 'Model strength history' : 'Bias history'}</h2>
+      <p className="research-note">Seven daily snapshots on a fixed internal score scale. These are historical model scores, not direction percentages or market prices.</p>
       {entries.length && latest ? <div className="research-history-layout">
         <div>
           <svg className="research-history-chart" viewBox="0 0 540 220" role="img" aria-label={`${data.symbol} bias history, score range minus 100 to plus 100. Values are listed in the table below.`}>
@@ -133,7 +133,8 @@ export function MarketMethodology({ data }: { data: BiasResult }) {
     <section className="research-section research-methodology" aria-labelledby="score-method-title">
       <h2 id="score-method-title">{data.forecast ? "How to read the forecast" : "How to read macro bias strength"}</h2>
       <details>
-        <summary>Score breakdown and methodology</summary>
+        <summary>{data.forecast ? 'Direction estimate and model inputs' : 'Score breakdown and methodology'}</summary>
+        {data.forecast && <p>Up and down percentages add to 100% and estimate direction over the next four hours. A symmetric logistic model converts weighted evidence into directional odds, with a maximum of 80% for either side. Missing price data reduces certainty toward 50/50: news-only evidence uses 70% of the log odds with multiple sources or 50% with one source; macro-only evidence uses 35%. These are modeling assumptions, not probabilities calibrated against observed outcomes. No usable inputs means no estimate. Stale and expired estimates are hidden.</p>}
         <dl className="research-breakdown">
           <div><dt>Raw score</dt><dd>{signed(data.biasScore)} / [-100, +100]</dd></div>
           {data.scoring && <div><dt>Net points / capacity</dt><dd>{signed(data.scoring.netPoints)} / {data.scoring.maxPoints}</dd></div>}

@@ -42,8 +42,25 @@ describe('live bias route', () => {
     expect(body.data[0]).toMatchObject({ symbol: 'USDJPY', direction: 'weakly_bullish', conviction: 'low',
       forecast: { basis: 'news', modelVersion: FORECAST_VERSION, macroSignal: 'neutral' }, signal: 'buy' });
     expect(body.sourceHealth.fred).toBe('failed');
+    expect(body.data[0].forecast.directionChance).toMatchObject({ status: 'estimated', calibration: 'unvalidated', horizonHours: 4 });
+    expect(body.data[0].forecast.directionChance.upPercent).toBeGreaterThan(50);
+    expect(body.data[0].forecast.probability).toBeNull();
+    expect(body.data[0].probability.status).toBe('unavailable');
     expect(recordDailySnapshot).toHaveBeenCalledWith('USDJPY', 'weakly_bullish', body.data[0].biasScore, FORECAST_VERSION);
     expect(getHistory).toHaveBeenCalledWith('USDJPY', FORECAST_VERSION);
+  });
+  it.each([
+    { source: 'baseline' as const, stale: false, cachedAt: '2026-11-11T12:00:00.000Z' },
+    { source: 'live' as const, stale: true, cachedAt: '2026-11-11T12:00:00.000Z' },
+    { source: 'live' as const, stale: false, cachedAt: '2026-11-11T11:54:00.000Z' },
+    { source: 'live' as const, stale: false, cachedAt: '2026-11-11T12:01:00.000Z' },
+  ])('withholds direction percentages for unhealthy inputs: %j', async metadata => {
+    const asOf = '2026-11-11T12:00:00.000Z';
+    vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
+    const events = classifyHeadline('USD/JPY rallies').map(row => createEventFromClassification(row, 'News', 'https://example.com/story', asOf));
+    vi.mocked(getEvents).mockResolvedValue({ events, context: unknownContext(asOf), ...metadata, sourceHealth: { rss: 'ok' }, nextEvent: null });
+    const body = await (await GET(new NextRequest('http://localhost/api/bias?symbol=USDJPY'))).json();
+    expect(body.data[0].forecast.directionChance).toMatchObject({ status: 'unavailable', upPercent: null, downPercent: null });
   });
   it('uses the already-fetched upcoming event and hides it once its scheduled time passes', async () => {
     const asOf = '2026-11-10T12:00:00.000Z';

@@ -462,6 +462,7 @@ export default function Home() {
                   onNavigate={rememberPosition}
                   index={index}
                   historyScale={historyScale}
+                  chanceBlocked={!!error || !!response?.stale || response?.source === 'baseline'}
                 />
               ))}
             </AnimatePresence>
@@ -488,7 +489,7 @@ export default function Home() {
           )}
           <p className="market-footnote">
             <span className="legend-dot" />
-            Four-hour predictions combine the price trend for each market, recent news and macro background. Scores run from -100 to +100. Open a market to see its forecast inputs and time window.
+            Percentages estimate the chance of moving up or down over the next four hours, using price action, news and macro context. They are uncalibrated model estimates. Open a market for both directions and the forecast inputs.
           </p>
         </section>
 
