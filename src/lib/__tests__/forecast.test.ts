@@ -35,7 +35,8 @@ describe('USD/JPY news coverage', () => {
     expect(result.direction).toBe(sign > 0 ? 'weakly_bullish' : 'weakly_bearish');
     expect(result.forecast).toMatchObject({ basis: 'news', probability: null, horizonHours: 4 });
     expect(result.conviction).toBe('low');
-    expect(result.signal).toBe('neutral');
+    expect(result.signal).toBe(sign > 0 ? 'buy' : 'sell');
+    expect(result.forecast?.macroSignal).toBe('neutral');
     expect(result.alignment?.status).toBe('insufficient_evidence');
   });
 

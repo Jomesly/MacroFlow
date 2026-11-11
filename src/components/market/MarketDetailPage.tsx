@@ -44,12 +44,12 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
           {data && <section className="research-read" aria-label="Current market bias">
             <div className="research-bias">
               <p>{data.forecast ? "Four-hour forecast score" : "Macro bias strength"}</p>
-              <strong aria-label={`${signed(data.biasPercent)}% ${data.forecast ? "forecast score" : "macro bias strength"}`}>{signed(data.biasPercent)}<span>%</span></strong>
+              <strong aria-label={`${signed(data.biasPercent)}${data.forecast ? " out of 100 forecast score" : "% macro bias strength"}`}>{signed(data.biasPercent)}<span>{data.forecast ? "/100" : "%"}</span></strong>
               <p className="research-direction"><DirectionIcon size={24} weight="bold" aria-hidden="true" />{directionLabel(data.direction)}</p>
             </div>
             <div className="research-assessment">
               <p>{data.forecast ? data.forecast.summary : data.direction === 'neutral' ? 'No dominant fundamental direction in this read.' : `The scored evidence is ${directionLabel(data.direction)} with ${data.conviction} conviction.`}</p>
-              <p className="research-note">{data.forecast ? "This experimental score is a directional lean from news and macro context, not a win probability. Low confidence means confirmation is incomplete." : "The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation."}</p>
+              <p className="research-note">{data.forecast ? "The next-four-hour prediction combines the current price trend, relevant news and macro background. Confidence describes agreement between these inputs; it is not a win probability." : "The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation."}</p>
               <dl>
                 <div><dt>{data.forecast ? "Confidence" : "Conviction"}</dt><dd>{data.conviction}</dd></div>
                 <div><dt>Agreement</dt><dd>{data.confirmationRatio}%</dd></div>
@@ -72,11 +72,16 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             <h2 id="forecast-title">Four-hour directional forecast</h2>
             <p>Issued <time dateTime={data.forecast.issuedAt}>{new Date(data.forecast.issuedAt).toLocaleString()}</time>. Valid until <time dateTime={data.forecast.expiresAt}>{new Date(data.forecast.expiresAt).toLocaleString()}</time>.</p>
             <p>{data.forecast.basis} inputs / {data.forecast.sourceCount} news sources / separate macro score {signed(data.forecast.macroBiasScore)}</p>
+            {data.forecast.marketMove && <p>Observed session move: {signed(Number(data.forecast.marketMove.sessionChangePercent.toFixed(2)))}%. Latest hour: {data.forecast.marketMove.recentChangePercent === null ? 'unavailable' : `${signed(Number(data.forecast.marketMove.recentChangePercent.toFixed(2)))}%`}.{data.forecast.marketMove.proxy && ' Gold futures proxy.'}</p>}
+            {data.forecast.components && <dl className="research-breakdown">
+              {Object.entries(data.forecast.components).map(([name, component]) => <div key={name}><dt>{name === 'momentum' ? 'Price trend' : name === 'news' ? 'Relevant news' : 'Macro background'}</dt><dd>{component ? `${signed(component.score)} / 100, ${Math.round(component.weight * 100)}% weight` : 'Unavailable'}</dd></div>)}
+              <div><dt>Forecast call</dt><dd>{data.signal.replaceAll('_', ' ')}</dd></div>
+            </dl>}
             <ul>{data.forecast.limitations.map(limitation => <li key={limitation}>{limitation}</li>)}</ul>
           </section>}
           {data.alignment && <section className="research-fact" aria-labelledby="alignment-title">
             <h2 id="alignment-title">Four-hour macro alignment</h2>
-            <p>{data.alignment.status.replaceAll('_', ' ')} · {data.conviction} conviction</p>
+            <p>{data.alignment.status.replaceAll('_', ' ')} / {data.forecast ? `separate macro signal: ${data.forecast.macroSignal?.replaceAll('_', ' ') ?? 'neutral'}` : `${data.conviction} conviction`}</p>
             <p className="research-note">Regime: {data.alignment.context.regime.replaceAll('_', ' ')}.</p>
             <p className="research-note">Market confirmation: {data.alignment.marketConfirmation ?? 'unavailable'}.</p>
             {data.alignment.reasons.length > 0 && <ul>{data.alignment.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>}
@@ -89,8 +94,8 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             </select>
             <p role="status">{technicalSide === 'none' ? 'Choose the direction from your chart analysis.'
               : data.direction === 'neutral' ? 'Macro evidence has no directional lean to compare.'
-              : (technicalSide === 'long') === data.direction.includes('bullish') ? 'Your technical direction matches the macro lean.' : 'Your technical direction opposes the macro lean.'}</p>
-            <p className="research-note">Compare the macro direction, conviction and market confirmation with your chart setup. The bias percentage does not estimate a trade win rate.</p>
+              : (technicalSide === 'long') === data.direction.includes('bullish') ? 'Your technical direction matches the forecast lean.' : 'Your technical direction opposes the forecast lean.'}</p>
+            <p className="research-note">Compare the forecast direction and its inputs with your chart setup. The score does not estimate a trade win rate.</p>
           </section>
           <nav className="research-section-links" aria-label="Analysis sections"><a href="#market-drivers">Drivers</a><a href="#market-history">History</a>{marketFeatures.calendar && <a href="#economic-calendar">Upcoming releases</a>}</nav>
           <MarketDrivers data={data} />

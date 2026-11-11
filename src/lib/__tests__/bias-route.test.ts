@@ -25,7 +25,7 @@ describe('live bias route', () => {
     const body = await response.json();
     expect(body.data).toMatchObject(JSON.parse(JSON.stringify(scoreMarketForecast(inputs.events, inputs.context, asOf, 'US100'))));
     expect(body.data[0].alignment.context.regime).toBe('growth_sensitive');
-    expect(body.data[0].signal).toBe('neutral');
+    expect(body.data[0].signal).toBe(scoreMarketForecast(inputs.events, inputs.context, asOf, 'US100')[0].signal);
     expect(body.sourceHealth.economic_calendar).toBe('failed');
     const { getCalendar } = await import('../calendar');
     expect(getCalendar).not.toHaveBeenCalled();
@@ -40,7 +40,7 @@ describe('live bias route', () => {
     const body = await (await GET(new NextRequest('http://localhost/api/bias?symbol=USDJPY'))).json();
     expect(body.data).toHaveLength(1);
     expect(body.data[0]).toMatchObject({ symbol: 'USDJPY', direction: 'weakly_bullish', conviction: 'low',
-      forecast: { basis: 'news', modelVersion: FORECAST_VERSION }, signal: 'neutral' });
+      forecast: { basis: 'news', modelVersion: FORECAST_VERSION, macroSignal: 'neutral' }, signal: 'buy' });
     expect(body.sourceHealth.fred).toBe('failed');
     expect(recordDailySnapshot).toHaveBeenCalledWith('USDJPY', 'weakly_bullish', body.data[0].biasScore, FORECAST_VERSION);
     expect(getHistory).toHaveBeenCalledWith('USDJPY', FORECAST_VERSION);

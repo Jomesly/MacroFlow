@@ -37,7 +37,7 @@ const TECHNICAL_ARTICLE = /\b(price (forecast|prediction|analysis)|technical (an
 const POLICY_NEGATION = /\b(no|not|unlikely|won'?t|doubts?|fad(e|es|ing)|scal(e|es|ing) back|pare[sd]?|paring|delay(s|ed|ing)?|push(es|ed|ing)? back|rul(e|es|ed|ing) out|less likely|against)\b/i;
 const NEGATION_WINDOW = 30;
 
-const FOREIGN_EQUITY = /\b(asia|asian|china|chinese|japan|japanese|nikkei|hang seng|taiwan|taiwanese|taiex|korea|korean|kospi|india|indian|sensex|europe|european|ftse|stoxx|dax|cac)\b.{0,40}\b(stocks?|shares|equities|markets?|index|indices)\b/i;
+const FOREIGN_EQUITY = /\b(greece|greek|athens|gulf|saudi|dubai|abu dhabi|qatar|kuwait|turkey|turkish|brazil|brazilian|mexico|mexican|asia|asian|china|chinese|japan|japanese|nikkei|hang seng|taiwan|taiwanese|taiex|korea|korean|kospi|india|indian|sensex|europe|european|ftse|stoxx|dax|cac)\b.{0,40}\b(stocks?|shares|equities|markets?|index|indices)\b/i;
 const GLOBAL_EQUITY = /\b(wall street|s&p|nasdaq|dow|global|world)\b/i;
 
 const FOREIGN_REGIONS: [string, RegExp][] = [
@@ -254,16 +254,16 @@ const ASSET_SUBJECTS: [AssetSymbol, string][] = [
   ['AUDUSD', 'aud\\s*[/\\-]?\\s*usd|aussie'],
   ['USDCAD', 'usd\\s*[/\\-]?\\s*cad'],
   ['NZDUSD', 'nzd\\s*[/\\-]?\\s*usd|kiwi'],
-  ['US500', 's&p(?:[ -]?500)?|sp500|us500'],
+  ['US500', 's&p(?:[ -]?500)?|sp500|us500|spy'],
   ['USDJPY', 'usd\\s*[/\\-]?\\s*jpy|dollar[- ]yen'],
   ['GBPUSD', 'gbp\\s*[/\\-]?\\s*usd|pound[- ]dollar|sterling|cable'],
   ['XAUUSD', 'xau\\s*[/\\-]?\\s*usd|gold'],
   ['BTCUSD', 'btc(?:\\s*[/\\-]?\\s*usd)?|bitcoin'],
-  ['US100', 'nasdaq(?:[ -]?100)?|us100|nas100|ustec'],
-  ['DJ30', 'dow(?: jones(?:[ -]30)?)?|djia|dj30|us30|ws30'],
+  ['US100', 'nasdaq(?:[ -]?100)?|us100|nas100|ustec|qqq'],
+  ['DJ30', 'dow(?: jones(?:[ -]30)?)?|djia|dj30|us30|ws30|dia'],
 ];
-const UP = /\b(rall(?:y|ies|ied|ying)|ris(?:e|es|ing)|rose|climb\w*|surge\w*|gain\w*|advanc\w*|bullish|higher|up|strengthen\w*|rebound\w*|recover\w*|firm\w*)\b/i;
-const DOWN = /\b(fall\w*|fell|drop\w*|slid\w*|slip\w*|plung\w*|declin\w*|bearish|lower|down|weaken\w*|retreat\w*|slump\w*|soften\w*|tumbl\w*)\b/i;
+const UP = /\b(rall(?:y|ies|ied|ying)|ris(?:e|es|ing)|rose|climb\w*|surge\w*|gain\w*|advanc\w*|bullish|higher|up|strengthen\w*|rebound\w*|recover\w*|firm\w*|soar\w*|jump\w*|leap\w*)\b/i;
+const DOWN = /\b(fall\w*|fell|drop\w*|slid\w*|slip\w*|plung\w*|declin\w*|bearish|lower|down|weaken\w*|retreat\w*|slump\w*|soften\w*|tumbl\w*|sink\w*|sank|sell[ -]?off|sell[ -]?offs)\b/i;
 const CLAUSE_BREAK = /[.!?;:,]|\b(?:as|amid|while|after|because|but|ahead|despite|due|on|and|with)\b/i;
 const isAsserted = (clause: string) => !/\b(not|no|never|fails?|failed|unlikely|may|might|could|if|whether)\b/i.test(clause);
 const COORDINATED_SUBJECTS = new RegExp(`^(?:\\s*(?:,\\s*(?:and\\s+)?|and\\s+|&\\s*)(?:${ASSET_SUBJECTS.map(([, subject]) => subject).join('|')})\\b)+`, 'i');
@@ -273,6 +273,7 @@ function narrativeClauses(text: string, subject: string): string[] {
   const pattern = new RegExp(`\\b(?:${subject})\\b`, 'gi');
   return [...text.matchAll(pattern)].flatMap(match => {
     const prefix = text.slice(0, match.index);
+    if (/\b(?:anxiety|fears?|concerns?|worries|volatility|demand)\s+(?:in|about|over|for)\s+(?:(?:the|U\.S\.|US)\s+)*$/i.test(prefix)) return [];
     if (/\b(?:if|whether|could|may|might)\s+(?:the\s+)?$/i.test(prefix)) return [];
     const tail = text.slice(match.index + match[0].length).replace(COORDINATED_SUBJECTS, '');
     if (/^[- ](?:listed|miners?|mining|producers?|company|companies|demand|etfs?)\b/i.test(tail)) return [];
@@ -284,7 +285,9 @@ function clauseDirection(clause: string): 'bullish' | 'bearish' | null {
   if (!isAsserted(clause)) return null;
   // Relative underperformance does not state that the named asset rose or fell.
   if (/^\s*(?:sits? out|sat out|trails?|lags?|miss(?:es|ed)?|ignores?)\b/i.test(clause)) return null;
-  const up = UP.test(clause), down = DOWN.test(clause);
+  // 'Recovery from yesterday's sell-off' describes recovery, not a new sell-off.
+  const current = clause.split(/\bfrom\b/i)[0];
+  const up = UP.test(current), down = DOWN.test(current);
   return up === down ? null : up ? 'bullish' : 'bearish';
 }
 
@@ -317,7 +320,7 @@ function classifyNarratives(text: string): SentimentResult[] {
     const direction = clauseDirection(clause);
     if (direction) add('dollar_strength', direction === 'bullish' ? 'strong' : 'weak');
   }
-  for (const clause of narrativeClauses(text, '(?:stock|equity) (?:market )?index|stock markets?|markets|stocks|equities|wall[ -]street|(?:global|US) shares')) {
+  for (const clause of narrativeClauses(text, '(?:stock|equity) (?:market )?index|(?:stock|equity|US) futures|stock markets?|markets|stocks|equities|wall[ -](?:street|st)|(?:global|US) shares')) {
     const direction = clauseDirection(clause);
     if (direction) add('risk_sentiment', direction === 'bullish' ? 'risk_on' : 'risk_off');
   }
@@ -349,8 +352,8 @@ function classifyNarratives(text: string): SentimentResult[] {
       if (!isAsserted(clause)) continue;
       if (/\b(?:cut\w*|lower\w*|rais\w*|hik\w*)\b.{0,45}\b(?:forecasts?|projections?|estimates?|outlook)\b/i.test(clause)
         && !/\b(rates?|policy|borrowing costs?)\b/i.test(clause)) continue;
-      const dovish = /\b(dovish|cuts?|cutting|eas\w*|lower\w*)\b/i.test(clause);
-      const hawkish = /\b(hawkish|hikes?|hiking|rais\w*|tight\w*|taper\w*)\b/i.test(clause);
+      const dovish = /\b(dovish|cuts?|cutting|eas\w*)\b/i.test(clause) || /\blower\w*\s+(?:(?:interest|cash|official cash|policy)\s+)?(?:rates?|borrowing costs?)\b/i.test(clause);
+      const hawkish = /\b(hawkish|hikes?|hiking|tight\w*|taper\w*)\b/i.test(clause) || /\brais\w*\s+(?:(?:interest|cash|official cash|policy)\s+)?(?:rates?|borrowing costs?)\b/i.test(clause);
       const delayed = /\b(delay\w*|postpon\w*)\b/i.test(clause);
       if (dovish) add(category, delayed ? 'hawkish' : 'dovish', symbol, 'high');
       if (hawkish) add(category, delayed ? 'dovish' : 'hawkish', symbol, 'high');

@@ -17,7 +17,7 @@ describe('dated narrative ingestion', () => {
   afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
   it('keeps dated FX stories beyond the old eight-item cutoff and skips malformed timestamps per item', async () => {
-    parseURL.mockResolvedValue({ items: [
+    parseURL.mockImplementation(async (url: string) => url !== 'https://example.com/rss' ? { items: [] } : { items: [
       { title: 'USD/JPY falls', isoDate: 'invalid' },
       { title: 'USD/JPY falls' },
       ...Array.from({ length: 8 }, () => ({ title: 'Market update', isoDate: asOf })),

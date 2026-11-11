@@ -128,10 +128,10 @@ export default function MarketCard({
             {!open && <span>Closed</span>}
           </span>
         </span>
-        <span className="market-score" aria-label={`${data.biasPercent > 0 ? '+' : ''}${data.biasPercent}% ${data.forecast ? "forecast score" : "macro bias strength"}`}>
+        <span className="market-score" aria-label={`${data.biasPercent > 0 ? '+' : ''}${data.biasPercent}${data.forecast ? " out of 100 forecast score" : "% macro bias strength"}`}>
           {data.biasPercent > 0 ? "+" : ""}
           {data.biasPercent}
-          <small>%</small>
+          <small>{data.forecast ? "/100" : "%"}</small>
         </span>
         <span className="market-read">
           <span className="market-direction">

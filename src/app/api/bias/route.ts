@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   const data = await Promise.all(
     results.map(async (r) => {
       const inputAge = Date.parse(asOf) - Date.parse(cachedAt);
-      const inputsHealthy = source === 'live' && !stale && !Object.values(sourceHealth).includes('failed')
+      const inputsHealthy = source === 'live' && !stale
         && Number.isFinite(inputAge) && inputAge >= 0 && inputAge <= 5 * 60_000;
       if (source === 'live' && !stale) await recordDailySnapshot(r.symbol, r.direction, r.biasScore, FORECAST_VERSION);
       const history = await getHistory(r.symbol, FORECAST_VERSION);

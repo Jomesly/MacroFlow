@@ -1,37 +1,34 @@
-# Four-hour news forecast
+# Four-hour market and news forecast
 
-The dashboard and `/api/bias` now use `narrative-v1.3-4h-2026-11-11`. The primary direction is a speculative forecast from recent narratives, structured releases, measured dollar/yield observations, and a weaker economic trend prior. It can express a bullish or bearish lean when structured confirmation is absent. The existing macro alignment assessment remains separate, including its original score in `forecast.macroBiasScore`.
+The dashboard and `/api/bias` use `market-news-v2-4h-2026-11-12` across all 12 markets. The forecast extrapolates recent asset price action and news over the next four hours. Its signed score runs from -100 to +100; it is not a probability or a forecast percentage return. Buy/sell labels express this speculative forecast, including low-confidence forecasts. The separate macro signal remains available in `forecast.macroSignal`.
 
-The forecast covers all 12 existing dashboard markets, including USD/JPY, the six other major dollar pairs, US500, Gold, Bitcoin, Nasdaq and Dow. Rules distinguish Fed policy, BoJ policy, dollar strength, yen strength, and US versus Japanese economic releases. Direct price narratives are scoped to their named asset. A reported rally is treated as a continuation hypothesis, not proof that the next four hours will rise. Yen appreciation maps to a bearish USD/JPY contribution; yen depreciation maps to bullish. These are heuristic mappings, not fitted response estimates.
+## Why this version changed
 
-## Scoring
+The previous deployment showed Nasdaq at -1 and S&P 500 at -2 during a strong rally. Its market adapter fetched only DXY and Treasury yields, never the asset being forecast. Multiple slow macro penalties could offset the entire bullish-news contribution. Operational source-health checks did not catch this directional defect. A regression now exercises the actual adapter-to-forecast path with a rally and opposing dollar/yield inputs.
 
-- Only inputs available at the forecast time enter scoring. Existing expiry remains 24 hours for headlines/releases, two days for trends, and four hours for measured market observations.
-- Headlines have a six-hour half-life. Direct asset narratives contribute ?30 points before decay; other headline channels use 80%. Trends use 35% of their existing half-weight contribution. Structured surprises and measured market observations retain their rule weight.
-- One article supplies one net vote: its strongest positive contribution plus its strongest negative contribution. When it directly describes this asset's price direction, that narrative takes precedence over generic causal mappings from the same article. Other articles can still oppose it. URLs ignore query strings and trailing slashes for deduplication; matching normalized titles also merge. Within a category, only the strongest positive and strongest negative story contributions count. The final score is clipped to ±100. Displayed driver contributions can therefore sum to a different number.
-- Any nonzero net score produces a lean; absolute scores of at least 50 produce a bullish/bearish direction. Exactly balanced or missing inputs stay neutral. There is no random direction when every source is unavailable.
-- Forecast confidence remains low unless macro alignment independently qualifies, agrees on direction, forecast strength is at least 50, and at least 60% of contributions agree. A news lean is displayed even when the confirmed trading signal remains neutral.
-- Forecast history and browser direction-change notices use a separate model version from macro alignment history.
-- Every forecast includes `issuedAt` and `expiresAt`, defining the four-hour period starting at generation time. The detail panel shows this window.
+## Inputs and weighting
 
-## News coverage and limits
+- Asset quotes cover the three US cash indices, seven dollar pairs, Bitcoin spot and a clearly identified gold-futures proxy. The Yahoo chart request uses `range=1d`, so its prior close is not accidentally the beginning of a five-day chart.
+- Quotes must be dated within the past 30 minutes. Missing, future, malformed or older quotes are omitted. Failed individual markets do not discard the others. Closed cash sessions therefore fall back to news and macro context once their quotes expire.
+- Price trend combines the session return (60%) and approximately the latest hour (40%). Each is bounded with a symmetric tanh transform using fixed asset-class scales. The hourly comparison uses a five-minute bar that was complete at the comparison time. A recent reversal can pull against the session return. This is a continuation heuristic, not a trained return model.
+- Relevant market news includes direct asset moves, risk appetite, earnings, crypto regulation and geopolitical events. Policy and economic news remain available as background, or become the news component when no market-specific news is present.
+- With all components present, price trend gets 60%, news 30%, and macro background 10%. With price and news only, the split is 65/35. With either price or news plus macro, the split is 80/20. A sole available component gets full weight.
+- Headlines retain a six-hour half-life. Each story gets one net vote; direct reporting about the asset takes priority over causal mappings from the same story. Duplicate URLs/titles merge, and within each category only the strongest positive and negative contributions count. The news component scales its category total by 1.5, capped at 85 points in either direction.
+- The API exposes the component scores and actual weights. Macro penalties stay in one bounded component, preventing several correlated economic series from drowning out the asset's own trend.
+- Any nonzero forecast issues a buy/sell lean. Exactly balanced or absent inputs stay neutral. Missing FRED/calendar confirmation no longer suppresses a usable news or price forecast. Stale or baseline API snapshots still suppress actionable signal labels.
 
-Existing `RSS_*` configuration and `FINNHUB_API_KEY` supply news. FXStreet scanning now covers up to 40 items instead of eight. Distinct articles with the same classification are retained so recency and opposing narratives can be assessed. Missing, invalid, or future publication times are skipped rather than assigned the download time. US and JPY calendar events list USD/JPY as an affected market; Japanese calendar actuals still require a verified adapter before they can supply structured surprises.
+Confidence is a heuristic input-quality label. High confidence requires magnitude at least 60, agreeing price/news components and at least two identified news sources. Medium confidence requires magnitude at least 30 with either fresh asset prices or multiple news sources. Otherwise confidence is low. Probability remains unavailable. Earlier macro backtests do not validate this forecast.
 
-Extraction uses patterns, not an LLM or a trained forecasting model. Direct asset clauses reject basic negation and hypothetical wording, but complex attribution, sarcastic language, multi-asset headlines, and differently worded syndication remain limitations. Headlines reporting price moves are not measured momentum. Rule weights and the four-hour continuation hypothesis have not been validated for predictive accuracy. `forecast.probability` remains null. Earlier macro backtests do not validate this model, and no live USD/JPY direction is asserted by the implementation tests.
+## News and presentation
 
-Regression fixtures cover bullish/bearish news with missing macro data across all 12 supported markets, common broker aliases, asset isolation, negation, multi-asset clauses, Fed/BoE/BoJ tone, yield-country attribution, ETF regulation, recency, stale/future rejection, duplicate stories, conflicting news, trend overrides, provider ingestion, and the live API response.
+Existing feeds are supplemented with Yahoo equity news and MarketWatch Market Pulse. `RSS_EQUITIES` can override the Yahoo feed (an empty value disables it). QQQ, SPY and DIA headline aliases map to their corresponding cash indices; these ETFs are news references, not additional dashboard instruments. Foreign stock-market stories are filtered from generic US equity sentiment. Both upward and downward price/news cases have regression coverage.
 
-The cross-market correction recognizes Cable, BTC, NAS100, USTEC, US30, and WS30. Named index moves stay scoped to that index; an explicit broad stock-market or risk narrative can still affect other markets. Pound or euro moves alone cannot supply dollar-index evidence. Generic yield mappings apply to US rates; explicit UK yields affect GBP/USD and Japanese yields affect USD/JPY through separate forecast mappings. New cache and history versions prevent the previous classifications from being reused.
+Cards show a signed score out of 100. Market details show the observed session/hour moves, price proxy where applicable, component weights, four-hour issue/expiry window, and separate macro assessment. Forecast history and direction-change notices use the new model version.
 
-Live-feed checks additionally caught foreign-dollar names being attributed to the US dollar and a Bitcoin article borrowing a stock rebound. Those cases now have regression fixtures. This improves attribution; it does not establish predictive accuracy.
-
-## Check the running predictor
-
-With the current app running, use its actual address:
+## Verification
 
 ```sh
-npm run forecast:check -- --url=http://localhost:3000/api/bias
+npm run forecast:check -- --url=http://localhost:3188/api/bias
 ```
 
-The command checks that all 12 markets have fresh forecasts, the current model version, usable evidence, and valid four-hour windows. It fails on baseline, stale, missing, or outdated results. Balanced evidence may legitimately produce a neutral forecast. It saves a separate JSON snapshot under ignored `.artifacts/forecasts/` so the issued directions can be compared with subsequent market outcomes. It reports operational readiness only; it does not report a hit rate or a successful prediction of the future.
+The check verifies all 12 markets, current model, fresh issue times, usable evidence, valid four-hour windows and component arithmetic. `--require-price` additionally requires a fresh own-market quote for every market; use it while all relevant markets are open. Each run saves an immutable snapshot under ignored `.artifacts/forecasts/`. This is an operational check, not a realized-outcome accuracy test.

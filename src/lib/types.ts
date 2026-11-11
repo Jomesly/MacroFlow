@@ -15,6 +15,7 @@ export type EventCategory =
   | 'boe_tone'
   | 'yen_strength'
   | 'asset_sentiment'
+  | 'price_momentum'
   | 'ecb_tone'
   | 'boj_tone'
   | 'snb_tone'
@@ -74,6 +75,7 @@ export interface MacroEvent {
   value: string;
   /** Direct asset narratives must never spill into unrelated markets. */
   symbol?: AssetSymbol;
+  marketMove?: import('./asset-momentum').MarketMove;
   country?: string;
   url?: string;
   sourceName?: string;
@@ -145,7 +147,10 @@ export interface BiasResult {
     horizonHours: 4;
     issuedAt: string;
     expiresAt: string;
-    basis: 'news' | 'mixed' | 'macro' | 'unavailable';
+    basis: 'news' | 'market' | 'mixed' | 'macro' | 'unavailable';
+    components?: { momentum: { score: number; weight: number } | null; news: { score: number; weight: number } | null; macro: { score: number; weight: number } | null };
+    marketMove?: import('./asset-momentum').MarketMove;
+    macroSignal?: TradeSignal;
     summary: string;
     limitations: string[];
     sourceCount: number;

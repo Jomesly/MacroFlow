@@ -9,7 +9,7 @@ export function scoreMacroAlignment(events: MacroEvent[], context: MacroContext,
     ? context : unknownContext(asOf, 'Regime context is stale or from the future');
   const selected = selectEventsAsOf(events, asOf).filter(event => {
     // Narrative forecasts are assessed separately from confirmed macro alignment.
-    if (['asset_sentiment', 'yen_strength'].includes(event.category)) return false;
+    if (['asset_sentiment', 'yen_strength', 'price_momentum'].includes(event.category)) return false;
     // Currency-cross and yield headlines are ambiguous proxies and can duplicate
     // the measured observations. Only the price adapter supplies these inputs.
     if (['dollar_strength', 'yields'].includes(event.category) && event.evidenceType !== 'market') return false;

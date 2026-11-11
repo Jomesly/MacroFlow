@@ -13,12 +13,15 @@ const CACHE_TTL = 300_000;
 const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000;
 
 interface FeedConfig {
-  envKey: string;
+  envKey?: string;
+  defaultUrl?: string;
   sourceName: string;
   maxItems: number;
 }
 
 const FEEDS: FeedConfig[] = [
+  { envKey: 'RSS_EQUITIES', defaultUrl: 'https://finance.yahoo.com/rss/headline?s=QQQ,SPY,DIA', sourceName: 'Yahoo Finance equities', maxItems: 30 },
+  { defaultUrl: 'https://feeds.content.dowjones.io/public/rss/mw_marketpulse', sourceName: 'MarketWatch Market Pulse', maxItems: 30 },
   { envKey: 'RSS_MARKETWATCH', sourceName: 'marketwatch', maxItems: 8 },
   { envKey: 'RSS_FXSTREET', sourceName: 'fxstreet', maxItems: 40 },
   { envKey: 'RSS_COINDESK', sourceName: 'coindesk', maxItems: 5 },
@@ -26,7 +29,7 @@ const FEEDS: FeedConfig[] = [
 ];
 
 export async function fetchRssFeeds(): Promise<MacroEvent[]> {
-  const cacheKey = 'rss_events_v7';
+  const cacheKey = 'rss_events_v9';
   const cached = await getCached<MacroEvent[]>(cacheKey);
   if (cached) return cached;
 
@@ -34,7 +37,7 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
 
   const results = await Promise.allSettled(
     FEEDS.map(async (feed) => {
-      const url = process.env[feed.envKey];
+      const url = (feed.envKey ? process.env[feed.envKey] : undefined) ?? feed.defaultUrl;
       if (!url) return [];
 
       try {

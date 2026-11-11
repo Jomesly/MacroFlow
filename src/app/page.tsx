@@ -328,7 +328,7 @@ export default function Home() {
                     ? `${data.filter((d) => d.conviction === 'high').length}/${data.length}`
                     : '—'}
                 </strong>{' '}
-                high conviction
+                {data.some(row => row.forecast) ? "high confidence" : "high conviction"}
               </span>
               <span>
                 <strong>{response ? uniqueEvents.length : '—'}</strong> distinct
@@ -385,7 +385,7 @@ export default function Home() {
                 Market overview
                 <span className="section-count">{data.length || '—'}</span>
               </h2>
-              <p>Four-hour directional forecasts from recent news and macro context.</p>
+              <p>Four-hour predictions from price action, recent news and macro context.</p>
             </div>
             <button
               onClick={() => void fetchBias()}
@@ -488,7 +488,7 @@ export default function Home() {
           )}
           <p className="market-footnote">
             <span className="legend-dot" />
-            Tile size shows confidence. Percentages are directional forecast scores, not win probabilities. News can produce a low-confidence lean before macro confirmation. Open a market for its evidence and forecast window.
+            Four-hour predictions combine the price trend for each market, recent news and macro background. Scores run from -100 to +100. Open a market to see its forecast inputs and time window.
           </p>
         </section>
 

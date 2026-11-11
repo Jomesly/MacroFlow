@@ -8,12 +8,13 @@ import { fetchFredInputs } from './fred';
 import { getCalendar, nextHighEvent } from '../calendar';
 import { coalesce, getCacheEntry, setCache } from './cache';
 
-const CACHE_KEY = 'merged_events_v11_forecast';
+const CACHE_KEY = 'merged_events_v12_market_forecast';
 const eventSchema = z.object({
-  id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'yen_strength', 'asset_sentiment', 'other']),
+  id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'yen_strength', 'asset_sentiment', 'price_momentum', 'other']),
   title: z.string(), description: z.string(), timestamp: z.iso.datetime(),
   impact: z.enum(['high', 'medium', 'low']), value: z.string(),
   symbol: z.enum(['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD', 'US500', 'EURUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD']).optional(),
+  marketMove: z.object({ ticker: z.string(), proxy: z.boolean(), price: z.number().finite().positive(), previousClose: z.number().finite().positive(), sessionChangePercent: z.number().finite(), recentChangePercent: z.number().finite().nullable() }).optional(),
   country: z.string().optional(), url: z.string().optional(), sourceName: z.string().optional(),
   evidenceType: z.enum(['headline', 'surprise', 'trend', 'market']).optional(),
   seriesId: z.string().optional(), observationDate: z.string().optional(), expiresAt: z.iso.datetime().optional(),

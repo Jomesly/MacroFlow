@@ -29,6 +29,15 @@ async function main() {
     if (forecast.basis === 'unavailable' || !result.eventCount || !Number.isFinite(latestEvidenceAt) || latestEvidenceAt > issuedAt) {
       throw new Error(`${result.symbol}: no usable forecast evidence.`);
     }
+    const components = Object.values(forecast.components ?? {}).filter(component => component !== null);
+    if (!components.length || Math.abs(components.reduce((sum, component) => sum + component.weight, 0) - 1) > 1e-6
+      || components.some(component => !Number.isFinite(component.score) || Math.abs(component.score) > 100 || !Number.isFinite(component.weight) || component.weight <= 0 || component.weight > 1)
+      || Math.round(components.reduce((sum, component) => sum + component.score * component.weight, 0)) !== result.biasScore) {
+      throw new Error(`${result.symbol}: invalid forecast component arithmetic.`);
+    }
+    if (process.argv.includes('--require-price') && (!forecast.marketMove || !forecast.components?.momentum)) {
+      throw new Error(`${result.symbol}: no fresh own-market price quote.`);
+    }
     if (!Number.isFinite(result.biasScore) || Math.abs(result.biasScore) > 100 || forecast.probability !== null) throw new Error(`${result.symbol}: invalid forecast score or probability claim.`);
   }
   const outputDirectory = path.resolve('.artifacts', 'forecasts');
@@ -38,6 +47,7 @@ async function main() {
   await writeFile(outputFile, JSON.stringify({ schemaVersion: 1, checkedAt, endpoint: `${endpoint.origin}${endpoint.pathname}`,
     accuracyValidated: false, response: body }, null, 2) + '\n', { flag: 'wx' });
   console.log(JSON.stringify({ status: 'passed', model: FORECAST_VERSION, markets: symbols.size,
+    marketsWithPrice: body.data.filter(result => result.forecast?.marketMove).length,
     directionalForecasts: body.data.filter(result => result.direction !== 'neutral').length,
     checkedAt, sourceHealth: body.sourceHealth, snapshot: outputFile, accuracyValidated: false }, null, 2));
 }

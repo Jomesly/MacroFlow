@@ -262,4 +262,4 @@ MacroFlow provides informational market context and personal record-keeping tool
 
 ### Four-hour narrative forecasts
 
-The dashboard now shows experimental directional forecasts across all 12 markets, using recent news and macro context even when structured confirmation is incomplete. Scores are not win probabilities. See [forecast methodology and operational checks](docs/news-forecast.md).
+The dashboard now shows experimental directional forecasts across all 12 markets, using each market's own price action, recent news and macro context even when structured confirmation is incomplete. Scores are not win probabilities. See [forecast methodology and operational checks](docs/news-forecast.md).
