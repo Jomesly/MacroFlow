@@ -81,7 +81,7 @@ export default function MarketCard({
 
   useEffect(() => {
     try {
-      const key = `mf-direction-${data.alignment?.modelVersion ?? "legacy"}-${data.symbol}`;
+      const key = `mf-direction-${data.forecast?.modelVersion ?? data.alignment?.modelVersion ?? "legacy"}-${data.symbol}`;
       const previous = sessionStorage.getItem(key);
       if (previous && previous !== data.direction) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- compare the previous session snapshot after hydration
@@ -91,7 +91,7 @@ export default function MarketCard({
     } catch {
       /* The card remains usable when browser storage is unavailable. */
     }
-  }, [data.symbol, data.direction, data.alignment?.modelVersion]);
+  }, [data.symbol, data.direction, data.alignment?.modelVersion, data.forecast?.modelVersion]);
 
   return (
     <motion.article
@@ -128,7 +128,7 @@ export default function MarketCard({
             {!open && <span>Closed</span>}
           </span>
         </span>
-        <span className="market-score" aria-label={`${data.biasPercent > 0 ? '+' : ''}${data.biasPercent}% macro bias strength`}>
+        <span className="market-score" aria-label={`${data.biasPercent > 0 ? '+' : ''}${data.biasPercent}% ${data.forecast ? "forecast score" : "macro bias strength"}`}>
           {data.biasPercent > 0 ? "+" : ""}
           {data.biasPercent}
           <small>%</small>
@@ -143,7 +143,7 @@ export default function MarketCard({
             />
             {direction}
           </span>
-          <span className="market-conviction">{conviction} conviction</span>
+          <span className="market-conviction">{conviction} {data.forecast ? "confidence / 4h" : "conviction"}</span>
         </span>
         {tile?.size === "lg" && driver && (
           <span className="market-driver">{driver}</span>

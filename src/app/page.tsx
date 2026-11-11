@@ -385,7 +385,7 @@ export default function Home() {
                 Market overview
                 <span className="section-count">{data.length || '—'}</span>
               </h2>
-              <p>Macro bias strength, conviction, and the drivers behind it.</p>
+              <p>Four-hour directional forecasts from recent news and macro context.</p>
             </div>
             <button
               onClick={() => void fetchBias()}
@@ -488,7 +488,7 @@ export default function Home() {
           )}
           <p className="market-footnote">
             <span className="legend-dot" />
-            Tile size shows conviction and percentages show macro bias strength. High-conviction markets lead. Open a market to explore its conviction and alignment.
+            Tile size shows confidence. Percentages are directional forecast scores, not win probabilities. News can produce a low-confidence lean before macro confirmation. Open a market for its evidence and forecast window.
           </p>
         </section>
 

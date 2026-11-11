@@ -1,4 +1,4 @@
-import { EventCategory, EventImpact, MacroEvent } from '../types';
+import { AssetSymbol, EventCategory, EventImpact, MacroEvent } from '../types';
 
 type SentimentResult = {
   category: EventCategory;
@@ -7,6 +7,7 @@ type SentimentResult = {
   title: string;
   description: string;
   country?: string;
+  symbol?: AssetSymbol;
 };
 
 const COUNTRY_SENSITIVE_CATEGORIES = new Set<EventCategory>([
@@ -54,12 +55,12 @@ function inferCountry(text: string): string | undefined {
   // Require capitalized "US" to avoid matching the pronoun "us" (e.g. "surprises us")
   const regions: string[] = [];
   if (/\bUS\b|\bU\.S\./.test(text) || /\b(united states|america|federal reserve|fed)\b/i.test(text)) regions.push('US');
-  if (/\b(uk|united kingdom|britain|boe|bank of england)\b/i.test(text)) regions.push('GB');
+  if (/\b(uk|united kingdom|britain|british|gilts?|boe|bank of england)\b/i.test(text)) regions.push('GB');
   for (const [code, pattern] of FOREIGN_REGIONS) {
     if (pattern.test(text)) regions.push(code);
   }
   if (regions.length > 1) return 'MIXED';
-  return regions[0];
+  return regions[0] ?? (/\btreasur(?:y|ies)\b/i.test(text) ? 'US' : undefined);
 }
 
 /** A crypto subject and the regulatory action must occur in the same clause. */
@@ -245,18 +246,129 @@ function isNegatedPolicyMove(text: string, match: RegExpExecArray): boolean {
   return POLICY_NEGATION.test(text.slice(start, match.index + match[0].length + NEGATION_WINDOW));
 }
 
+// These are narratives, including reported moves, rather than measured price observations.
+// Match the named subject's clause so "USD/JPY falls as stocks rally" keeps its sign.
+const ASSET_SUBJECTS: [AssetSymbol, string][] = [
+  ['EURUSD', 'eur\\s*[/\\-]?\\s*usd|euro[- ]dollar'],
+  ['USDCHF', 'usd\\s*[/\\-]?\\s*chf|dollar[- ]franc'],
+  ['AUDUSD', 'aud\\s*[/\\-]?\\s*usd|aussie'],
+  ['USDCAD', 'usd\\s*[/\\-]?\\s*cad'],
+  ['NZDUSD', 'nzd\\s*[/\\-]?\\s*usd|kiwi'],
+  ['US500', 's&p(?:[ -]?500)?|sp500|us500'],
+  ['USDJPY', 'usd\\s*[/\\-]?\\s*jpy|dollar[- ]yen'],
+  ['GBPUSD', 'gbp\\s*[/\\-]?\\s*usd|pound[- ]dollar|sterling|cable'],
+  ['XAUUSD', 'xau\\s*[/\\-]?\\s*usd|gold'],
+  ['BTCUSD', 'btc(?:\\s*[/\\-]?\\s*usd)?|bitcoin'],
+  ['US100', 'nasdaq(?:[ -]?100)?|us100|nas100|ustec'],
+  ['DJ30', 'dow(?: jones(?:[ -]30)?)?|djia|dj30|us30|ws30'],
+];
+const UP = /\b(rall(?:y|ies|ied|ying)|ris(?:e|es|ing)|rose|climb\w*|surge\w*|gain\w*|advanc\w*|bullish|higher|up|strengthen\w*|rebound\w*|recover\w*|firm\w*)\b/i;
+const DOWN = /\b(fall\w*|fell|drop\w*|slid\w*|slip\w*|plung\w*|declin\w*|bearish|lower|down|weaken\w*|retreat\w*|slump\w*|soften\w*|tumbl\w*)\b/i;
+const CLAUSE_BREAK = /[.!?;:,]|\b(?:as|amid|while|after|because|but|ahead|despite|due|on|and|with)\b/i;
+const isAsserted = (clause: string) => !/\b(not|no|never|fails?|failed|unlikely|may|might|could|if|whether)\b/i.test(clause);
+const COORDINATED_SUBJECTS = new RegExp(`^(?:\\s*(?:,\\s*(?:and\\s+)?|and\\s+|&\\s*)(?:${ASSET_SUBJECTS.map(([, subject]) => subject).join('|')})\\b)+`, 'i');
+
+function narrativeClauses(text: string, subject: string): string[] {
+  // Do not consume the tail: a second named subject needs its own clause.
+  const pattern = new RegExp(`\\b(?:${subject})\\b`, 'gi');
+  return [...text.matchAll(pattern)].flatMap(match => {
+    const prefix = text.slice(0, match.index);
+    if (/\b(?:if|whether|could|may|might)\s+(?:the\s+)?$/i.test(prefix)) return [];
+    const tail = text.slice(match.index + match[0].length).replace(COORDINATED_SUBJECTS, '');
+    if (/^[- ](?:listed|miners?|mining|producers?|company|companies|demand|etfs?)\b/i.test(tail)) return [];
+    return [tail.split(CLAUSE_BREAK)[0].slice(0, 90)];
+  });
+}
+
+function clauseDirection(clause: string): 'bullish' | 'bearish' | null {
+  if (!isAsserted(clause)) return null;
+  // Relative underperformance does not state that the named asset rose or fell.
+  if (/^\s*(?:sits? out|sat out|trails?|lags?|miss(?:es|ed)?|ignores?)\b/i.test(clause)) return null;
+  const up = UP.test(clause), down = DOWN.test(clause);
+  return up === down ? null : up ? 'bullish' : 'bearish';
+}
+
+function withoutCurrencyPairs(text: string): string {
+  return text.replace(/\b[a-z]{3}\s*[/\-]\s*[a-z]{3}\b|\b(?:usd|eur|gbp|jpy|aud|nzd|cad|chf|xau|btc){2}\b|\b(?:pound[- ]dollar|dollar[- ]yen)\b/gi, 'PAIR');
+}
+
+function classifyNarratives(text: string): SentimentResult[] {
+  const results: SentimentResult[] = [];
+  const add = (category: EventCategory, value: string, symbol?: AssetSymbol, impact: EventImpact = 'medium') => {
+    if (results.some(row => row.category === category && row.value === value && row.symbol === symbol)) return;
+    results.push({ category, value, symbol, impact, title: text.length > 80 ? text.slice(0, 77) + '...' : text, description: text });
+  };
+  for (const [symbol, subject] of ASSET_SUBJECTS) {
+    for (const clause of narrativeClauses(text, subject)) {
+      const direction = clauseDirection(clause);
+      if (direction) {
+        add('asset_sentiment', direction, symbol);
+        if (symbol === 'US100' || symbol === 'DJ30' || symbol === 'US500') add('risk_sentiment', direction === 'bullish' ? 'risk_on' : 'risk_off', symbol);
+      }
+    }
+  }
+  const currencyText = withoutCurrencyPairs(text)
+    .replace(/\b(?:australian|aussie|canadian|new zealand|kiwi|singapore(?:an)?|hong kong|(?:new )?taiwan(?:ese)?|aud|cad|nzd|sgd|hkd|twd)\s+dollars?\b/gi, 'FOREIGN_CURRENCY');
+  for (const clause of narrativeClauses(currencyText, 'yen|jpy')) {
+    const direction = clauseDirection(clause);
+    if (direction) add('yen_strength', direction === 'bullish' ? 'strong' : 'weak', 'USDJPY');
+  }
+  for (const clause of narrativeClauses(currencyText, 'dollar(?: index)?|usd(?: index)?|dxy|greenback')) {
+    const direction = clauseDirection(clause);
+    if (direction) add('dollar_strength', direction === 'bullish' ? 'strong' : 'weak');
+  }
+  for (const clause of narrativeClauses(text, '(?:stock|equity) (?:market )?index|stock markets?|markets|stocks|equities|wall[ -]street|(?:global|US) shares')) {
+    const direction = clauseDirection(clause);
+    if (direction) add('risk_sentiment', direction === 'bullish' ? 'risk_on' : 'risk_off');
+  }
+  for (const clause of text.split(CLAUSE_BREAK)) {
+    if (!isAsserted(clause)) continue;
+    if (/\b(risk[ -]?off|safe[ -]?haven|turmoil|crisis|fear|panic)\b/i.test(clause)) add('risk_sentiment', 'risk_off');
+    if (/\b(risk[ -]?on|optimism|euphoria)\b/i.test(clause)) add('risk_sentiment', 'risk_on');
+  }
+  for (const clause of narrativeClauses(text, 'trade')) {
+    if (!isAsserted(clause)) continue;
+    if (/\b(war|tensions?|escalat\w*)\b/i.test(clause)) add('risk_sentiment', 'risk_off', undefined, 'high');
+    if (/\b(deal|truce|agreement)\b/i.test(clause)) add('risk_sentiment', 'risk_on');
+  }
+  const policyText = text.replace(/\b(hawkish|dovish)\s+(fed|federal reserve|fomc|boe|bank of england|boj|bank of japan)\b/gi, '$2 $1');
+  const banks: [EventCategory, string, AssetSymbol?][] = [
+    ['fed_tone', 'fed|federal reserve|fomc'],
+    ['boe_tone', 'boe|bank of england'],
+    ['boj_tone', 'boj|bank of japan'],
+    ['ecb_tone', 'ecb|european central bank'],
+    ['snb_tone', 'snb|swiss national bank'],
+    ['rba_tone', 'rba|reserve bank of australia'],
+    ['boc_tone', 'boc|bank of canada'],
+    ['rbnz_tone', 'rbnz|reserve bank of new zealand'],
+  ];
+  for (const [category, subject, symbol] of banks) {
+    const bankMatch = new RegExp(`\\b(?:${subject})\\b`, 'i').exec(policyText);
+    if (bankMatch && POLICY_NEGATION.test(policyText.slice(Math.max(0, bankMatch.index - 30), bankMatch.index))) continue;
+    for (const clause of narrativeClauses(policyText, subject)) {
+      if (!isAsserted(clause)) continue;
+      if (/\b(?:cut\w*|lower\w*|rais\w*|hik\w*)\b.{0,45}\b(?:forecasts?|projections?|estimates?|outlook)\b/i.test(clause)
+        && !/\b(rates?|policy|borrowing costs?)\b/i.test(clause)) continue;
+      const dovish = /\b(dovish|cuts?|cutting|eas\w*|lower\w*)\b/i.test(clause);
+      const hawkish = /\b(hawkish|hikes?|hiking|rais\w*|tight\w*|taper\w*)\b/i.test(clause);
+      const delayed = /\b(delay\w*|postpon\w*)\b/i.test(clause);
+      if (dovish) add(category, delayed ? 'hawkish' : 'dovish', symbol, 'high');
+      if (hawkish) add(category, delayed ? 'dovish' : 'hawkish', symbol, 'high');
+    }
+  }
+  return results;
+}
+
 export function classifyHeadline(text: string): SentimentResult[] {
   if (TECHNICAL_ARTICLE.test(text)) return [];
   const foreignEquityOnly = FOREIGN_EQUITY.test(text) && !GLOBAL_EQUITY.test(text);
   const seen = new Set<string>();
-  const results: SentimentResult[] = cryptoPolicySignals(text);
+  const results: SentimentResult[] = [...cryptoPolicySignals(text), ...classifyNarratives(text).filter(row => row.category !== 'risk_sentiment' || !foreignEquityOnly || !!row.symbol)];
   for (const rule of RULES) {
-    if (rule.category === 'risk_sentiment' && foreignEquityOnly) continue;
+    if (rule.category === 'dollar_strength' || rule.category === 'risk_sentiment') continue;
+    if (POLICY_CATEGORIES.has(rule.category) && /\b(fed|federal reserve|fomc|boe|bank of england|boj|bank of japan|ecb|european central bank|snb|swiss national bank|rba|reserve bank of australia|boc|bank of canada|rbnz|reserve bank of new zealand)\b/i.test(text)) continue;
     // Price verbs near an upcoming release do not describe the economic measure.
     if (rule.category === 'inflation' && !/\b(cpi|ppi|inflation|pce(?: price index)?)\s+(?:(?:is|was|has|have|remains?|came(?: in)?|comes(?: in)?|printed|prints)\s+)?(?:ris\w*|ros\w*|fell|fall\w*|drop\w*|cool\w*|accelerat\w*|slow\w*|climb\w*|hot\w*|high\w*|low\w*|beat\w*|miss\w*|up\b|down\b|sticky|moderate)/i.test(text)) continue;
-    const singleCompanyMove = /\b(stock|shares)\s+(fall\w*|drop\w*|plung\w*|rall\w*|surge\w*|climb\w*|gain\w*|ris\w*)|\b(apple|google|microsoft|amazon|meta|nvidia|tesla|boeing)(?:['’]s)?\s+(?:stock|shares)\b/i.test(text);
-    const broadMarketMove = /\b(markets|stocks|equities|nasdaq|dow|s&p(?: 500)?|wall street|(?:global|world|US) shares)\s+(?:are\s+|is\s+)?(fall\w*|drop\w*|plung\w*|rall\w*|surge\w*|climb\w*|gain\w*|ris\w*|higher|lower)/i.test(text);
-    if (rule.category === 'risk_sentiment' && singleCompanyMove && !broadMarketMove) continue;
     for (const pattern of rule.patterns) {
       const match = pattern.exec(text);
       if (!match) continue;
@@ -271,13 +383,13 @@ export function classifyHeadline(text: string): SentimentResult[] {
           impact: rule.impact,
           title: text.length > 80 ? text.slice(0, 77) + '...' : text,
           description: text,
-          country: COUNTRY_SENSITIVE_CATEGORIES.has(rule.category) ? inferCountry(text) : undefined,
+          country: COUNTRY_SENSITIVE_CATEGORIES.has(rule.category) || rule.category === 'yields' ? inferCountry(text) : undefined,
         });
       }
     }
   }
   // A text pointing both ways in one category carries no usable signal.
-  return results.filter((result) => results.every((other) => other.category !== result.category || other.value === result.value));
+  return results.filter((result) => results.every((other) => other.category !== result.category || other.symbol !== result.symbol || other.value === result.value));
 }
 
 export function createEventFromClassification(
@@ -295,6 +407,7 @@ export function createEventFromClassification(
     timestamp: publishedAt ?? new Date().toISOString(),
     impact: classified.impact,
     value: classified.value,
+    symbol: classified.symbol,
     country: classified.country,
     url,
     sourceName: source,

@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { buildMacroInputs } from '../macro-context';
+import { buildMacroInputs, unknownContext } from '../macro-context';
 import { contextFixture } from './fixtures/macro';
-import { scoreMacroAlignment } from '../alignment';
-import { maxBiasPoints } from '../engine';
+import { FORECAST_VERSION, scoreMarketForecast } from '../forecast';
+import { classifyHeadline, createEventFromClassification } from '../api/classifier';
+import { getHistory, recordDailySnapshot } from '../redis';
 import { getEvents } from '../events';
 import { GET } from '../../app/api/bias/route';
 
@@ -22,15 +23,27 @@ describe('live bias route', () => {
     const response = await GET(new NextRequest('http://localhost/api/bias?symbol=US100'));
     expect(response.headers.get('cache-control')).toBe('no-store');
     const body = await response.json();
-    expect(body.data).toMatchObject(scoreMacroAlignment(inputs.events, inputs.context, asOf, 'US100'));
-    expect(body.data[0].probability).toMatchObject({ status: 'unavailable', value: null });
-    // Percentage = net news points / most points the market's news can add.
-    expect(body.data[0].biasPercent).toBe(Math.round((100 * body.data[0].biasScore) / maxBiasPoints('US100')));
+    expect(body.data).toMatchObject(JSON.parse(JSON.stringify(scoreMarketForecast(inputs.events, inputs.context, asOf, 'US100'))));
     expect(body.data[0].alignment.context.regime).toBe('growth_sensitive');
     expect(body.data[0].signal).toBe('neutral');
     expect(body.sourceHealth.economic_calendar).toBe('failed');
     const { getCalendar } = await import('../calendar');
     expect(getCalendar).not.toHaveBeenCalled();
+  });
+  it('returns a USD/JPY news forecast through the live endpoint when macro data is missing', async () => {
+    const asOf = '2026-11-11T12:00:00.000Z';
+    vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
+    const events = classifyHeadline('USD/JPY rallies as the yen weakens').map(row =>
+      createEventFromClassification(row, 'FX news', 'https://example.com/usdjpy', asOf));
+    vi.mocked(getEvents).mockResolvedValue({ events, context: unknownContext(asOf), source: 'live', cachedAt: asOf,
+      sourceHealth: { rss: 'ok', fred: 'failed', market_data: 'empty' }, nextEvent: null });
+    const body = await (await GET(new NextRequest('http://localhost/api/bias?symbol=USDJPY'))).json();
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0]).toMatchObject({ symbol: 'USDJPY', direction: 'weakly_bullish', conviction: 'low',
+      forecast: { basis: 'news', modelVersion: FORECAST_VERSION }, signal: 'neutral' });
+    expect(body.sourceHealth.fred).toBe('failed');
+    expect(recordDailySnapshot).toHaveBeenCalledWith('USDJPY', 'weakly_bullish', body.data[0].biasScore, FORECAST_VERSION);
+    expect(getHistory).toHaveBeenCalledWith('USDJPY', FORECAST_VERSION);
   });
   it('uses the already-fetched upcoming event and hides it once its scheduled time passes', async () => {
     const asOf = '2026-11-10T12:00:00.000Z';
@@ -42,31 +55,20 @@ describe('live bias route', () => {
     vi.setSystemTime(new Date(nextEvent.date));
     expect((await (await GET(new NextRequest('http://localhost/api/bias'))).json()).nextEvent).toBeNull();
   });
-  // 130 net points of Gold's 260 possible => 50%.
-  it.each([['dovish', 'low', 'weak', 50, 'strong_buy'], ['hawkish', 'high', 'strong', -50, 'strong_sell']] as const)(
-    'preserves the aligned %s macro signal without a fitted probability model', async (policy, inflation, dollar, expected, signal) => {
-      const asOf = '2026-11-10T12:00:00.000Z';
-      vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
-      const { context } = buildMacroInputs(contextFixture(), asOf);
-      const common = { title: 'Test evidence', description: 'Test evidence', country: 'US', impact: 'high' as const, timestamp: asOf };
-      const events = [
-        { ...common, id: 'fed', category: 'fed_tone' as const, value: policy, evidenceType: 'headline' as const },
-        { ...common, id: 'cpi', category: 'inflation' as const, value: inflation, evidenceType: 'surprise' as const },
-        { ...common, id: 'dxy', category: 'dollar_strength' as const, value: dollar, evidenceType: 'market' as const },
-        { ...common, id: 'yield', category: 'yields' as const, value: expected > 0 ? 'falling' : 'rising', evidenceType: 'market' as const },
-        ...(['employment', 'gdp', 'pmi', 'retail_sales'] as const).map(category => ({ ...common, id: category, category,
-          value: category === 'employment' ? (expected > 0 ? 'weak' : 'strong') : (expected > 0 ? 'miss' : 'beat'), evidenceType: 'surprise' as const })),
-      ];
-      const input = { events, context, source: 'live' as const, cachedAt: asOf, sourceHealth: { fred: 'ok' as const }, nextEvent: null };
-      vi.mocked(getEvents).mockResolvedValue(input);
-      const body = await (await GET(new NextRequest('http://localhost/api/bias?symbol=XAUUSD'))).json();
-      expect(body.data[0]).toMatchObject({ biasPercent: expected, conviction: 'high', signal, alignment: { status: 'aligned' }, probability: { value: null } });
-      // Refresh both values from the same inputs; losing the CPI release drops below 50%.
-      vi.mocked(getEvents).mockResolvedValue({ ...input, events: events.filter(event => event.id !== 'cpi') });
-      const weaker = await (await GET(new NextRequest('http://localhost/api/bias?symbol=XAUUSD'))).json();
-      expect(weaker.data[0]).toMatchObject({ biasPercent: expected > 0 ? 44 : -44, conviction: 'low', signal: 'neutral' });
-      vi.mocked(getEvents).mockResolvedValue({ ...input, stale: true });
-      const stale = await (await GET(new NextRequest('http://localhost/api/bias?symbol=XAUUSD'))).json();
-      expect(stale.data[0]).toMatchObject({ biasPercent: expected, signal: 'neutral' });
-    });
+  it.each([
+    ['GBPUSD', 'Cable rallies', 'weakly_bullish'],
+    ['XAUUSD', 'Gold falls', 'weakly_bearish'],
+    ['BTCUSD', 'BTC rallies', 'weakly_bullish'],
+    ['US100', 'NAS100 falls', 'weakly_bearish'],
+    ['DJ30', 'US30 rallies', 'weakly_bullish'],
+  ])('serves an asset-specific %s forecast from the dashboard endpoint', async (symbol, headline, direction) => {
+    const asOf = '2026-11-11T12:00:00.000Z';
+    vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
+    const events = classifyHeadline(headline).map(row => createEventFromClassification(row, 'News', 'https://example.com/story', asOf));
+    vi.mocked(getEvents).mockResolvedValue({ events, context: unknownContext(asOf), source: 'live', cachedAt: asOf,
+      sourceHealth: { rss: 'ok', fred: 'failed' }, nextEvent: null });
+    const body = await (await GET(new NextRequest(`http://localhost/api/bias?symbol=${symbol}`))).json();
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0]).toMatchObject({ symbol, direction, conviction: 'low', forecast: { basis: 'news' } });
+  });
 });

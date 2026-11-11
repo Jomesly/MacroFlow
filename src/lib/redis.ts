@@ -15,11 +15,11 @@ function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export async function getHistory(symbol: string): Promise<HistoryEntry[]> {
+export async function getHistory(symbol: string, modelVersion = MODEL_VERSION): Promise<HistoryEntry[]> {
   const redis = createClient();
   if (!redis) return [];
   try {
-    const raw = await redis.get<HistoryEntry[]>(`macroflow:history:${MODEL_VERSION}:${symbol}`);
+    const raw = await redis.get<HistoryEntry[]>(`macroflow:history:${modelVersion}:${symbol}`);
     return raw ?? [];
   } catch {
     return [];
@@ -32,11 +32,11 @@ export function upsertDailySnapshot(history: HistoryEntry[], entry: HistoryEntry
   return [...earlier, entry].slice(-limit);
 }
 
-export async function recordDailySnapshot(symbol: string, direction: HistoryEntry['direction'], biasScore: number): Promise<void> {
+export async function recordDailySnapshot(symbol: string, direction: HistoryEntry['direction'], biasScore: number, modelVersion = MODEL_VERSION): Promise<void> {
   const redis = createClient();
   if (!redis) return;
 
-  const key = `macroflow:history:${MODEL_VERSION}:${symbol}`;
+  const key = `macroflow:history:${modelVersion}:${symbol}`;
 
   try {
     const existing = await redis.get<HistoryEntry[]>(key);

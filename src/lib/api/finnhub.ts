@@ -3,7 +3,7 @@ import { classifyHeadline, createEventFromClassification } from './classifier';
 import { getCached, setCache } from './cache';
 
 const BASE_URL = 'https://finnhub.io/api/v1';
-const CACHE_KEY = 'finnhub_news_v6';
+const CACHE_KEY = 'finnhub_news_v7';
 const CACHE_TTL = 300_000;
 const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000;
 
@@ -46,10 +46,10 @@ export async function fetchNews(): Promise<MacroEvent[]> {
       const text = `${article.headline} ${article.summary}`;
       const classifiedList = classifyHeadline(text);
       for (const classified of classifiedList) {
-        const key = `${classified.category}:${classified.value}:${classified.country ?? ''}`;
+        const key = `${article.url || article.id}:${classified.category}:${classified.value}:${classified.country ?? ''}:${classified.symbol ?? ''}`;
         if (!seen.has(key)) {
           seen.add(key);
-          events.push(createEventFromClassification(classified, 'finnhub', article.url, publishedAt));
+          events.push(createEventFromClassification(classified, article.source || 'finnhub', article.url, publishedAt));
         }
       }
     }

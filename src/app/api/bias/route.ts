@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEvents } from '@/lib/events';
 import { ALL_SYMBOLS } from '@/lib/engine';
-import { scoreMacroAlignment } from '@/lib/alignment';
+import { FORECAST_VERSION, scoreMarketForecast } from '@/lib/forecast';
 import { selectEventsAsOf } from '@/lib/macro-context';
 import { AssetSymbol, BiasApiResponse, DxyContext } from '@/lib/types';
 import { getHistory, recordDailySnapshot } from '@/lib/redis';
-import { estimateProbability } from '@/lib/probability/model';
-import probabilityModel from '@/lib/probability/registry.json';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,23 +32,19 @@ export async function GET(request: NextRequest) {
 
   const { events, source, cachedAt, sourceHealth, stale, context, nextEvent } = await getEvents();
   const asOf = new Date().toISOString();
-  const results = scoreMacroAlignment(events, context, asOf, symbol);
+  const results = scoreMarketForecast(events, context, asOf, symbol);
 
   const dxy = getDxyContext(selectEventsAsOf(events, asOf));
 
   const data = await Promise.all(
     results.map(async (r) => {
-      if (source === 'live' && !stale) await recordDailySnapshot(r.symbol, r.direction, r.biasScore);
-      const history = await getHistory(r.symbol);
       const inputAge = Date.parse(asOf) - Date.parse(cachedAt);
-      const probability = estimateProbability(r, probabilityModel, asOf, {
-        source, sourceHealth, stale: stale || !Number.isFinite(inputAge) || inputAge < 0 || inputAge > 5 * 60_000,
-      });
-      // Macro signals follow the scorer's evidence and market-alignment gates.
-      // Optional outcome calibration must not disable the working macro engine.
       const inputsHealthy = source === 'live' && !stale && !Object.values(sourceHealth).includes('failed')
         && Number.isFinite(inputAge) && inputAge >= 0 && inputAge <= 5 * 60_000;
-      return { ...r, history, probability, signal: inputsHealthy ? r.signal : 'neutral' as const };
+      if (source === 'live' && !stale) await recordDailySnapshot(r.symbol, r.direction, r.biasScore, FORECAST_VERSION);
+      const history = await getHistory(r.symbol, FORECAST_VERSION);
+      return { ...r, history,
+        signal: inputsHealthy ? r.signal : 'neutral' as const };
     })
   );
 

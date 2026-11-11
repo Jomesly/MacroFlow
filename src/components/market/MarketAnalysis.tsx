@@ -101,7 +101,7 @@ export function MarketBiasHistory({ data }: { data: BiasResult }) {
   return (
     <section id="market-history" className="research-section" aria-labelledby="market-history-title">
       <h2 id="market-history-title">Bias history</h2>
-      <p className="research-note">Seven daily snapshots on a fixed score scale. This tracks fundamental bias, not market price.</p>
+      <p className="research-note">Seven daily snapshots on a fixed score scale. This tracks directional scores, not market price.</p>
       {entries.length && latest ? <div className="research-history-layout">
         <div>
           <svg className="research-history-chart" viewBox="0 0 540 220" role="img" aria-label={`${data.symbol} bias history, score range minus 100 to plus 100. Values are listed in the table below.`}>
@@ -131,7 +131,7 @@ export function MarketMethodology({ data }: { data: BiasResult }) {
   const bearish = data.events.filter((event) => event.scoreChange < 0).length;
   return (
     <section className="research-section research-methodology" aria-labelledby="score-method-title">
-      <h2 id="score-method-title">How to read macro bias strength</h2>
+      <h2 id="score-method-title">{data.forecast ? "How to read the forecast" : "How to read macro bias strength"}</h2>
       <details>
         <summary>Score breakdown and methodology</summary>
         <dl className="research-breakdown">
@@ -145,7 +145,7 @@ export function MarketMethodology({ data }: { data: BiasResult }) {
           <div><dt>Bullish / bearish</dt><dd>{bullish} / {bearish}</dd></div>
           <div><dt>High-impact events</dt><dd>{data.events.filter((event) => event.impact === 'high').length}</dd></div>
         </dl>
-        <p>The displayed percentage is 100 × net category-capped points ÷ the sum of this market’s category caps, rounded to a whole percent. Categories without evidence contribute no points; they remain in the fixed capacity. It measures directional macro strength, not confidence, a win probability or a price return. The raw score is separately capped at ±100 points and determines the direction zone.</p>
+        {data.forecast ? <p>Recent news receives more weight, with a six-hour half-life. Each story contributes one net vote; repeated stories in a category cannot manufacture confirmation. The signed score is capped between -100 and +100. It is an experimental four-hour directional lean, not a win probability or predicted price return. Structured macro alignment is assessed separately.</p> : <p>The displayed percentage is 100 × net category-capped points ÷ the sum of this market’s category caps, rounded to a whole percent. Categories without evidence contribute no points; they remain in the fixed capacity. It measures directional macro strength, not confidence, a win probability or a price return. The raw score is separately capped at ±100 points and determines the direction zone.</p>}
         <p>High conviction requires a displayed magnitude of at least 50% in either direction, three net-supporting categories, supporting high-impact evidence and at least 60% event agreement. The live alignment checks also require fresh macro context, net-supporting structured economic evidence and confirming market observations. Missing, flat or conflicting confirmation can keep conviction low even when the percentage is large.</p>
         <p>Agreement measures the share of scored events pointing the same way as the final score. Coverage counts distinct categories with a nonzero contribution against available categories. Driver inputs are shown before category and total caps, so their sum can differ from the final percentage. The technical-direction selector compares your chosen trade direction with the macro lean; it does not change the score or establish a win rate.</p>
       </details>

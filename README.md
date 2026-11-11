@@ -259,3 +259,7 @@ docs/             Setup guides, reviewed reports, and curated screenshots
 - **Journal:** [Trading accounts](docs/trading-accounts.md), [account funds](docs/account-funds.md), [imports](docs/journal-imports.md), [glossary](GLOSSARY.md).
 
 MacroFlow provides informational market context and personal record-keeping tools. Bias scores, research results, and illustrative screenshots are not guarantees of future market direction or trading performance.
+
+### Four-hour narrative forecasts
+
+The dashboard now shows experimental directional forecasts across all 12 markets, using recent news and macro context even when structured confirmation is incomplete. Scores are not win probabilities. See [forecast methodology and operational checks](docs/news-forecast.md).

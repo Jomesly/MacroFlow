@@ -43,15 +43,15 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
           </header>
           {data && <section className="research-read" aria-label="Current market bias">
             <div className="research-bias">
-              <p>Macro bias strength</p>
-              <strong aria-label={`${signed(data.biasPercent)}% macro bias strength`}>{signed(data.biasPercent)}<span>%</span></strong>
+              <p>{data.forecast ? "Four-hour forecast score" : "Macro bias strength"}</p>
+              <strong aria-label={`${signed(data.biasPercent)}% ${data.forecast ? "forecast score" : "macro bias strength"}`}>{signed(data.biasPercent)}<span>%</span></strong>
               <p className="research-direction"><DirectionIcon size={24} weight="bold" aria-hidden="true" />{directionLabel(data.direction)}</p>
             </div>
             <div className="research-assessment">
-              <p>{data.direction === 'neutral' ? 'No dominant fundamental direction in this read.' : `The scored evidence is ${directionLabel(data.direction)} with ${data.conviction} conviction.`}</p>
-              <p className="research-note">The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation.</p>
+              <p>{data.forecast ? data.forecast.summary : data.direction === 'neutral' ? 'No dominant fundamental direction in this read.' : `The scored evidence is ${directionLabel(data.direction)} with ${data.conviction} conviction.`}</p>
+              <p className="research-note">{data.forecast ? "This experimental score is a directional lean from news and macro context, not a win probability. Low confidence means confirmation is incomplete." : "The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation."}</p>
               <dl>
-                <div><dt>Conviction</dt><dd>{data.conviction}</dd></div>
+                <div><dt>{data.forecast ? "Confidence" : "Conviction"}</dt><dd>{data.conviction}</dd></div>
                 <div><dt>Agreement</dt><dd>{data.confirmationRatio}%</dd></div>
                 <div><dt>Scored events</dt><dd>{data.eventCount}</dd></div>
                 <div><dt>Session</dt><dd>{marketIsOpen(symbol, new Date(now)) ? 'Market open' : 'Market closed'}</dd></div>
@@ -68,6 +68,12 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             <p>Source mode: {response!.source}. {error || response!.stale ? 'Outdated read.' : 'Latest available read.'}{degraded && ' Some providers are unavailable.'}{response!.source === 'baseline' && ' Baseline inputs; live confirmation is unavailable.'}</p>
             <p>Inputs fetched <time dateTime={response!.timestamp}>{new Date(response!.timestamp).toLocaleString()}</time></p>
           </div>
+          {data.forecast && <section className="research-fact" aria-labelledby="forecast-title">
+            <h2 id="forecast-title">Four-hour directional forecast</h2>
+            <p>Issued <time dateTime={data.forecast.issuedAt}>{new Date(data.forecast.issuedAt).toLocaleString()}</time>. Valid until <time dateTime={data.forecast.expiresAt}>{new Date(data.forecast.expiresAt).toLocaleString()}</time>.</p>
+            <p>{data.forecast.basis} inputs / {data.forecast.sourceCount} news sources / separate macro score {signed(data.forecast.macroBiasScore)}</p>
+            <ul>{data.forecast.limitations.map(limitation => <li key={limitation}>{limitation}</li>)}</ul>
+          </section>}
           {data.alignment && <section className="research-fact" aria-labelledby="alignment-title">
             <h2 id="alignment-title">Four-hour macro alignment</h2>
             <p>{data.alignment.status.replaceAll('_', ' ')} · {data.conviction} conviction</p>

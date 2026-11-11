@@ -13,6 +13,8 @@ export type TradeSignal = 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_se
 export type EventCategory =
   | 'fed_tone'
   | 'boe_tone'
+  | 'yen_strength'
+  | 'asset_sentiment'
   | 'ecb_tone'
   | 'boj_tone'
   | 'snb_tone'
@@ -70,6 +72,8 @@ export interface MacroEvent {
   timestamp: string;
   impact: EventImpact;
   value: string;
+  /** Direct asset narratives must never spill into unrelated markets. */
+  symbol?: AssetSymbol;
   country?: string;
   url?: string;
   sourceName?: string;
@@ -136,6 +140,19 @@ export interface BiasResult {
   history: HistoryEntry[];
   lastUpdated: string;
   alignment?: AlignmentAssessment;
+  forecast?: {
+    modelVersion: string;
+    horizonHours: 4;
+    issuedAt: string;
+    expiresAt: string;
+    basis: 'news' | 'mixed' | 'macro' | 'unavailable';
+    summary: string;
+    limitations: string[];
+    sourceCount: number;
+    latestEvidenceAt: string | null;
+    macroBiasScore: number;
+    probability: null;
+  };
 }
 
 export interface DxyContext {

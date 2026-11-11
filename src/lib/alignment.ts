@@ -8,13 +8,15 @@ export function scoreMacroAlignment(events: MacroEvent[], context: MacroContext,
   const safeContext = Number.isFinite(contextAge) && contextAge >= 0 && contextAge < 2 * 86_400_000
     ? context : unknownContext(asOf, 'Regime context is stale or from the future');
   const selected = selectEventsAsOf(events, asOf).filter(event => {
+    // Narrative forecasts are assessed separately from confirmed macro alignment.
+    if (['asset_sentiment', 'yen_strength'].includes(event.category)) return false;
     // Currency-cross and yield headlines are ambiguous proxies and can duplicate
     // the measured observations. Only the price adapter supplies these inputs.
     if (['dollar_strength', 'yields'].includes(event.category) && event.evidenceType !== 'market') return false;
     if (!['inflation', 'employment', 'gdp', 'pmi', 'retail_sales'].includes(event.category)) return true;
     // A news mention is neither a measured trend nor a verified release surprise.
     return (policy.economicHeadlines || event.evidenceType === 'trend' || event.evidenceType === 'surprise')
-      && ['US', 'GB', 'UK', 'EU', 'JP', 'CH', 'AU', 'CA', 'NZ', 'UNITED STATES', 'UNITED KINGDOM'].includes(event.country?.toUpperCase() ?? '');
+      && ['US', 'GB', 'UK', 'JAPAN', 'EU', 'JP', 'CH', 'AU', 'CA', 'NZ', 'UNITED STATES', 'UNITED KINGDOM'].includes(event.country?.toUpperCase() ?? '');
   });
   return calculateBias(selected, symbol, safeContext, policy).map(result => {
     const reasons: string[] = [];

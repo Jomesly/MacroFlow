@@ -33,13 +33,13 @@ export function parseWeeklyFeed(raw: unknown): CalendarEvent[] {
 }
 
 export async function fetchWeeklyFeed(): Promise<CalendarEvent[]> {
-  const cached = await getCached<CalendarEvent[]>('calendar_feed_v1');
+  const cached = await getCached<CalendarEvent[]>('calendar_feed_v2');
   if (cached) return cached;
   const response = await fetch(FEED_URL, { signal: AbortSignal.timeout(10_000), cache: 'no-store',
     headers: { 'User-Agent': 'MacroFlow dashboard' } });
   if (!response.ok) throw new Error(`Calendar feed HTTP ${response.status}`);
   const events = parseWeeklyFeed(await response.json());
   if (!events.length) throw new Error('Calendar feed returned no usable events');
-  await setCache('calendar_feed_v1', events, 3_600_000);
+  await setCache('calendar_feed_v2', events, 3_600_000);
   return events;
 }

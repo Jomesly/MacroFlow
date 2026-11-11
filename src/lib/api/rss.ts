@@ -20,13 +20,13 @@ interface FeedConfig {
 
 const FEEDS: FeedConfig[] = [
   { envKey: 'RSS_MARKETWATCH', sourceName: 'marketwatch', maxItems: 8 },
-  { envKey: 'RSS_FXSTREET', sourceName: 'fxstreet', maxItems: 8 },
+  { envKey: 'RSS_FXSTREET', sourceName: 'fxstreet', maxItems: 40 },
   { envKey: 'RSS_COINDESK', sourceName: 'coindesk', maxItems: 5 },
   { envKey: 'RSS_INVESTING_GOLD', sourceName: 'investing-gold', maxItems: 5 },
 ];
 
 export async function fetchRssFeeds(): Promise<MacroEvent[]> {
-  const cacheKey = 'rss_events_v6';
+  const cacheKey = 'rss_events_v7';
   const cached = await getCached<MacroEvent[]>(cacheKey);
   if (cached) return cached;
 
@@ -51,7 +51,7 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
           const text = `${item.title ?? ''} ${item.contentSnippet ?? ''}`;
           const classifiedList = classifyHeadline(text);
           for (const classified of classifiedList) {
-            const signal = `${classified.category}:${classified.value}:${classified.country ?? ''}`;
+            const signal = `${item.link ?? item.title}:${classified.category}:${classified.value}:${classified.country ?? ''}:${classified.symbol ?? ''}`;
             if (!seen.has(signal)) {
               seen.add(signal);
               items.push(createEventFromClassification(classified, feed.sourceName, item.link, publishedAt));

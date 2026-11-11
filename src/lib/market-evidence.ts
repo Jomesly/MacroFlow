@@ -31,7 +31,7 @@ export function priceDatasetIssues(dataset: PriceDataset): string[] {
   if (dataset.schemaVersion !== 1 || !Number.isFinite(dataset.intervalMinutes) || dataset.intervalMinutes <= 0 || dataset.intervalMinutes > 60) issues.push('Invalid intraday schema or interval');
   if (!dataset.bars.length || dataset.bars.some(bar => !validBar(bar))) issues.push('Missing or invalid OHLC bars');
   if (new Set(dataset.bars.map(bar => Date.parse(bar.openTime))).size !== dataset.bars.length) issues.push('Duplicate bar timestamps');
-  if (['GBPUSD', 'XAUUSD'].includes(dataset.instrument) && dataset.bars.some(bar => {
+  if (['GBPUSD', 'USDJPY', 'XAUUSD'].includes(dataset.instrument) && dataset.bars.some(bar => {
     const time = new Date(bar.openTime);
     return time.getUTCDay() === 6 && time.getUTCHours() >= 6 && time.getUTCHours() < 18;
   })) issues.push('Weekend FX/metal quotes have no verified executable session');
@@ -67,7 +67,7 @@ export function buildMarketEvents(datasets: Partial<Record<'DXY' | 'US10Y', Pric
       category: instrument === 'DXY' ? 'dollar_strength' : 'yields', value,
       title: `${instrument}: ${change >= 0 ? '+' : ''}${change.toFixed(2)}${instrument === 'DXY' ? '%' : ' pp'} versus prior UTC session`,
       description: `Completed hourly observation ${latest.closeTime}. Current: ${latest.close.toFixed(2)}, Previous Close: ${prior.close.toFixed(2)} (${change.toFixed(2)}${instrument === 'DXY' ? '%' : ' pp'})`,
-      timestamp: latest.closeTime, impact: 'medium', sourceName: dataset.provider, evidenceType: 'market',
+      timestamp: latest.closeTime, impact: 'medium', country: 'US', sourceName: dataset.provider, evidenceType: 'market',
       expiresAt: new Date(Date.parse(latest.closeTime) + 4 * 3_600_000).toISOString() });
   }
   return events;

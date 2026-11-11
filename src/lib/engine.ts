@@ -79,6 +79,8 @@ function getEmploymentModulation(
 const CATEGORY_CAPS: Partial<Record<MacroEvent['category'], number>> = {
   fed_tone: 40,
   boe_tone: 40,
+  yen_strength: 30,
+  asset_sentiment: 35,
   ecb_tone: 40,
   boj_tone: 40,
   snb_tone: 40,
@@ -174,6 +176,7 @@ function clamp(value: number, min: number, max: number): number {
 function normalizeCountry(country?: string): string | undefined {
   if (!country) return undefined;
   const upper = country.toUpperCase();
+  if (upper === 'JAPAN') return 'JP';
   if (upper === 'UNITED STATES') return 'US';
   if (upper === 'UNITED KINGDOM' || upper === 'UK') return 'GB';
   return upper;
@@ -188,6 +191,8 @@ function ruleMatchesEvent(
   const ruleCountry = normalizeCountry(rule.country);
 
   if (ruleCountry) return eventCountry === ruleCountry;
+  // Generic yield rules describe US rates. Other countries need an explicit mapping.
+  if (event.category === 'yields' && eventCountry && eventCountry !== 'US') return false;
 
   if (TWO_LEG_SYMBOLS.has(symbol) && COUNTRY_SENSITIVE_CATEGORIES.has(event.category)) {
     return false;
@@ -295,6 +300,8 @@ export function calculateBias(
     const seenArticles = new Set<string>();
 
     for (const event of events) {
+      if (event.symbol && event.symbol !== sym) continue;
+      if (event.category === 'asset_sentiment' && !event.symbol) continue;
       const signalKey = `${event.category}:${event.value}:${normalizeCountry(event.country) ?? ''}`;
       const eventKey = `${event.id}:${signalKey}`;
       const articleKey = event.url ? `${event.url}:${event.timestamp.slice(0, 10)}:${signalKey}` : undefined;

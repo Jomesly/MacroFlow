@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "forecast:check": "tsx scripts/check-live-forecast.ts",
     "test:ui": "playwright test --config playwright.ui.config.ts",
     "backtest:fetch-context": "tsx scripts/fetch-historical-calendar.ts",
     "backtest:fetch-prices": "tsx scripts/fetch-historical-prices.ts",
