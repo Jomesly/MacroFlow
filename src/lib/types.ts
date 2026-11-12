@@ -108,6 +108,8 @@ export interface ScoredEvent {
   impact: EventImpact;
   /** Rule contribution before category caps and the final score cap. */
   scoreChange: number;
+  /** Classified reading, e.g. hawkish or rising; explains the factor's channel. */
+  value?: string;
   country?: string;
   url?: string;
   sourceName?: string;
@@ -143,13 +145,13 @@ export interface BiasResult {
   lastUpdated: string;
   alignment?: AlignmentAssessment;
   forecast?: {
-    directionChance?: import('./direction-chance').DirectionChance;
     modelVersion: string;
     horizonHours: 4;
     issuedAt: string;
     expiresAt: string;
-    basis: 'news' | 'market' | 'mixed' | 'macro' | 'unavailable';
-    components?: { momentum: { score: number; weight: number } | null; news: { score: number; weight: number } | null; macro: { score: number; weight: number } | null };
+    basis: 'news' | 'mixed' | 'macro' | 'unavailable';
+    components?: { news: { score: number; weight: number } | null; macro: { score: number; weight: number } | null };
+    /** Observed price context for display only; never scored. */
     marketMove?: import('./asset-momentum').MarketMove;
     macroSignal?: TradeSignal;
     summary: string;

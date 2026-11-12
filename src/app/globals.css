@@ -652,8 +652,8 @@ button:active:not(:disabled),
   padding: 7px 0;
 }
 .market-grid {
-  --ladder-columns: minmax(128px, 1fr) minmax(112px, 0.7fr) minmax(152px, 1fr)
-    minmax(0, 2.6fr) 16px;
+  --ladder-columns: minmax(128px, 1.2fr) minmax(150px, 1fr) minmax(72px, auto)
+    minmax(0, 1.4fr) 16px;
   display: grid;
   gap: 2px;
 }
@@ -783,23 +783,139 @@ button:active:not(:disabled),
   line-height: 1.5;
   color: var(--card-soft);
 }
-.direction-chance { display: grid; gap: 8px; min-width: 0; width: 100%; }
-.chance-labels { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
-.chance-labels > span { white-space: nowrap; }
-.chance-track { display: flex; width: 100%; height: 10px; overflow: hidden; border-radius: 5px; }
-.chance-up { background: var(--positive); }
-.chance-down { background: var(--negative); }
-.chance-note { font-size: 12px; line-height: 1.5; color: var(--muted); }
-.direction-chance.is-compact { gap: 5px; }
-.is-compact .chance-labels { font-size: 12px; }
-.is-compact .chance-note { font-size: 10px; color: var(--card-soft); }
-.research-read > .direction-chance { grid-column: 1 / -1; }
+.market-score.is-bias {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.14em;
+  font-size: 32px;
+  letter-spacing: -0.03em;
+}
+.market-score.is-bias .score-direction-icon {
+  color: var(--card-soft);
+}
+/* How strong the lean is. Same scale as the bias word, lighter so the word leads. */
+.market-percent {
+  font-family: var(--font-display), sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+.market-percent small {
+  font-size: 0.5em;
+  margin-left: 2px;
+  color: var(--card-soft);
+}
+/* Conviction as three rising bars, so strength reads before the label does. */
+.conviction-meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+.conviction-meter > span {
+  width: 4px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.28;
+}
+.conviction-meter > span:nth-child(1) { height: 5px; }
+.conviction-meter > span:nth-child(2) { height: 8.5px; }
+.conviction-meter > span:nth-child(3) { height: 12px; }
+.conviction-meter[data-level='1'] > span:nth-child(-n + 1),
+.conviction-meter[data-level='2'] > span:nth-child(-n + 2),
+.conviction-meter[data-level='3'] > span {
+  opacity: 1;
+}
+.market-window {
+  font-weight: 400;
+  color: var(--card-soft);
+}
+.market-window::before {
+  content: '/';
+  margin-right: 4px;
+  opacity: 0.6;
+}
+.market-window.is-outdated {
+  font-weight: 600;
+  color: var(--caution);
+}
+/* A read that could not refresh must not look as sure as a live one. */
+.market-card[data-outdated] {
+  filter: saturate(0.45);
+}
+.factor-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.factor {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-items: start;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--frost);
+}
+.factor-icon {
+  margin-top: 2px;
+}
+.factor.is-bullish .factor-icon { color: var(--positive); }
+.factor.is-bearish .factor-icon { color: var(--negative); }
+.factor-body {
+  display: grid;
+  min-width: 0;
+}
+.factor-reason {
+  font-weight: 600;
+}
+.factor-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--card-soft);
+  text-wrap: pretty;
+}
+.factor-list.is-detailed .factor-title {
+  -webkit-line-clamp: 2;
+  font-size: 0.88em;
+  color: inherit;
+  opacity: 0.8;
+}
+/* Sits on the direction fill, so it inherits the light text instead of canvas grey. */
+.factor-source {
+  opacity: 0.85;
+}
+.factor-empty {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--card-soft);
+}
+.research-read > .factor-list,
+.research-read > .factor-empty {
+  grid-column: 1 / -1;
+}
+.research-read .factor {
+  font-size: 15px;
+}
 .market-card-caret {
   color: var(--card-soft);
   transition: transform 180ms;
 }
 .market-card-main:hover .market-card-caret {
   transform: translateX(2px);
+}
+.market-card-main:active {
+  transform: translateY(1px);
 }
 .history-table-wrap table {
   font-size: 12px;
@@ -1980,8 +2096,8 @@ button:active:not(:disabled),
     grid-template-columns: 1fr 1fr;
   }
   .market-grid {
-    --ladder-columns: minmax(104px, 1fr) minmax(96px, 0.7fr) minmax(132px, 1fr)
-      minmax(0, 1.6fr);
+    --ladder-columns: minmax(104px, 1.2fr) minmax(140px, 1fr) minmax(64px, auto)
+      minmax(0, 1.3fr);
   }
   .market-card-main,
   .market-skeleton {
@@ -2157,11 +2273,14 @@ button:active:not(:disabled),
     --ladder-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
   .market-card-main {
+    grid-template-areas: 'id score' 'read percent';
     gap: 8px 16px;
   }
-  .market-score {
-    font-size: 36px;
-  }
+  .market-id { grid-area: id; }
+  .market-score { grid-area: score; justify-self: end; font-size: 36px; }
+  .market-score.is-bias { font-size: 28px; }
+  .market-percent { grid-area: percent; justify-self: end; font-size: 22px; }
+  .market-read { grid-area: read; align-self: end; }
   .bias-history {
     height: 32px;
   }
@@ -2744,7 +2863,6 @@ button:active:not(:disabled),
    each card spans the area packBoard gives it: high conviction is a half-width,
    double-height tile, medium a half-width tile, low a quarter. Narrower screens
    keep the ladder rows above, in the same conviction order. */
-.market-driver,
 .flip-short {
   display: none;
 }
@@ -2764,54 +2882,58 @@ button:active:not(:disabled),
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-content: space-between;
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'id id' 'score percent' 'read read';
+    align-items: end;
+    gap: 8px 16px;
     padding: 20px 24px;
   }
+  .market-card[data-size] .market-id { grid-area: id; align-self: start; padding-right: 28px; }
+  .market-card[data-size] .market-score { grid-area: score; }
+  .market-card[data-size] .market-percent { grid-area: percent; justify-self: end; }
+  .market-card[data-size] .market-read { grid-area: read; }
+  .market-card[data-size] .bias-history,
+  .market-card[data-size] .bias-history-empty { grid-column: 1 / -1; }
+  /* The whole tile opens the analysis; a quiet corner arrow says so. */
   .market-card[data-size] .market-card-caret {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    opacity: 0.5;
+    transition: opacity 180ms, transform 180ms;
+  }
+  .market-card[data-size] .market-card-main:hover .market-card-caret,
+  .market-card[data-size] .market-card-main:focus-visible .market-card-caret {
+    opacity: 1;
+  }
+  .market-card[data-size]:has(.flip-notice) .market-card-caret {
     display: none;
   }
-  .market-card[data-size='lg'] .market-score {
-    font-size: 88px;
+  .market-card[data-size='lg'] .market-card-main {
+    gap: 14px 24px;
+    padding: 28px 32px;
   }
-  .market-card[data-size='md'] .market-card-main {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: 'id id' 'score history' 'read history';
-    column-gap: 20px;
-    row-gap: 6px;
-    padding: 16px 20px;
-  }
-  .market-card[data-size='md'] .market-id { grid-area: id; }
-  .market-card[data-size='md'] .market-score { grid-area: score; font-size: 48px; }
-  .market-card[data-size='md'] .market-read { grid-area: read; }
-  .market-card[data-size='md'] .market-direction { font-size: 12px; white-space: normal; }
-  .market-card[data-size='md'] .bias-history,
-  .market-card[data-size='md'] .direction-chance,
-  .market-card[data-size='md'] .bias-history-empty {
-    grid-area: history;
-    align-self: end;
-  }
+  .market-card[data-size='lg'] .market-id h3 { font-size: 20px; }
+  .market-card[data-size='lg'] .market-name { font-size: 14px; }
+  .market-card[data-size='lg'] .market-score,
+  .market-card[data-size='lg'] .market-percent { font-size: 84px; }
+  .market-card[data-size='lg'] .market-direction { font-size: 16px; }
+  .market-card[data-size='lg'] .conviction-meter { height: 15px; gap: 3px; margin-right: 4px; }
+  .market-card[data-size='lg'] .conviction-meter > span { width: 5px; }
+  .market-card[data-size='lg'] .conviction-meter > span:nth-child(1) { height: 6px; }
+  .market-card[data-size='lg'] .conviction-meter > span:nth-child(2) { height: 10.5px; }
+  .market-card[data-size='lg'] .conviction-meter > span:nth-child(3) { height: 15px; }
+  .market-card[data-size='md'] .market-score,
+  .market-card[data-size='md'] .market-percent { font-size: 44px; }
+  .market-card[data-size='md'] .market-direction { font-size: 13px; }
+  .market-card[data-size='sm'] .market-card-main { padding: 16px 18px; gap: 6px 10px; }
+  .market-card[data-size='sm'] .market-card-caret { top: 16px; right: 14px; }
+  .market-card[data-size='sm'] .market-score,
+  .market-card[data-size='sm'] .market-percent { font-size: 28px; }
+  .market-card[data-size='sm'] .market-direction { font-size: 12px; white-space: nowrap; }
   .market-card[data-size='sm'] .bias-history,
-  .market-card[data-size='sm'] .bias-history-empty {
-    display: none;
-  }
-  .market-card[data-size='sm'] .market-card-main { padding: 12px 16px; gap: 4px; }
-  .market-card[data-size='sm'] .market-score { font-size: 36px; }
-  .market-card[data-size='sm'] .market-direction { font-size: 11px; white-space: normal; }
-  .market-card[data-size='sm'] .market-conviction { display: none; }
-  .market-card[data-size='sm'] .chance-labels { font-size: 11px; gap: 2px 6px; }
-  .market-card[data-size='sm'] .chance-track { height: 5px; }
-  .market-card[data-size='lg'] .market-driver {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    max-width: 44ch;
-    font-size: 15px;
-    line-height: 1.4;
-    color: var(--frost);
-  }
+  .market-card[data-size='sm'] .bias-history-empty { display: none; }
   .market-card[data-size] .flip-notice {
     position: absolute;
     top: 16px;

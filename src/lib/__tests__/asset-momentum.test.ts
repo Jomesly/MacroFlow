@@ -53,45 +53,31 @@ describe('market-led forecasts', () => {
     sessionChangePercent: 3 * sign, recentChangePercent: 1.5 * sign,
   }, asOf);
   const news = (title: string, index = 0) => classifyHeadline(title).map(row => createEventFromClassification(row, `Publisher ${index}`, `https://example.com/${index}`, asOf));
-  it.each(ALL_SYMBOLS)('%s can forecast either direction from its own price without macro confirmation', symbol => {
+  it.each(ALL_SYMBOLS)('%s never scores its own price action, which is left to technical analysis', symbol => {
     for (const sign of [1, -1]) {
       const [result] = scoreMarketForecast([price(symbol, sign)], unknownContext(asOf), asOf, symbol);
-      expect(Math.sign(result.biasScore)).toBe(sign);
-      expect(Math.abs(result.biasScore)).toBeGreaterThan(50);
-      expect(result.signal).toBe(sign > 0 ? 'buy' : 'sell');
-      expect(result.forecast?.macroSignal).toBe('neutral');
-      expect(result.probability?.value).toBeNull();
+      expect(result.biasScore).toBe(0);
+      expect(result.direction).toBe('neutral');
+      expect(result.events).toEqual([]);
+      expect(result.forecast?.basis).toBe('unavailable');
+      expect(result.forecast?.marketMove?.sessionChangePercent).toBe(3 * sign);
     }
   });
-  it('allows a falling index to remain bearish while another index rallies', () => {
-    const results = scoreMarketForecast([price('US100'), price('DJ30', -1)], unknownContext(asOf), asOf);
-    expect(results.find(row => row.symbol === 'US100')!.biasScore).toBeGreaterThan(50);
-    expect(results.find(row => row.symbol === 'DJ30')!.biasScore).toBeLessThan(-50);
-    expect(results.find(row => row.symbol === 'EURUSD')!.biasScore).toBe(0);
-  });
-  it('lets the recent hour pull against a small session gain', () => {
-    const event = price('US100');
-    event.marketMove!.sessionChangePercent = 0.1;
-    event.marketMove!.recentChangePercent = -1;
-    expect(scoreMarketForecast([event], unknownContext(asOf), asOf, 'US100')[0].biasScore).toBeLessThan(0);
-  });
-  it('falls back to fresh news when the asset quote has expired', () => {
-    const old = price('US100', -1);
-    old.timestamp = '2026-11-11T15:00:00Z'; old.expiresAt = '2026-11-11T15:30:00Z';
-    const [result] = scoreMarketForecast([old, ...news('Nasdaq jumps')], unknownContext(asOf), asOf, 'US100');
+  it('does not let a falling price overturn bullish news', () => {
+    const [result] = scoreMarketForecast([price('US100', -1), ...news('Nasdaq jumps')], unknownContext(asOf), asOf, 'US100');
     expect(result.biasScore).toBeGreaterThan(0);
-    expect(result.forecast?.components?.momentum).toBeNull();
+    expect(result.forecast?.components).not.toHaveProperty('momentum');
     expect(result.signal).toBe('buy');
   });
-  it('does not let multiple macro penalties outweigh current price and asset news', () => {
+  it('weights fresh news 70% and macro background 30%', () => {
     const macro: MacroEvent[] = [
       { id: 'dxy', category: 'dollar_strength', value: 'strong' },
       { id: 'yield', category: 'yields', value: 'rising' },
     ].map(row => ({ ...row, category: row.category as MacroEvent['category'], title: row.id, description: row.id,
       timestamp: asOf, impact: 'high', evidenceType: 'market' }));
-    const [result] = scoreMarketForecast([...macro, price('US100'), ...news('Nasdaq soars')], unknownContext(asOf), asOf, 'US100');
-    expect(result.biasScore).toBeGreaterThan(50);
-    expect(result.forecast?.components?.macro?.weight).toBe(0.1);
+    const [result] = scoreMarketForecast([...macro, ...news('Nasdaq soars')], unknownContext(asOf), asOf, 'US100');
+    expect(result.forecast?.components?.news?.weight).toBe(0.7);
+    expect(result.forecast?.components?.macro?.weight).toBe(0.3);
     expect(result.forecast?.components?.macro?.score).toBeLessThan(0);
   });
   it.each([['QQQ jumps', 'US100'], ['SPY soars', 'US500'], ['DIA sinks', 'DJ30']] as const)('recognizes ETF narrative %s', (headline, symbol) => {

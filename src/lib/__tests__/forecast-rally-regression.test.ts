@@ -13,7 +13,7 @@ vi.mock('../api/intraday', () => ({ fetchYahooHourly: vi.fn(async (instrument: s
 })) }));
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
-it('forecasts an equity rally from the asset itself despite a stronger dollar and rising yields', async () => {
+it('keeps a live equity rally out of the scored factors and shows it only as price context', async () => {
   const asOf = '2026-11-11T16:10:00.000Z';
   vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ chart: { result: [{
@@ -24,7 +24,7 @@ it('forecasts an equity rally from the asset itself despite a stronger dollar an
   const events = await fetchMarketData();
   for (const symbol of ['US100', 'US500', 'DJ30'] as const) {
     const [result] = scoreMarketForecast(events, unknownContext(asOf), asOf, symbol);
-    expect(result.biasScore, `${symbol} ignores its rally and follows macro proxies`).toBeGreaterThan(25);
-    expect(result.direction).toMatch(/bullish/);
+    expect(result.events.some(event => event.category === 'price_momentum'), `${symbol} scored its own price`).toBe(false);
+    expect(result.forecast?.marketMove?.sessionChangePercent).toBeCloseTo(2.4);
   }
 });

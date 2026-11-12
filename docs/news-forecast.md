@@ -1,39 +1,43 @@
-# Four-hour market and news forecast
+# Four-hour news and macro bias
 
-The dashboard and `/api/bias` use `market-news-v2.1-4h-2026-11-12` across all 12 markets. The primary percentages estimate the chance of direction over the next four hours: for example, 65% up and 35% down. They are uncalibrated model estimates, not expected percentage price moves or measured trade win rates. Buy/sell labels express this speculative forecast, including low-confidence forecasts. The separate macro signal remains available in `forecast.macroSignal`.
+The dashboard and `/api/bias` use `macro-factors-v3-4h-2026-11-12` across all 12 markets. Each market card is a quick read of three things, and the full analysis page behind it holds the reasons:
 
-## Estimated direction percentages
+1. **Bias**: bullish, bearish or neutral for the next four hours, with a **strength percentage** (the size of the lean on a 0–100 scale, not a win rate).
+2. **Conviction**: high, medium or low, showing how firmly the factors point one way.
+3. **Factors** (on the market page, not the card): the news and macro inputs that may move the chart, each marked bullish or bearish and labeled with its reason (for example "Fed hawkish" or "US yields rising"), with the headline or data point as evidence. Factors that support the bias come first, then the risks against it. One factor is listed per driver channel, matching how the score counts them.
 
-`forecast.directionChance` is separate from the empirical calibration subsystem. It contains complementary `upPercent` and `downPercent`, `horizonHours: 4`, issue/expiry times, `modelVersion: heuristic-logit-v1`, and `calibration: unvalidated`.
+Technical analysis is left to the trader. Price action is **not scored**, so the bias stays independent of the chart, and a trader can check whether their setup agrees with the fundamentals. The intended use is to take setups in the bias direction, preferably with high conviction, and skip or reduce size when the chart opposes the bias.
 
-Let `e` be the weighted sum of available component scores divided by 100. The model assumes `P(up) = 1 / (1 + exp(-ln(4) * e * c))`, with `P(down) = 1 - P(up)`. Coverage `c` is 1 with fresh own-market prices, 0.7 with news from at least two sources but no price, 0.5 with fewer news sources and no price, or 0.35 for macro-only inputs. These coefficients are design assumptions, not fitted or validated probabilities. They limit either direction to 80%, reducing certainty when price evidence is missing. Both percentages are rounded together to one decimal and sum to 100%.
+## Factors
 
-This is a binary directional model; it does not assign a separate probability to an unchanged price. Balanced usable evidence produces 50/50. Absent or malformed evidence produces `unavailable`, not an invented probability. The API withholds estimates for stale/baseline snapshots; clients also hide blocked, future, malformed or expired estimates. Forecasts compare direction over the four hours after issuance, not an individual trade's outcome. News-only forecasts lack a fresh price anchor and should be treated as narrative direction estimates.
+- **News** includes every classified headline: direct reporting on the asset, central-bank actions and tone, risk sentiment, earnings, crypto regulation, geopolitics, currency strength and yield headlines.
+- **Macro backdrop** includes structured economic data: release surprises against consensus, economic trends and dollar/yield market observations.
+- Each headline has a six-hour half-life. Each story gets one net vote, and direct reporting on the asset takes priority over causal mappings from the same story. Duplicate URLs and titles merge. Within each category only the strongest bullish and bearish contribution counts, so repeated stories cannot manufacture confirmation.
+- Fresh asset quotes are still fetched and shown on the market page as price context. They never enter the score or the factor list.
 
-The internal signed score remains for auditing and history. The legacy calibrated `probability` remains unavailable, and `forecast.probability` remains null. No historical accuracy claim is implied by the new percentage model.
+## Score and weights
+
+The news component is 1.5 × its category total, capped at ±100. The macro component is its category total, capped at ±100. With both present, news carries 70% and macro 30%. A sole component gets full weight. The final signed score is capped at ±100 and sets the direction: ±50 or more is bullish or bearish, smaller nonzero scores are weakly bullish or bearish, and zero is neutral.
+
+## Conviction
+
+| Conviction | Requirements |
+| --- | --- |
+| High | Score magnitude at least 60, at least two independent news sources, and a macro backdrop that does not contradict the news |
+| Medium | Score magnitude at least 30, backed by two news sources or by macro data that points the same way |
+| Low | Any weaker nonzero lean |
+
+High conviction issues a strong buy or strong sell call. Medium and low conviction issue buy or sell calls. A market with no fresh factors is neutral and says so instead of inventing a lean. Stale or baseline API snapshots suppress all buy/sell calls.
+
+Conviction is a heuristic about the evidence, not a measured win rate. No historical accuracy claim is implied. The legacy calibrated `probability` stays unavailable, and `forecast.probability` is null.
+
+## Feed resilience
+
+Each news feed is retried once. If it still fails, its last successful stories (kept for up to six hours) stand in, and the combined set is refreshed after one minute instead of five. A feed outage therefore cannot silently drop a market's main news source and swing its reading. Stories still fade through the six-hour half-life. Cards are marked "outdated" when the dashboard cannot refresh its data.
 
 ## Why this version changed
 
-The previous deployment showed Nasdaq at -1 and S&P 500 at -2 during a strong rally. Its market adapter fetched only DXY and Treasury yields, never the asset being forecast. Multiple slow macro penalties could offset the entire bullish-news contribution. Operational source-health checks did not catch this directional defect. A regression now exercises the actual adapter-to-forecast path with a rally and opposing dollar/yield inputs.
-
-## Inputs and weighting
-
-- Asset quotes cover the three US cash indices, seven dollar pairs, Bitcoin spot and a clearly identified gold-futures proxy. The Yahoo chart request uses `range=1d`, so its prior close is not accidentally the beginning of a five-day chart.
-- Quotes must be dated within the past 30 minutes. Missing, future, malformed or older quotes are omitted. Failed individual markets do not discard the others. Closed cash sessions therefore fall back to news and macro context once their quotes expire.
-- Price trend combines the session return (60%) and approximately the latest hour (40%). Each is bounded with a symmetric tanh transform using fixed asset-class scales. The hourly comparison uses a five-minute bar that was complete at the comparison time. A recent reversal can pull against the session return. This is a continuation heuristic, not a trained return model.
-- Relevant market news includes direct asset moves, risk appetite, earnings, crypto regulation and geopolitical events. Policy and economic news remain available as background, or become the news component when no market-specific news is present.
-- With all components present, price trend gets 60%, news 30%, and macro background 10%. With price and news only, the split is 65/35. With either price or news plus macro, the split is 80/20. A sole available component gets full weight.
-- Headlines retain a six-hour half-life. Each story gets one net vote; direct reporting about the asset takes priority over causal mappings from the same story. Duplicate URLs/titles merge, and within each category only the strongest positive and negative contributions count. The news component scales its category total by 1.5, capped at 85 points in either direction.
-- The API exposes the component scores and actual weights. Macro penalties stay in one bounded component, preventing several correlated economic series from drowning out the asset's own trend.
-- Any nonzero forecast issues a buy/sell lean. Exactly balanced or absent inputs stay neutral. Missing FRED/calendar confirmation no longer suppresses a usable news or price forecast. Stale or baseline API snapshots still suppress actionable signal labels.
-
-Confidence is a heuristic input-quality label. High confidence requires magnitude at least 60, agreeing price/news components and at least two identified news sources. Medium confidence requires magnitude at least 30 with either fresh asset prices or multiple news sources. Otherwise confidence is low. Empirically calibrated probability remains unavailable. Earlier macro backtests do not validate this forecast.
-
-## News and presentation
-
-Existing feeds are supplemented with Yahoo equity news and MarketWatch Market Pulse. `RSS_EQUITIES` can override the Yahoo feed (an empty value disables it). QQQ, SPY and DIA headline aliases map to their corresponding cash indices; these ETFs are news references, not additional dashboard instruments. Foreign stock-market stories are filtered from generic US equity sentiment. Both upward and downward price/news cases have regression coverage.
-
-Cards and market details show the favored direction percentage and an up/down percentage chart. Market details retain observed session/hour moves, price proxy where applicable, internal component scores and weights, four-hour issue/expiry window, and separate macro assessment. Model strength history explicitly shows internal scores, not past percentages. History and direction-change notices use the new model version.
+Version 2.1 showed estimated up/down chances driven 60% by each market's own price trend. That duplicated the trader's technical analysis and hid the reasons behind the reading. Version 3 removes price from the score, drops the chance percentages, and puts the factors themselves on every card, so the dashboard answers the question "what could move this chart, and which way?"
 
 ## Verification
 
@@ -41,4 +45,4 @@ Cards and market details show the favored direction percentage and an up/down pe
 npm run forecast:check -- --url=http://localhost:3188/api/bias
 ```
 
-The check verifies all 12 markets, current model, fresh issue times, usable evidence, valid four-hour windows, component arithmetic and matching complementary direction percentages. `--require-price` additionally requires a fresh own-market quote for every market; use it while all relevant markets are open. Each run saves an immutable snapshot under ignored `.artifacts/forecasts/`. This is an operational check, not a realized-outcome accuracy test.
+The check verifies all 12 markets, the current model, fresh issue times, valid four-hour windows and component arithmetic. It also confirms that price action is never scored and that markets without factors stay neutral. Each run saves an immutable snapshot under ignored `.artifacts/forecasts/`. This is an operational check, not a realized-outcome accuracy test.

@@ -12,11 +12,9 @@ import {
 } from "@phosphor-icons/react";
 import type { CSSProperties } from "react";
 import type { BiasResult } from "@/lib/types";
-import { leadDriver, type BoardTile } from "@/lib/market-board";
+import type { BoardTile } from "@/lib/market-board";
 import { marketIsOpen } from "@/lib/marketIsOpen";
-import { currentDirectionChance, chanceHeadline } from "@/lib/direction-chance";
-import { useMarketClock } from "@/components/market/useMarketClock";
-import DirectionChanceChart from "@/components/market/DirectionChanceChart";
+import { biasWord, convictionLabel } from "@/lib/market-factors";
 
 /** Every row shares one scale, so a small move never looks like a large one. */
 function BiasHistory({ data, scale }: { data: BiasResult; scale: number }) {
@@ -55,7 +53,7 @@ export default function MarketCard({
   onNavigate,
   index = 0,
   historyScale = 100,
-  chanceBlocked = false,
+  outdated = false,
 }: {
   data: BiasResult;
   /** Board placement; on wide screens the tile's size follows its conviction. */
@@ -64,23 +62,20 @@ export default function MarketCard({
   onNavigate?: () => void;
   index?: number;
   historyScale?: number;
-  chanceBlocked?: boolean;
+  /** The read could not be refreshed; conviction must not be presented as current. */
+  outdated?: boolean;
 }) {
   const [flip, setFlip] = useState<string | null>(null);
   const reduce = useReducedMotion();
-  const now = useMarketClock();
-  const chance = currentDirectionChance(data, now, chanceBlocked);
-  const headline = chanceHeadline(chance);
-  const positive = data.forecast ? headline.direction === 'up' : data.direction.includes("bullish");
-  const negative = data.forecast ? headline.direction === 'down' : data.direction.includes("bearish");
+  const positive = data.direction.includes("bullish");
+  const negative = data.direction.includes("bearish");
   const tone = positive ? "positive" : negative ? "negative" : "neutral";
   const open = marketIsOpen(data.symbol);
-  const driver = leadDriver(data);
-  const direction = data.direction.startsWith("weakly_")
-    ? `Leaning ${positive ? "bullish" : "bearish"}`
-    : data.direction.charAt(0).toUpperCase() + data.direction.slice(1);
-  const conviction =
-    data.conviction.charAt(0).toUpperCase() + data.conviction.slice(1);
+  const bias = biasWord(data.direction);
+  // Strength of the news and macro lean; the full analysis page holds the reasons.
+  const strength = data.direction === "neutral" ? null : Math.abs(Math.round(data.biasPercent));
+  // Signal-bar meter: empty when there is no lean to be convinced of.
+  const level = data.direction === "neutral" ? 0 : data.conviction === "high" ? 3 : data.conviction === "medium" ? 2 : 1;
   const DirectionIcon = positive
     ? ArrowUpRight
     : negative
@@ -113,6 +108,7 @@ export default function MarketCard({
       }}
       className={`market-card tone-${tone}`}
       data-conviction={data.conviction}
+      data-outdated={outdated || undefined}
       data-size={tile?.size}
       style={
         tile
@@ -127,7 +123,7 @@ export default function MarketCard({
         href={`/markets/${data.symbol}`}
         onClick={onNavigate}
         className="market-card-main"
-        aria-label={`View ${data.symbol} analysis`}
+        aria-label={`${data.symbol}: ${bias}${strength === null ? "" : `, ${strength}% strength`}, ${convictionLabel(data).toLowerCase()}${outdated ? ", outdated read" : ""}. View full analysis.`}
       >
         <span className="market-id">
           <h3>{data.symbol}</h3>
@@ -136,28 +132,35 @@ export default function MarketCard({
             {!open && <span>Closed</span>}
           </span>
         </span>
-        <span className="market-score" aria-label={data.forecast
-          ? headline.percent === null ? 'Direction chance unavailable' : `${headline.percent}% estimated ${headline.direction} chance over four hours`
-          : `${data.biasPercent}% macro bias strength`}>
-          {data.forecast ? headline.percent ?? '—' : `${data.biasPercent > 0 ? '+' : ''}${data.biasPercent}`}
-          {(!data.forecast || headline.percent !== null) && <small>%</small>}
+        <span className="market-score is-bias">
+          <DirectionIcon
+            size="0.6em"
+            weight="bold"
+            className="score-direction-icon"
+            aria-hidden="true"
+          />
+          {bias}
+        </span>
+        <span className="market-percent">
+          {strength === null ? "—" : strength}
+          {strength !== null && <small>%</small>}
         </span>
         <span className="market-read">
           <span className="market-direction">
-            <DirectionIcon
-              size={14}
-              weight="bold"
-              className="score-direction-icon"
-              aria-hidden="true"
-            />
-            {data.forecast ? headline.direction === "up" ? "Estimated chance up" : headline.direction === "down" ? "Estimated chance down" : headline.direction === "balanced" ? "Even chance" : "Awaiting estimate" : direction}
+            <span className="conviction-meter" data-level={level} aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+            {convictionLabel(data)}
+            {outdated ? (
+              <span className="market-window is-outdated">Outdated</span>
+            ) : (
+              data.forecast && <span className="market-window">4h</span>
+            )}
           </span>
-          <span className="market-conviction">{conviction} {data.forecast ? "confidence / 4h" : "conviction"}</span>
         </span>
-        {tile?.size === "lg" && driver && (
-          <span className="market-driver">{driver}</span>
-        )}
-        {data.forecast ? <DirectionChanceChart chance={chance} compact /> : <BiasHistory data={data} scale={historyScale} />}
+        {!data.forecast && <BiasHistory data={data} scale={historyScale} />}
         <CaretRight
           size={16}
           className="market-card-caret"

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEvents } from '@/lib/events';
-import { unavailableDirectionChance } from '@/lib/direction-chance';
 import { ALL_SYMBOLS } from '@/lib/engine';
 import { FORECAST_VERSION, scoreMarketForecast } from '@/lib/forecast';
 import { selectEventsAsOf } from '@/lib/macro-context';
@@ -45,7 +44,6 @@ export async function GET(request: NextRequest) {
       if (source === 'live' && !stale) await recordDailySnapshot(r.symbol, r.direction, r.biasScore, FORECAST_VERSION);
       const history = await getHistory(r.symbol, FORECAST_VERSION);
       return { ...r, history,
-        forecast: r.forecast && { ...r.forecast, directionChance: inputsHealthy ? r.forecast.directionChance : unavailableDirectionChance(asOf, 'Live inputs are stale or unavailable.') },
         signal: inputsHealthy ? r.signal : 'neutral' as const };
     })
   );

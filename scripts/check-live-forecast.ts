@@ -2,7 +2,6 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ALL_SYMBOLS } from '../src/lib/engine';
 import { FORECAST_VERSION } from '../src/lib/forecast';
-import { currentDirectionChance, estimateDirectionChance } from '../src/lib/direction-chance';
 import type { BiasApiResponse } from '../src/lib/types';
 
 async function main() {
@@ -27,8 +26,13 @@ async function main() {
     if (!Number.isFinite(age) || age < -5000 || age > 300_000) throw new Error(`${result.symbol}: forecast issue time is missing, stale, or in the future.`);
     if (forecast.horizonHours !== 4 || Date.parse(forecast.expiresAt) - issuedAt !== 4 * 3_600_000) throw new Error(`${result.symbol}: invalid four-hour forecast window.`);
     const latestEvidenceAt = Date.parse(forecast.latestEvidenceAt ?? '');
-    if (forecast.basis === 'unavailable' || !result.eventCount || !Number.isFinite(latestEvidenceAt) || latestEvidenceAt > issuedAt) {
-      throw new Error(`${result.symbol}: no usable forecast evidence.`);
+    // A market with no fresh news or macro factors is legitimately neutral.
+    if (forecast.basis === 'unavailable') {
+      if (result.biasScore !== 0 || result.direction !== 'neutral' || result.eventCount) throw new Error(`${result.symbol}: directional bias without factors.`);
+      continue;
+    }
+    if (!result.eventCount || !Number.isFinite(latestEvidenceAt) || latestEvidenceAt > issuedAt) {
+      throw new Error(`${result.symbol}: no usable factor evidence.`);
     }
     const components = Object.values(forecast.components ?? {}).filter(component => component !== null);
     if (!components.length || Math.abs(components.reduce((sum, component) => sum + component.weight, 0) - 1) > 1e-6
@@ -36,15 +40,8 @@ async function main() {
       || Math.round(components.reduce((sum, component) => sum + component.score * component.weight, 0)) !== result.biasScore) {
       throw new Error(`${result.symbol}: invalid forecast component arithmetic.`);
     }
-    if (process.argv.includes('--require-price') && (!forecast.marketMove || !forecast.components?.momentum)) {
-      throw new Error(`${result.symbol}: no fresh own-market price quote.`);
-    }
     if (!Number.isFinite(result.biasScore) || Math.abs(result.biasScore) > 100 || forecast.probability !== null) throw new Error(`${result.symbol}: invalid forecast score or probability claim.`);
-    const chance = currentDirectionChance(result, Date.parse(checkedAt));
-    const expected = estimateDirectionChance(forecast.components!, forecast.sourceCount, forecast.issuedAt);
-    if (!chance || chance.issuedAt !== forecast.issuedAt || chance.upPercent !== expected.upPercent || chance.downPercent !== expected.downPercent) {
-      throw new Error(`${result.symbol}: missing or inconsistent estimated direction percentages.`);
-    }
+    if (result.events.some(event => event.category === 'price_momentum')) throw new Error(`${result.symbol}: price action must not be scored.`);
   }
   const outputDirectory = path.resolve('.artifacts', 'forecasts');
   await mkdir(outputDirectory, { recursive: true });
@@ -53,9 +50,9 @@ async function main() {
   await writeFile(outputFile, JSON.stringify({ schemaVersion: 1, checkedAt, endpoint: `${endpoint.origin}${endpoint.pathname}`,
     accuracyValidated: false, response: body }, null, 2) + '\n', { flag: 'wx' });
   console.log(JSON.stringify({ status: 'passed', model: FORECAST_VERSION, markets: symbols.size,
-    marketsWithPrice: body.data.filter(result => result.forecast?.marketMove).length,
-    directionalForecasts: body.data.filter(result => result.direction !== 'neutral').length,
-    directionChances: body.data.map(result => ({ symbol: result.symbol, up: result.forecast!.directionChance!.upPercent, down: result.forecast!.directionChance!.downPercent })),
+    marketsWithFactors: body.data.filter(result => result.forecast?.basis !== 'unavailable').length,
+    directionalBiases: body.data.filter(result => result.direction !== 'neutral').length,
+    biases: body.data.map(result => ({ symbol: result.symbol, direction: result.direction, conviction: result.conviction, score: result.biasScore })),
     checkedAt, sourceHealth: body.sourceHealth, snapshot: outputFile, accuracyValidated: false }, null, 2));
 }
 

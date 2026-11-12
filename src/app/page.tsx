@@ -328,7 +328,7 @@ export default function Home() {
                     ? `${data.filter((d) => d.conviction === 'high').length}/${data.length}`
                     : '—'}
                 </strong>{' '}
-                {data.some(row => row.forecast) ? "high confidence" : "high conviction"}
+                high conviction
               </span>
               <span>
                 <strong>{response ? uniqueEvents.length : '—'}</strong> distinct
@@ -385,7 +385,7 @@ export default function Home() {
                 Market overview
                 <span className="section-count">{data.length || '—'}</span>
               </h2>
-              <p>Four-hour predictions from price action, recent news and macro context.</p>
+              <p>Four-hour news and macro bias for each market. Open one for the factors behind it, then pair it with your technicals.</p>
             </div>
             <button
               onClick={() => void fetchBias()}
@@ -462,7 +462,7 @@ export default function Home() {
                   onNavigate={rememberPosition}
                   index={index}
                   historyScale={historyScale}
-                  chanceBlocked={!!error || !!response?.stale || response?.source === 'baseline'}
+                  outdated={!!error || !!response?.stale}
                 />
               ))}
             </AnimatePresence>
@@ -489,7 +489,7 @@ export default function Home() {
           )}
           <p className="market-footnote">
             <span className="legend-dot" />
-            Percentages estimate the chance of moving up or down over the next four hours, using price action, news and macro context. They are uncalibrated model estimates. Open a market for both directions and the forecast inputs.
+            Each market shows its news and macro bias for the next four hours, how strong that lean is, and the conviction behind it. The percentage measures the strength of the lean, not a win rate. Price action is not scored, so confirm the bias with your own technical analysis. Open a market for the factors behind the read.
           </p>
         </section>
 

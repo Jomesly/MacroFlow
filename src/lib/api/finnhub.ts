@@ -1,5 +1,5 @@
 import { MacroEvent } from '../types';
-import { classifyHeadline, createEventFromClassification } from './classifier';
+import { articleText, classifyHeadline, createEventFromClassification } from './classifier';
 import { getCached, setCache } from './cache';
 
 const BASE_URL = 'https://finnhub.io/api/v1';
@@ -43,7 +43,7 @@ export async function fetchNews(): Promise<MacroEvent[]> {
       if (!article.datetime || !Number.isFinite(publishedMs) || publishedMs > Date.now() || Date.now() - publishedMs > MAX_ARTICLE_AGE_MS) continue;
       const publishedAt = new Date(publishedMs).toISOString();
 
-      const text = `${article.headline} ${article.summary}`;
+      const text = articleText(article.headline, article.summary);
       const classifiedList = classifyHeadline(text);
       for (const classified of classifiedList) {
         const key = `${article.url || article.id}:${classified.category}:${classified.value}:${classified.country ?? ''}:${classified.symbol ?? ''}`;

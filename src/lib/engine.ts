@@ -336,6 +336,7 @@ export function calculateBias(
           // Preserve the rule input so opposing evidence remains visible.
           // Category and final score caps are applied after aggregation.
           scoreChange: modulatedScore,
+          value: event.value,
           country: event.country,
           url: event.url,
           sourceName: event.sourceName,

@@ -143,8 +143,9 @@ const RULES: Rule[] = [
   { patterns: [/\bunemployment\b.{0,40}\b(high|rise|up\b|climb)/i], category: 'employment', value: 'weak', impact: 'medium' },
   { patterns: [/\bjobless claims\b.{0,40}\b(rise|up\b|high|climb)/i], category: 'employment', value: 'weak', impact: 'medium' },
   { patterns: [/\bjobless claims\b.{0,40}\b(fall|drop|down\b|low)/i], category: 'employment', value: 'strong', impact: 'medium' },
-  { patterns: [/\bjobs\b.{0,40}\b(beat|strong|surge|up\b)/i], category: 'employment', value: 'strong', impact: 'medium' },
-  { patterns: [/\bjobs\b.{0,40}\b(miss|weak|fall|drop|disappoint)/i], category: 'employment', value: 'weak', impact: 'medium' },
+  // "Steve Jobs" is a person, not the labor market.
+  { patterns: [/(?<!\bsteve )\bjobs\b.{0,40}\b(beat|strong|surge|up\b)/i], category: 'employment', value: 'strong', impact: 'medium' },
+  { patterns: [/(?<!\bsteve )\bjobs\b.{0,40}\b(miss|weak|fall|drop|disappoint)/i], category: 'employment', value: 'weak', impact: 'medium' },
 
   // ── GDP ──
   { patterns: [/\bgdp\b.{0,40}\b(beat|above|strong|up\b|revised.*up\b|growth)/i], category: 'gdp', value: 'beat', impact: 'high' },
@@ -198,7 +199,9 @@ const RULES: Rule[] = [
   { patterns: [/\bgeopolitical\b.{0,40}\b(tension|risk|escalat|conflict|war)/i], category: 'geopolitical', value: 'tension', impact: 'high' },
   { patterns: [/\bsanction.{0,40}\b(new|escalat|tighten)/i], category: 'geopolitical', value: 'tension', impact: 'medium' },
   { patterns: [/\bsanction.{0,40}\b(ease|lift|remove)/i], category: 'geopolitical', value: 'easing', impact: 'medium' },
-  { patterns: [/\b(ceasefire|truce|peace)\b.{0,40}\b(deal|agreement)/i], category: 'geopolitical', value: 'easing', impact: 'medium' },
+  // A peace deal that is fading, stalled or out of reach is not easing.
+  { patterns: [/(?<!\b(?:no|without|lack of|fading|doubts? (?:over|about)|far from)\b.{0,60})\b(ceasefire|truce|peace)\b.{0,40}\b(deal|agreement)(?!.{0,40}\b(?:fad\w*|collaps\w*|stall\w*|fail\w*|falter\w*|break(?:s|ing)? down|broke down|reject\w*|in doubt|dim\w*|unlikely))/i], category: 'geopolitical', value: 'easing', impact: 'medium' },
+  { patterns: [/\b(ceasefire|truce|peace)\b.{0,40}\b(deal|agreement|talks|hopes?)\b.{0,30}\b(fad\w*|collaps\w*|stall\w*|fail\w*|falter\w*|break(?:s|ing)? down|broke down)/i], category: 'geopolitical', value: 'tension', impact: 'medium' },
 
   // ── Dollar Strength ──
   { patterns: [/\bdollar\b.{0,40}\b(surge|rally|strength|climb|up\b|bullish)/i], category: 'dollar_strength', value: 'strong', impact: 'medium' },
@@ -238,7 +241,7 @@ const RULES: Rule[] = [
   { patterns: [/\btech\b.{0,40}\b(earnings|profit|revenue)\b.{0,40}\b(beat|surge|record)/i], category: 'earnings', value: 'positive', impact: 'high' },
   { patterns: [/\btech\b.{0,40}\b(earnings|profit|revenue)\b.{0,40}\b(miss|decline|drop)/i], category: 'earnings', value: 'negative', impact: 'high' },
   { patterns: [/\b(apple|google|microsoft|amazon|meta|nvidia)\b.{0,40}\b(earnings|profit|revenue)\b.{0,40}\b(beat|surge|growth)/i], category: 'earnings', value: 'positive', impact: 'high' },
-  { patterns: [/\b(apple|google|microsoft|amazon|meta|nvidia)\b.{0,40}\b(miss|weak|decline|drop)/i], category: 'earnings', value: 'negative', impact: 'high' },
+  { patterns: [/\b(apple|google|microsoft|amazon|meta|nvidia)\b.{0,40}\b(earnings|profit|revenue|results|guidance)\b.{0,40}\b(miss|weak|decline|drop)/i], category: 'earnings', value: 'negative', impact: 'high' },
 ];
 
 function isNegatedPolicyMove(text: string, match: RegExpExecArray): boolean {
@@ -287,6 +290,9 @@ function clauseDirection(clause: string): 'bullish' | 'bearish' | null {
   if (/^\s*(?:sits? out|sat out|trails?|lags?|miss(?:es|ed)?|ignores?)\b/i.test(clause)) return null;
   // 'Recovery from yesterday's sell-off' describes recovery, not a new sell-off.
   const current = clause.split(/\bfrom\b/i)[0];
+  // "Reverses its earlier gains" is a fall; "erases losses" is a rise.
+  const unwound = /\b(?:revers\w*|eras\w*|par(?:e|es|ed|ing)|trims?|trimmed|gives? up|gave up|surrender\w*|wip(?:e|es|ed|ing) out)\b.{0,30}\b(gains?|advance|rally|losses|declines?|drop|sell[ -]?off)\b/i.exec(current);
+  if (unwound) return /^(?:gains?|advance|rally)$/i.test(unwound[1]) ? 'bearish' : 'bullish';
   const up = UP.test(current), down = DOWN.test(current);
   return up === down ? null : up ? 'bullish' : 'bearish';
 }
@@ -360,6 +366,17 @@ function classifyNarratives(text: string): SentimentResult[] {
     }
   }
   return results;
+}
+
+/**
+ * Join a headline and its lead as separate sentences. Without the break, the
+ * subject that ends a headline borrows the verb that opens the article body.
+ */
+export function articleText(headline: string | undefined, body: string | undefined, maxBody = Infinity): string {
+  const title = (headline ?? '').trim();
+  const lead = (body ?? '').trim().slice(0, maxBody);
+  if (!title || !lead) return title || lead;
+  return `${title}${/[.!?]$/.test(title) ? '' : '.'} ${lead}`;
 }
 
 export function classifyHeadline(text: string): SentimentResult[] {

@@ -32,11 +32,7 @@ describe('forecasts across every supported market', () => {
         const [result] = forecast(`${alias} ${verb}`, symbol);
         expect(Math.sign(result.biasScore)).toBe(sign);
         expect(result.forecast?.basis).toBe('news');
-        const chance = result.forecast!.directionChance!;
-        expect(chance.status).toBe('estimated');
-        expect(chance.calibration).toBe('unvalidated');
-        expect(chance.upPercent! + chance.downPercent!).toBeCloseTo(100);
-        expect(Math.sign(chance.upPercent! - chance.downPercent!)).toBe(sign);
+        expect(result.direction).toMatch(sign > 0 ? /bullish/ : /bearish/);
         expect(result.conviction).toBe('low');
       }
     });

@@ -11,8 +11,8 @@ import { marketIsOpen } from '@/lib/marketIsOpen';
 import { marketFeatures } from '@/lib/market/features';
 import { useMarketResource } from './useMarketResource';
 import { useMarketClock } from './useMarketClock';
-import { chanceHeadline, currentDirectionChance } from '@/lib/direction-chance';
-import DirectionChanceChart from './DirectionChanceChart';
+import { biasWord, convictionLabel, factorCounts, marketFactors } from '@/lib/market-factors';
+import FactorList from './FactorList';
 import { MarketBiasAxis, MarketBiasHistory, MarketDrivers, MarketMethodology } from './MarketAnalysis';
 import EconomicCalendar from './EconomicCalendar';
 import MacroContext from './MacroContext';
@@ -25,11 +25,8 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
   const data = response?.data.map(consistentBiasReading).find((entry) => entry.symbol === symbol);
   const reference = referenceCharts[symbol];
   const degraded = response?.sourceHealth && Object.values(response.sourceHealth).some((status) => status === 'failed');
-  const chance = data ? currentDirectionChance(data, now, !!error || !!response?.stale || response?.source === 'baseline') : null;
-  const headline = chanceHeadline(chance);
-  const tone = data?.forecast
-    ? headline.direction === 'up' ? 'positive' : headline.direction === 'down' ? 'negative' : 'neutral'
-    : data?.direction.includes('bullish') ? 'positive' : data?.direction.includes('bearish') ? 'negative' : 'neutral';
+  const tone = data?.direction.includes('bullish') ? 'positive' : data?.direction.includes('bearish') ? 'negative' : 'neutral';
+  const counts = data ? factorCounts(data) : { bullish: 0, bearish: 0 };
   const DirectionIcon = tone === 'positive' ? ArrowUpRight : tone === 'negative' ? ArrowDownRight : Minus;
   return (
     <div className={`market-research research-tone-${tone}`} data-conviction={data?.conviction}>
@@ -49,23 +46,24 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
           </header>
           {data && <section className="research-read" aria-label="Current market bias">
             <div className="research-bias">
-              <p>{data.forecast ? "Estimated direction chance / next 4h" : "Macro bias strength"}</p>
-              <strong aria-label={data.forecast ? headline.percent === null ? 'Direction chance unavailable' : `${headline.percent}% estimated ${headline.direction} chance over four hours` : `${signed(data.biasPercent)}% macro bias strength`}>
-                {data.forecast ? headline.percent ?? '\u2014' : signed(data.biasPercent)}{(!data.forecast || headline.percent !== null) && <span>%</span>}
-              </strong>
-              <p className="research-direction"><DirectionIcon size={24} weight="bold" aria-hidden="true" />{data.forecast ? headline.direction === 'up' ? 'Chance up' : headline.direction === 'down' ? 'Chance down' : headline.direction === 'balanced' ? 'Even chance' : 'Awaiting estimate' : directionLabel(data.direction)}</p>
+              <p>{data.forecast ? 'News and macro bias / next 4h' : 'Macro bias strength'}</p>
+              {data.forecast
+                ? <strong>{biasWord(data.direction)}</strong>
+                : <strong aria-label={`${signed(data.biasPercent)}% macro bias strength`}>{signed(data.biasPercent)}<span>%</span></strong>}
+              <p className="research-direction"><DirectionIcon size={24} weight="bold" aria-hidden="true" />{data.forecast ? convictionLabel(data) : directionLabel(data.direction)}</p>
             </div>
             <div className="research-assessment">
               <p>{data.forecast ? data.forecast.summary : data.direction === 'neutral' ? 'No dominant fundamental direction in this read.' : `The scored evidence is ${directionLabel(data.direction)} with ${data.conviction} conviction.`}</p>
-              <p className="research-note">{data.forecast ? "The percentage estimates the chance of price direction over four hours using price trends, relevant news and macro background. It is an uncalibrated model estimate, not the size of the expected price move or a measured trade win rate." : "The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation."}</p>
+              <p className="research-note">{data.forecast ? 'These are the news and macro factors that may move this chart. Price action is not scored: use the bias to filter your technical setups, and trade it when your chart agrees.' : 'The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation.'}</p>
               <dl>
-                <div><dt>{data.forecast ? "Confidence" : "Conviction"}</dt><dd>{data.conviction}</dd></div>
-                <div><dt>Agreement</dt><dd>{data.confirmationRatio}%</dd></div>
-                <div><dt>Scored events</dt><dd>{data.eventCount}</dd></div>
+                <div><dt>Strength</dt><dd>{data.direction === 'neutral' ? '—' : `${Math.abs(Math.round(data.biasPercent))}%`}</dd></div>
+                <div><dt>Conviction</dt><dd>{data.conviction}</dd></div>
+                <div><dt>Drivers</dt><dd>{counts.bullish} bullish / {counts.bearish} bearish</dd></div>
+                <div><dt>News sources</dt><dd>{data.forecast?.sourceCount ?? '—'}</dd></div>
                 <div><dt>Session</dt><dd>{marketIsOpen(symbol, new Date(now)) ? 'Market open' : 'Market closed'}</dd></div>
               </dl>
             </div>
-            {data.forecast ? <DirectionChanceChart chance={chance} /> : <MarketBiasAxis data={data} />}
+            {data.forecast ? <FactorList factors={marketFactors(data, 8)} detailed /> : <MarketBiasAxis data={data} />}
           </section>}
         </div>
         {loading && !response && <div className="research-loading" role="status"><span>Loading {symbol} analysis</span><div /><div /><div /></div>}
@@ -77,13 +75,13 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             <p>Inputs fetched <time dateTime={response!.timestamp}>{new Date(response!.timestamp).toLocaleString()}</time></p>
           </div>
           {data.forecast && <section className="research-fact" aria-labelledby="forecast-title">
-            <h2 id="forecast-title">Four-hour directional forecast</h2>
+            <h2 id="forecast-title">Four-hour bias window</h2>
             <p>Issued <time dateTime={data.forecast.issuedAt}>{new Date(data.forecast.issuedAt).toLocaleString()}</time>. Valid until <time dateTime={data.forecast.expiresAt}>{new Date(data.forecast.expiresAt).toLocaleString()}</time>.</p>
             <p>{data.forecast.basis} inputs / {data.forecast.sourceCount} news sources / separate macro score {signed(data.forecast.macroBiasScore)}</p>
-            {data.forecast.marketMove && <p>Observed session move: {signed(Number(data.forecast.marketMove.sessionChangePercent.toFixed(2)))}%. Latest hour: {data.forecast.marketMove.recentChangePercent === null ? 'unavailable' : `${signed(Number(data.forecast.marketMove.recentChangePercent.toFixed(2)))}%`}.{data.forecast.marketMove.proxy && ' Gold futures proxy.'}</p>}
+            {data.forecast.marketMove && <p>Price context (not scored), session move: {signed(Number(data.forecast.marketMove.sessionChangePercent.toFixed(2)))}%. Latest hour: {data.forecast.marketMove.recentChangePercent === null ? 'unavailable' : `${signed(Number(data.forecast.marketMove.recentChangePercent.toFixed(2)))}%`}.{data.forecast.marketMove.proxy && ' Gold futures proxy.'}</p>}
             {data.forecast.components && <dl className="research-breakdown">
-              {Object.entries(data.forecast.components).map(([name, component]) => <div key={name}><dt>{name === 'momentum' ? 'Price trend' : name === 'news' ? 'Relevant news' : 'Macro background'}</dt><dd>{component ? `${signed(component.score)} / 100, ${Math.round(component.weight * 100)}% weight` : 'Unavailable'}</dd></div>)}
-              <div><dt>Forecast call</dt><dd>{data.signal.replaceAll('_', ' ')}</dd></div>
+              {Object.entries(data.forecast.components).map(([name, component]) => <div key={name}><dt>{name === 'news' ? 'News' : 'Macro data'}</dt><dd>{component ? `${signed(component.score)} / 100, ${Math.round(component.weight * 100)}% weight` : 'Unavailable'}</dd></div>)}
+              <div><dt>Bias call</dt><dd>{data.signal.replaceAll('_', ' ')}</dd></div>
             </dl>}
             <ul>{data.forecast.limitations.map(limitation => <li key={limitation}>{limitation}</li>)}</ul>
           </section>}
@@ -102,8 +100,10 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             </select>
             <p role="status">{technicalSide === 'none' ? 'Choose the direction from your chart analysis.'
               : data.direction === 'neutral' ? 'Macro evidence has no directional lean to compare.'
-              : (technicalSide === 'long') === data.direction.includes('bullish') ? 'Your technical direction matches the forecast lean.' : 'Your technical direction opposes the forecast lean.'}</p>
-            <p className="research-note">Compare the forecast direction and its inputs with your chart setup. Direction chance does not account for your entry, stop loss or profit target.</p>
+              : (technicalSide === 'long') === data.direction.includes('bullish')
+                ? `Aligned: your ${technicalSide} setup agrees with the ${biasWord(data.direction).toLowerCase()} bias (${data.conviction} conviction).`
+                : `Conflict: your ${technicalSide} setup trades against the ${biasWord(data.direction).toLowerCase()} bias. Consider waiting or reducing size.`}</p>
+            <p className="research-note">The bias covers fundamentals only. Your entry, stop loss and profit target come from your chart.</p>
           </section>
           <nav className="research-section-links" aria-label="Analysis sections"><a href="#market-drivers">Drivers</a><a href="#market-history">History</a>{marketFeatures.calendar && <a href="#economic-calendar">Upcoming releases</a>}</nav>
           <MarketDrivers data={data} />

@@ -26,6 +26,7 @@ vi.mock('../api/twelvedata', () => ({
 
 vi.mock('../api/rss', () => ({
   fetchRssFeeds: vi.fn(async () => []),
+  getRssFeedHealth: vi.fn(async () => ({})),
 }));
 
 vi.mock('../api/fred', async () => ({
