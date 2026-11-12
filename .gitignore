@@ -88,3 +88,6 @@ service-account*.json
 next-env.d.ts
 
 /.artifacts/forecasts/
+
+# Isolated account evaluation
+/.next-account-eval/

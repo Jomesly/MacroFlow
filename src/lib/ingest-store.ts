@@ -3,7 +3,6 @@ import type { Redis } from '@upstash/redis';
 import type { MappedTradeRow } from './ingest';
 
 const STALE_LINK_MS = 30 * 60 * 1000;
-const LAST_USED_WRITE_MS = 60 * 1000;
 
 // ── API key auth ────────────────────────────────────────────────────────
 
@@ -27,13 +26,13 @@ export async function authenticateApiKey(
   const row = data as { id: number; user_id: string; revoked_at: string | null; last_used_at: string | null };
   if (row.revoked_at) return null;
 
-  // Throttle last_used_at writes to at most one per minute per key.
-  if (!row.last_used_at || Date.now() - new Date(row.last_used_at).getTime() > LAST_USED_WRITE_MS) {
-    await sb
-      .from('journal_api_keys')
-      .update({ last_used_at: new Date().toISOString() })
-      .eq('id', row.id);
-  }
+  // Recheck revocation and deletion under the owner lock before any key write.
+  const touched = await sb.rpc('manage_journal_api_key', {
+    p_user_id: row.user_id, p_action: 'touch', p_key_id: row.id, p_hash: keyHash,
+  });
+  if (touched.error?.message === 'ACCOUNT_DELETING') return null;
+  if (touched.error) throw new Error('API key storage unavailable');
+  if (!touched.data) return null;
 
   return { keyId: row.id, userId: row.user_id };
 }

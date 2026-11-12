@@ -11,7 +11,7 @@ export default defineConfig({
   expect: { timeout: 30_000 },
   reporter: 'list',
   use: {
-    ...devices['Desktop Chrome'], baseURL: 'http://localhost:3137',
+    ...devices['Desktop Chrome'], baseURL: process.env.MACROFLOW_ACCOUNT_TEST_BASE_URL || 'http://localhost:3137',
     screenshot: 'only-on-failure', trace: 'off',
   },
 });

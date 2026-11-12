@@ -13,11 +13,8 @@ import {
 import {
   authenticateApiKey,
   checkIngestRateLimit,
-  getTradeIdsForLinking,
-  linkTradesToSnapshots,
-  upsertBrokerAccount,
-  upsertEaTrades,
 } from '@/lib/ingest-store';
+import { accountFailure } from '@/lib/account-api';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,36 +96,22 @@ export async function POST(request: NextRequest) {
   const { payload, rows, errors } = validated;
 
   try {
-    const accountId = await upsertBrokerAccount(supabase, authed.userId, {
-      account_login: payload.account_login,
-      server: payload.server,
-      currency: payload.currency ?? null,
-      ea_version: payload.ea_version,
+    const { data, error } = await supabase.rpc('ingest_managed_journal', {
+      p_user_id: authed.userId,
+      p_account: {
+        account_login: payload.account_login,
+        server: payload.server,
+        currency: payload.currency ?? null,
+        ea_version: payload.ea_version,
+      },
+      p_trades: rows,
     });
-
-    const { inserted, updated } = await upsertEaTrades(supabase, authed.userId, accountId, rows);
-
-    let linked = 0;
-    let stale = 0;
-    if (rows.length > 0) {
-      const linkable = await getTradeIdsForLinking(
-        supabase,
-        authed.userId,
-        accountId,
-        rows.map((r) => r.broker_trade_id)
-      );
-      const linkResult = await linkTradesToSnapshots(supabase, linkable);
-      linked = linkResult.linked;
-      stale = linkResult.stale;
-    }
+    if (error) return accountFailure(error);
 
     return NextResponse.json({
       ok: true,
       received: rows.length,
-      inserted,
-      updated,
-      linked,
-      stale,
+      ...data,
       errors,
     });
   } catch {

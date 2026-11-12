@@ -10,6 +10,7 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     ".next-auth-tests/**",
+    ".next-account-eval/**",
     ".artifacts/**",
     ".superpowers/**",
     ".hallmark/**",

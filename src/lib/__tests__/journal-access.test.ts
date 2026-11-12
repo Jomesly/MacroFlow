@@ -47,6 +47,11 @@ describe('verified journal access', () => {
     expect(await checkJournalAccess(sb, user)).toMatchObject({ status: 503, code: 'ACCESS_CHECK_UNAVAILABLE' });
   });
 
+  it('blocks a pending deletion even if an administrator restores the grant', async () => {
+    lookup.mockResolvedValue({ data: { status: 'active', deletion_requested_at: '2026-11-11T00:00:00Z' }, error: null });
+    expect(await checkJournalAccess(sb, user)).toMatchObject({ status: 403, code: 'ACCOUNT_DELETING' });
+  });
+
   it('fails closed on database errors and transport failures', async () => {
     lookup.mockResolvedValueOnce({ data: null, error: { message: 'offline' } });
     expect(await checkJournalAccess(sb, user)).toMatchObject({ status: 503 });

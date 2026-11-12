@@ -7,7 +7,7 @@ import AxeBuilder from '@axe-core/playwright';
 const statusPath = process.env.MACROFLOW_AUTH_TEST_STATUS;
 if (!statusPath) throw new Error('Set MACROFLOW_AUTH_TEST_STATUS to the disposable local Supabase status file.');
 const local = JSON.parse(readFileSync(statusPath, 'utf8').replace(/^\uFEFF/, '')) as Record<string, string>;
-if (!/^http:\/\/(127\.0\.0\.1|localhost):55321$/.test(local.API_URL)) throw new Error('Funds tests only run on isolated local Supabase.');
+if (!/^http:\/\/(127\.0\.0\.1|localhost):(55321|55621)$/.test(local.API_URL)) throw new Error('Funds tests only run on isolated local Supabase.');
 const admin = createClient(local.API_URL, local.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const password = 'MacroFlow-Funds-Test-2026!';
 const ago = (hours: number) => new Date(Date.now() - hours * 3_600_000);

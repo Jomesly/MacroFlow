@@ -16,9 +16,7 @@ export async function getOrCreateProfile(userId: string): Promise<JournalProfile
   if (result.error) throw new Error('Profile is unavailable. Please retry shortly.');
   if (!result.data) {
     // Repair preferences only. This must never create or restore a journal grant.
-    const { error } = await supabase.from('profiles').upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true });
-    if (error) throw new Error('Profile could not be prepared. Please retry.');
-    result = await supabase.from('profiles').select(columns).eq('id', userId).maybeSingle();
+    result = await supabase.rpc('save_journal_profile', { p_user_id: userId });
   }
   if (result.error || !result.data) throw new Error('Profile is unavailable. Please retry shortly.');
   return result.data as JournalProfile;
@@ -26,11 +24,9 @@ export async function getOrCreateProfile(userId: string): Promise<JournalProfile
 
 export async function saveOnboarding(userId: string, input: ProfileInput): Promise<void> {
   const preferences = profileSchema.parse(input);
-  const current = await getOrCreateProfile(userId);
-  const { error } = await supabase.from('profiles').update({
+  const { error } = await supabase.rpc('save_journal_profile', { p_user_id: userId, p_values: {
     display_name: preferences.displayName || null,
     reporting_timezone: preferences.reportingTimezone,
-    onboarding_completed_at: current.onboarding_completed_at ?? new Date().toISOString(),
-  }).eq('id', userId);
+  } });
   if (error) throw new Error('Profile could not be saved. Please retry.');
 }

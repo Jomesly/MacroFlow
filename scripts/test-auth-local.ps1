@@ -40,7 +40,7 @@ try {
   docker cp (Join-Path $taskRepo 'supabase/.') "supabase_db_${taskProjectId}:/tmp/macroflow-sql"
   if ($LASTEXITCODE -ne 0) { throw 'Could not copy test SQL into the disposable database container.' }
   $ErrorActionPreference = 'Continue'
-  docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/schema.sql -f /tmp/macroflow-sql/subscribers.sql -f /tmp/macroflow-sql/journal-autosync.sql -f /tmp/macroflow-sql/tests/signup-login.sql *> (Join-Path $taskWorkspace 'migration-tests.log')
+  docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/schema.sql -f /tmp/macroflow-sql/subscribers.sql -f /tmp/macroflow-sql/journal-autosync.sql -f /tmp/macroflow-sql/tests/signup-login.sql -f /tmp/macroflow-sql/account-management.sql -f /tmp/macroflow-sql/account-management-hardening.sql -f /tmp/macroflow-sql/tests/account-management.sql *> (Join-Path $taskWorkspace 'migration-tests.log')
   $ErrorActionPreference = 'Stop'
   if ($LASTEXITCODE -ne 0) { throw "Migration assertions failed. See $taskWorkspace/migration-tests.log." }
   # DROP POLICY IF EXISTS emits a harmless stderr NOTICE on a fresh database.
@@ -60,6 +60,10 @@ try {
   docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/journal-imports.sql -f /tmp/macroflow-sql/journal-imports.sql *> (Join-Path $taskWorkspace 'journal-imports-migration.log')
   $ErrorActionPreference = 'Stop'
   if ($LASTEXITCODE -ne 0) { throw 'Journal imports migration failed. See journal-imports-migration.log.' }
+  $ErrorActionPreference = 'Continue'
+  docker exec "supabase_db_$taskProjectId" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/account-management-journal-compat.sql -f /tmp/macroflow-sql/tests/account-management.sql -f /tmp/macroflow-sql/tests/account-management-journal-compat.sql *> (Join-Path $taskWorkspace 'account-compat-migration.log')
+  $ErrorActionPreference = 'Stop'
+  if ($LASTEXITCODE -ne 0) { throw 'Account compatibility assertions failed. See account-compat-migration.log.' }
   Write-Host 'Migration, backfill, rerun and trigger rollback assertions passed.'
   $ErrorActionPreference = 'Continue'
   $taskStatusText = npx --yes supabase status --workdir $taskWorkspace -o json 2> (Join-Path $taskWorkspace 'supabase-status.log')

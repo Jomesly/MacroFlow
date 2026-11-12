@@ -19,6 +19,7 @@ export default async function JournalLayout({
   return <JournalSessionBoundary key={userId} userId={userId}>
     <WorkspaceHeader active="journal">
         <Link href="/journal/welcome" className="journal-preferences text-zinc-400 hover:text-white" aria-label="Journal preferences"><SlidersHorizontal size={15} className="mr-2" aria-hidden="true" />Preferences</Link>
+        <Link href="/account" className="journal-preferences text-zinc-400 hover:text-white">Account settings</Link>
         <SignOutForm />
     </WorkspaceHeader>
     {children}

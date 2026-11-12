@@ -4,7 +4,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 export type AccessDenial = {
   ok: false;
   status: 401 | 403 | 503;
-  code: 'UNAUTHORIZED' | 'EMAIL_UNVERIFIED' | 'JOURNAL_ACCESS_REVOKED' | 'ACCESS_CHECK_UNAVAILABLE';
+  code: 'UNAUTHORIZED' | 'EMAIL_UNVERIFIED' | 'JOURNAL_ACCESS_REVOKED' | 'ACCESS_CHECK_UNAVAILABLE' | 'ACCOUNT_DELETING';
   error: string;
 };
 export type AccessResult = { ok: true; userId: string } | AccessDenial;
@@ -25,8 +25,11 @@ export async function checkJournalAccess(sb: SupabaseClient, user: User | null):
     return { ok: false, status: 403, code: 'EMAIL_UNVERIFIED', error: 'Verify your email before using the journal.' };
   }
   try {
-    const { data, error } = await sb.from('journal_access').select('status').eq('user_id', user.id).maybeSingle();
+    const { data, error } = await sb.from('journal_access').select('status,deletion_requested_at').eq('user_id', user.id).maybeSingle();
     if (error || !data) return accessUnavailable();
+    if (data.deletion_requested_at) {
+      return { ok: false, status: 403, code: 'ACCOUNT_DELETING', error: 'Account deletion has started. Open Account settings to finish deletion.' };
+    }
     if (data.status === 'revoked') {
       return { ok: false, status: 403, code: 'JOURNAL_ACCESS_REVOKED', error: 'Journal access is unavailable for this account. Contact the site owner.' };
     }

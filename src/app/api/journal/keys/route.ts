@@ -13,32 +13,12 @@ export async function POST(request: NextRequest) {
   const auth = await requireJournalAccess(request);
   if (!auth.ok) return auth.response;
 
-  const { count, error: countError } = await supabase
-    .from('journal_api_keys')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', auth.userId)
-    .is('revoked_at', null);
-
-  if (countError) {
-    return NextResponse.json({ error: 'Failed to create key' }, { status: 503 });
-  }
-  if ((count ?? 0) >= MAX_ACTIVE_KEYS) {
-    return NextResponse.json(
-      { error: `Key limit reached (${MAX_ACTIVE_KEYS} active keys). Revoke one first.` },
-      { status: 400 }
-    );
-  }
-
   const rawKey = `mf_${randomBytes(32).toString('base64url')}`;
-  const { data, error } = await supabase
-    .from('journal_api_keys')
-    .insert({
-      user_id: auth.userId,
-      key_hash: hashApiKey(rawKey),
-      key_prefix: keyPrefix(rawKey),
-    })
-    .select('id,key_prefix,created_at')
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('manage_journal_api_key', {
+    p_user_id: auth.userId, p_action: 'create', p_hash: hashApiKey(rawKey), p_prefix: keyPrefix(rawKey),
+  });
+  if (error?.message === 'API_KEY_LIMIT') return NextResponse.json(
+    { error: `Key limit reached (${MAX_ACTIVE_KEYS} active keys). Revoke one first.` }, { status: 400 });
 
   if (error || !data) {
     return NextResponse.json({ error: 'Failed to create key' }, { status: 503 });

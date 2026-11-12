@@ -3,7 +3,10 @@ import { supabase } from './supabase';
 import { TradingAccountError } from './trading-account-types';
 
 export async function journalRpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.rpc(name, args);
+  const managed = ['create_journal_trade_batch', 'mutate_journal_funds', 'update_journal_trade', 'stage_journal_import', 'commit_journal_import', 'undo_journal_import'].includes(name);
+  const { data, error } = managed
+    ? await supabase.rpc('run_managed_journal_rpc', { p_user_id: args.p_user, p_operation: name, p_arguments: args })
+    : await supabase.rpc(name, args);
   if (error) {
     if (['22023', '23514', '22003', '22007'].includes(error.code)) throw new TradingAccountError(error.code === '22023' ? error.message : 'Check the amounts and dates, then try again.', 400);
     if (error.code === '42501' || error.code === 'P0002') throw new TradingAccountError('Account or record was not found.', 404);

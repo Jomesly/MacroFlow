@@ -3,11 +3,10 @@ import { NextRequest } from 'next/server';
 import { POST } from '../../app/api/journal/ingest/route';
 
 const h = vi.hoisted(() => ({ key: vi.fn(), identity: vi.fn(), access: vi.fn(), write: vi.fn() }));
-vi.mock('../supabase', () => ({ supabase: { auth: { admin: { getUserById: h.identity } } } }));
+vi.mock('../supabase', () => ({ supabase: { rpc: h.write, auth: { admin: { getUserById: h.identity } } } }));
 vi.mock('../journal-access', async (original) => ({ ...await original<object>(), checkJournalAccess: h.access }));
 vi.mock('../ingest-store', () => ({
-  authenticateApiKey: h.key, checkIngestRateLimit: vi.fn(() => true), upsertBrokerAccount: h.write,
-  upsertEaTrades: vi.fn(), getTradeIdsForLinking: vi.fn(), linkTradesToSnapshots: vi.fn(),
+  authenticateApiKey: h.key, checkIngestRateLimit: vi.fn(() => true),
 }));
 
 describe('MT5 owner access', () => {

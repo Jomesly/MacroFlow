@@ -3,6 +3,7 @@ export function journalErrorDestination(status: number, code?: string): string |
   if (status === 401) return '/login';
   if (status === 403 && code === 'EMAIL_UNVERIFIED') return '/check-email';
   if (status === 403 && code === 'JOURNAL_ACCESS_REVOKED') return '/journal-access';
+  if (status === 403 && code === 'ACCOUNT_DELETING') return '/account';
   return null;
 }
 

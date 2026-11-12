@@ -1,17 +1,9 @@
 'use client';
 import { journalFetch } from '@/lib/journal-fetch';
 
-import { useCallback, useEffect, useState } from 'react';
-
-interface BrokerAccount {
-  id: number;
-  account_login: string;
-  server: string;
-  currency: string | null;
-  source: string;
-  ea_version: string | null;
-  last_seen_at: string | null;
-}
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { BrokerAccount } from '@/lib/account-management';
+import TradingAccountCard from './TradingAccountCard';
 
 interface ApiKeyInfo {
   id: number;
@@ -25,36 +17,33 @@ const LABEL = 'block text-xs font-medium text-zinc-400 mb-2';
 const BTN =
   'rounded-full bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-zinc-300 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60';
 
-function statusOf(lastSeen: string | null): { label: string; classes: string } {
-  if (!lastSeen) return { label: 'Waiting for EA', classes: 'text-amber-400' };
-  const ageMs = Date.now() - new Date(lastSeen).getTime();
-  if (ageMs < 5 * 60 * 1000) return { label: 'Connected', classes: 'text-emerald-400' };
-  return { label: 'Offline', classes: 'text-zinc-500' };
-}
-
 export default function ConnectAccount() {
   const [accounts, setAccounts] = useState<BrokerAccount[]>([]);
+  const [removedAccounts, setRemovedAccounts] = useState<BrokerAccount[]>([]);
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [newKey, setNewKey] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
   const [copied, setCopied] = useState(false);
+  const loadSequence = useRef(0);
 
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     try {
       const res = await journalFetch('/api/journal/accounts');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
+      if (sequence !== loadSequence.current) return;
       setAccounts(json.accounts ?? []);
+      setRemovedAccounts(json.removedAccounts ?? []);
       setKeys(json.keys ?? []);
       setError('');
     } catch (err) {
-      setAccounts([]);
-      setKeys([]);
+      if (sequence !== loadSequence.current) return;
       setError(err instanceof Error ? err.message : 'Failed to load connected accounts. Please retry.');
     } finally {
-      setLoading(false);
+      if (sequence === loadSequence.current) setLoading(false);
     }
   }, []);
 
@@ -111,6 +100,28 @@ export default function ConnectAccount() {
     <div className="space-y-5 max-w-3xl">
       {error && <div role="alert" className="text-xs"><p className="text-red-400">{error}</p><button onClick={() => void load()} className="mt-2 text-blue-400 underline">Try again</button></div>}
 
+      <section className={CARD} aria-labelledby="connected-accounts-heading">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 id="connected-accounts-heading" className="text-base font-semibold text-white">Trading accounts</h2>
+            <p className="mt-1 text-xs text-zinc-500">Manage account details, sync and imported history.</p>
+          </div>
+          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-400">{accounts.length} connected</span>
+        </div>
+        {accounts.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-8 text-center">
+            <p className="text-sm text-zinc-300">No connected trading accounts</p>
+            <p className="mt-2 text-xs text-zinc-500">Generate an API key below and attach the EA in MT5, or reconnect a removed account.</p>
+          </div>
+        ) : <div className="space-y-3">{accounts.map((account) => <TradingAccountCard key={account.id} account={account} onChanged={load} />)}</div>}
+      </section>
+
+      {removedAccounts.length > 0 && <details className={CARD}>
+        <summary className="cursor-pointer text-sm font-medium text-zinc-400">Removed accounts ({removedAccounts.length})</summary>
+        <p className="mt-3 mb-4 text-xs leading-relaxed text-zinc-500">These connections stay blocked until you reconnect them. Any retained trades remain in History and Analytics.</p>
+        <div className="space-y-3">{removedAccounts.map((account) => <TradingAccountCard key={account.id} account={account} onChanged={load} />)}</div>
+      </details>}
+
       <div className={CARD}>
         <h2 className="text-sm font-semibold text-white mb-1">Connect MT5 account (beta)</h2>
         <p className="text-xs text-zinc-500 mb-4">
@@ -155,31 +166,6 @@ export default function ConnectAccount() {
         <code className="block break-all rounded bg-zinc-950 px-3 py-2 font-mono text-xs text-zinc-300">
           {typeof window !== 'undefined' ? `${window.location.origin}/api/journal/ingest` : '/api/journal/ingest'}
         </code>
-      </div>
-
-      <div className={CARD}>
-        <h2 className="text-sm font-semibold text-white mb-3">Connected accounts</h2>
-        {accounts.length === 0 ? (
-          <p className="text-xs text-zinc-500">No accounts yet — generate a key and attach the EA.</p>
-        ) : (
-          <div className="space-y-3">
-            {accounts.map((a) => {
-              const s = statusOf(a.last_seen_at);
-              return (
-                <div key={a.id} className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3">
-                  <span className={`text-xs font-semibold ${s.classes}`}>● {s.label}</span>
-                  <span className="text-xs font-mono text-zinc-200">{a.account_login}</span>
-                  <span className="text-xs text-zinc-500">{a.server}</span>
-                  {a.currency && <span className="text-xs text-zinc-500">{a.currency}</span>}
-                  {a.ea_version && <span className="text-[10px] text-zinc-600">EA v{a.ea_version}</span>}
-                  <span className="ml-auto text-[10px] text-zinc-600">
-                    {a.last_seen_at ? `last sync ${new Date(a.last_seen_at).toLocaleString()}` : 'never synced'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       <div className={CARD}>

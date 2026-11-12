@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireJournalAccess } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import type { BrokerAccount } from '@/lib/account-management';
+import { accountFailure, accountResponse } from '@/lib/account-api';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,11 +13,7 @@ export async function GET(request: NextRequest) {
 
   const [{ data: accounts, error: accountsError }, { data: keys, error: keysError }] =
     await Promise.all([
-      supabase
-        .from('broker_accounts')
-        .select('id,account_login,server,currency,source,ea_version,last_seen_at')
-        .eq('user_id', auth.userId)
-        .order('last_seen_at', { ascending: false }),
+      supabase.rpc('list_managed_broker_accounts', { p_user_id: auth.userId }),
       supabase
         .from('journal_api_keys')
         .select('id,key_prefix,created_at,last_used_at')
@@ -25,11 +23,13 @@ export async function GET(request: NextRequest) {
     ]);
 
   if (accountsError || keysError) {
-    return NextResponse.json({ error: 'Failed to load accounts' }, { status: 503 });
+    return accountFailure(accountsError ?? keysError!);
   }
 
-  return NextResponse.json({
-    accounts: accounts ?? [],
+  const all = (accounts ?? []) as BrokerAccount[];
+  return accountResponse({
+    accounts: all.filter((a) => a.lifecycle !== 'removed'),
+    removedAccounts: all.filter((a) => a.lifecycle === 'removed'),
     keys: keys ?? [],
     timestamp: new Date().toISOString(),
   });

@@ -160,7 +160,7 @@ export async function createTrade(userId: string, input: CreateTradeInput): Prom
     notes: input.notes ?? '',
   };
 
-  const { error } = await supabase.from('trades').insert({
+  const { error } = await supabase.rpc('run_managed_journal_rpc', { p_user_id: userId, p_operation: 'create_journal_trade', p_arguments: { p_trade_id: trade.id, p_values: {
     id: trade.id,
     user_id: userId,
     ...(account ? { journal_account_id: account.id } : {}),
@@ -173,7 +173,7 @@ export async function createTrade(userId: string, input: CreateTradeInput): Prom
     setup_tags: trade.setupTags,
     notes: trade.notes,
     logged_at: trade.timestamp,
-  });
+  } } });
 
   if (error) throw storageError('save', error.message);
   return trade;
@@ -316,13 +316,9 @@ export async function deleteTrade(userId: string, id: string): Promise<boolean> 
   if (!userId) throw new JournalValidationError('Missing user id');
   if (!id) throw new JournalValidationError('Missing trade id');
 
-  const { data, error } = await supabase
-    .from('trades')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', userId)
-    .select('id');
-
+  const { data, error } = await supabase.rpc('write_journal_trade', {
+    p_user_id: userId, p_action: 'delete', p_trade_id: id,
+  });
   if (error) throw storageError('delete', error.message);
-  return (data?.length ?? 0) > 0;
+  return data !== null;
 }

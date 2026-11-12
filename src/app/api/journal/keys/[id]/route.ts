@@ -14,22 +14,18 @@ export async function DELETE(
 
   const { id } = await params;
   const keyId = Number(id);
-  if (!Number.isInteger(keyId)) {
+  if (!Number.isSafeInteger(keyId) || keyId <= 0) {
     return NextResponse.json({ error: 'Invalid key id' }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from('journal_api_keys')
-    .update({ revoked_at: new Date().toISOString() })
-    .eq('id', keyId)
-    .eq('user_id', auth.userId)
-    .is('revoked_at', null)
-    .select('id');
+  const { data, error } = await supabase.rpc('manage_journal_api_key', {
+    p_user_id: auth.userId, p_action: 'revoke', p_key_id: keyId,
+  });
 
   if (error) {
     return NextResponse.json({ error: 'Failed to revoke key' }, { status: 503 });
   }
-  if (!data || data.length === 0) {
+  if (!data) {
     return NextResponse.json({ error: 'Key not found' }, { status: 404 });
   }
   return new NextResponse(null, { status: 204 });

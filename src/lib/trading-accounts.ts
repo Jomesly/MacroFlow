@@ -35,10 +35,10 @@ export async function createTradingAccount(userId: string, input: unknown): Prom
   const parsed = tradingAccountSchema.safeParse(input);
   if (!parsed.success) throw new TradingAccountError(parsed.error.issues[0]?.message ?? 'Invalid account details.', 400);
   const value = parsed.data;
-  const { data, error } = await supabase.from('journal_accounts').insert({
-    user_id: userId, broker_name: value.brokerName, account_number: value.accountNumber,
+  const { data, error } = await supabase.rpc('run_managed_journal_rpc', { p_user_id: userId, p_operation: 'create_journal_account', p_arguments: { p_values: {
+    broker_name: value.brokerName, account_number: value.accountNumber,
     nickname: value.nickname || null, server: value.server || null, currency: value.currency,
-  }).select(columns).single();
+  } } });
   if (error?.code === '23505') throw new TradingAccountError('This broker account already exists. Select it above, or include a different server.', 409);
   if (error || !data) throw new TradingAccountError('Account could not be created. Please retry.');
   return fromRow(data as AccountRow);
@@ -49,10 +49,10 @@ export async function renameTradingAccount(userId: string, id: string, input: un
   const parsed = tradingAccountSchema.pick({ nickname: true, currency: true }).partial({ currency: true }).strict().safeParse(input);
   if (!parsed.success) throw new TradingAccountError('Use a nickname of 60 characters or fewer.', 400);
   if (parsed.data.currency && current.currency && parsed.data.currency !== current.currency) throw new TradingAccountError('Account currency is fixed once selected.', 400);
-  const { data, error } = await supabase.from('journal_accounts').update({
-    nickname: parsed.data.nickname || null, updated_at: new Date().toISOString(),
+  const { data, error } = await supabase.rpc('run_managed_journal_rpc', { p_user_id: userId, p_operation: 'rename_journal_account', p_arguments: { p_account_id: id, p_values: {
+    nickname: parsed.data.nickname || null,
     ...(!current.currency && parsed.data.currency ? { currency: parsed.data.currency } : {}),
-  }).eq('user_id', userId).eq('id', id).select(columns).single();
+  } } });
   if (error || !data) throw new TradingAccountError('Nickname could not be saved. Please retry.');
   return fromRow(data as AccountRow);
 }

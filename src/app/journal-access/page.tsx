@@ -16,6 +16,7 @@ export default async function JournalAccessPage({ searchParams }: { searchParams
         <p className="text-zinc-400">Free beta access does not require a payment. If your access has been disabled, contact the site owner.</p>
         <Link href={params.reason === 'profile' ? '/journal/welcome' : '/journal'} className="block text-blue-400 underline">Retry journal access</Link>
         <SignOutForm />
+        <Link href="/account" className="block text-zinc-400 underline">Account settings and deletion</Link>
       </div>
     </AuthShell>
   );

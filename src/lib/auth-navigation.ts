@@ -7,6 +7,7 @@ import { supabase } from './supabase';
 export function accessDestination(denial: AccessDenial): string {
   if (denial.code === 'UNAUTHORIZED') return '/login';
   if (denial.code === 'EMAIL_UNVERIFIED') return '/check-email';
+  if (denial.code === 'ACCOUNT_DELETING') return '/account';
   return '/journal-access';
 }
 

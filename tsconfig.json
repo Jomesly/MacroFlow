@@ -37,7 +37,9 @@
     "**/*.mts",
     ".next/dev/dev/types/**/*.ts",
     ".next-auth-tests/types/**/*.ts",
-    ".next-auth-tests/dev/types/**/*.ts"
+    ".next-auth-tests/dev/types/**/*.ts",
+    ".next-account-eval/types/**/*.ts",
+    ".next-account-eval/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -8,7 +8,7 @@ import { readImportCsv, suggestImportMapping } from '../../src/lib/journal-impor
 const statusPath = process.env.MACROFLOW_AUTH_TEST_STATUS;
 if (!statusPath) throw new Error('Set MACROFLOW_AUTH_TEST_STATUS to the disposable local Supabase status file.');
 const local = JSON.parse(readFileSync(statusPath, 'utf8').replace(/^\uFEFF/, ''));
-if (!/^http:\/\/(127\.0\.0\.1|localhost):55321$/.test(local.API_URL)) throw new Error('Import tests only use isolated local Supabase.');
+if (!/^http:\/\/(127\.0\.0\.1|localhost):(55321|55621)$/.test(local.API_URL)) throw new Error('Import tests only use isolated local Supabase.');
 const admin = createClient(local.API_URL, local.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const password = 'MacroFlow-Imports-Test-2026!';
 const artifacts = path.resolve('.artifacts/import-review');

@@ -7,7 +7,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/journal/:path*', '/api/journal/:path*', '/journal-access', '/upgrade',
+    '/journal/:path*', '/api/journal/:path*', '/journal-access', '/upgrade', '/account', '/api/account',
     '/login', '/signup', '/check-email', '/forgot-password', '/reset-password', '/auth/:path*',
   ],
 };

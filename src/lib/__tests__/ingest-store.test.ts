@@ -155,7 +155,12 @@ class FakeChain {
 }
 
 function fakeSb(tables: Map<string, Row[]>): SupabaseClient {
-  return { from: (table: string) => new FakeChain(tables, table) } as unknown as SupabaseClient;
+  return { from: (table: string) => new FakeChain(tables, table), rpc: async (name: string, args: Row) => {
+    if (name !== 'manage_journal_api_key' || args.p_action !== 'touch') throw new Error('Unexpected RPC');
+    const row = tables.get('journal_api_keys')?.find((key) => key.id === args.p_key_id && key.user_id === args.p_user_id && key.key_hash === args.p_hash && !key.revoked_at);
+    if (row && (!row.last_used_at || Date.now() - Date.parse(String(row.last_used_at)) > 60000)) row.last_used_at = new Date().toISOString();
+    return { data: row ?? null, error: null };
+  } } as unknown as SupabaseClient;
 }
 
 function fakeRedis(counts: Map<string, number>, fails = false): Redis {

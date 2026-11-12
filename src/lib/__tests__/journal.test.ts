@@ -194,9 +194,19 @@ const h = vi.hoisted(() => {
     }
   }
 
-  function createClient(...args: string[]): { from(table: string): Builder } {
+  function createClient(...args: string[]) {
     void args;
-    return { from: (table: string) => new Builder(table) };
+    return { from: (table: string) => new Builder(table), rpc: async (name: string, args: { p_user_id: string; p_action?: string; p_trade_id?: string; p_operation?: string; p_arguments?: { p_values?: Row; p_trade_id?: string } }) => {
+      if (name === 'run_managed_journal_rpc' && args.p_operation === 'create_journal_trade') {
+        return new Builder('trades').insert({ ...args.p_arguments?.p_values, id: args.p_arguments?.p_trade_id, user_id: args.p_user_id });
+      }
+      if (name === 'write_journal_trade' && args.p_action === 'delete') {
+        const query = new Builder('trades').eq('user_id', args.p_user_id).eq('id', args.p_trade_id);
+        const result = await query.delete().select('id');
+        return { data: (result.data as Row[])[0] ?? null, error: result.error };
+      }
+      throw new Error('Unexpected RPC: ' + name);
+    } };
   }
 
   function reset(): void {
