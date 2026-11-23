@@ -17,6 +17,7 @@ import {
   fmtPct,
   toneOf,
 } from '@/components/journal/AnalyticsCharts';
+import { moneyUnit } from '@/lib/money-format';
 
 const LABEL = 'block text-xs font-medium text-zinc-400 mb-2';
 const FIELD =
@@ -92,6 +93,9 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
   if (!data) return null;
 
   const t = data.totals;
+  // Cash figures carry the account's currency, e.g. "$" for USD and USDT ("UST") accounts.
+  const unit = moneyUnit(currency);
+  const money = (n: number | null) => fmtMoney(n, unit);
   const flatDays = data.equity.length - (t.winningDays ?? 0) - (t.losingDays ?? 0);
   const unknownEntries = data.byWeekday['Unknown entry time']?.trades ?? 0;
   const streak = t.currentStreak;
@@ -143,7 +147,7 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
               <p className="jd-label">Net P&amp;L{currency ? ` · ${currency}` : ''}</p>
               <div className="jd-tile-body">
                 <span className={`jd-value is-${toneOf(t.net)}`}>
-                  {t.net === null ? '—' : <CountUp value={t.net} format={fmtMoney} />}
+                  {t.net === null ? '—' : <CountUp value={t.net} format={money} />}
                 </span>
                 <Sparkline points={data.equity} />
               </div>
@@ -171,7 +175,7 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
               <div className="jd-tile-body">
                 <span className="jd-value">{t.profitFactor === null ? '—' : <CountUp value={t.profitFactor} format={fmtRatio} />}</span>
                 <Gauge
-                  label={`Gross profit ${fmtMoney(t.grossProfit)}, gross loss ${fmtMoney(t.grossLoss)}`}
+                  label={`Gross profit ${money(t.grossProfit)}, gross loss ${money(t.grossLoss)}`}
                   segments={[
                     { value: t.grossProfit ?? 0, tone: 'positive' },
                     { value: Math.abs(t.grossLoss ?? 0), tone: 'negative' },
@@ -179,7 +183,7 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
                 />
               </div>
               <p className="jd-sub">
-                {t.grossProfit === null ? 'Needs cash results' : `${fmtMoney(t.grossProfit)} won · ${fmtMoney(t.grossLoss)} lost`}
+                {t.grossProfit === null ? 'Needs cash results' : `${money(t.grossProfit)} won · ${money(t.grossLoss)} lost`}
               </p>
             </div>
 
@@ -207,22 +211,22 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
               <div className="jd-ratio">
                 <div className="is-positive">
                   <i style={{ width: `${((t.avgWin ?? 0) / widest) * 100}%` }} />
-                  <span>{fmtMoney(t.avgWin)}</span>
+                  <span>{money(t.avgWin)}</span>
                 </div>
                 <div className="is-negative">
                   <i style={{ width: `${(Math.abs(t.avgLoss ?? 0) / widest) * 100}%` }} />
-                  <span>{fmtMoney(t.avgLoss)}</span>
+                  <span>{money(t.avgLoss)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <dl className="jd-strip">
-            <div><dt>Expectancy / trade</dt><dd className={`is-${toneOf(t.expectancy)}`}>{fmtMoney(t.expectancy)}</dd></div>
+            <div><dt>Expectancy / trade</dt><dd className={`is-${toneOf(t.expectancy)}`}>{money(t.expectancy)}</dd></div>
             <div><dt>Avg R{t.rCoverage !== null && t.rCoverage < 100 ? ` (${t.rCoverage}% of closed)` : ''}</dt><dd>{t.avgR !== null ? `${t.avgR > 0 ? '+' : ''}${t.avgR.toFixed(2)}R` : '—'}</dd></div>
-            <div><dt>Daily close drawdown</dt><dd className={`is-${toneOf(t.maxDrawdown)}`}>{fmtMoney(t.maxDrawdown)}</dd></div>
-            <div><dt>Best day</dt><dd className={`is-${toneOf(t.bestDay?.net ?? null)}`}>{fmtMoney(t.bestDay?.net ?? null)}</dd></div>
-            <div><dt>Worst day</dt><dd className={`is-${toneOf(t.worstDay?.net ?? null)}`}>{fmtMoney(t.worstDay?.net ?? null)}</dd></div>
+            <div><dt>Daily close drawdown</dt><dd className={`is-${toneOf(t.maxDrawdown)}`}>{money(t.maxDrawdown)}</dd></div>
+            <div><dt>Best day</dt><dd className={`is-${toneOf(t.bestDay?.net ?? null)}`}>{money(t.bestDay?.net ?? null)}</dd></div>
+            <div><dt>Worst day</dt><dd className={`is-${toneOf(t.worstDay?.net ?? null)}`}>{money(t.worstDay?.net ?? null)}</dd></div>
             <div>
               <dt>Current streak</dt>
               <dd className={streak ? (streak.result === 'win' ? 'is-positive' : 'is-negative') : ''}>
@@ -247,36 +251,36 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
                 <h3>Cumulative net P&amp;L</h3>
                 <span>By close date</span>
               </div>
-              {data.equity.length ? <EquityCurve points={data.equity} /> : <p className="jd-empty">The curve appears once closed trades have a cash result{moneyComparable ? '' : ' in a single account'}.</p>}
+              {data.equity.length ? <EquityCurve points={data.equity} unit={unit} /> : <p className="jd-empty">The curve appears once closed trades have a cash result{moneyComparable ? '' : ' in a single account'}.</p>}
             </section>
             <section className="jd-panel">
               <div className="jd-panel-head">
                 <h3>Daily net P&amp;L</h3>
                 <span>Last {Math.min(30, data.equity.length)} trading {data.equity.length === 1 ? 'day' : 'days'}</span>
               </div>
-              {data.equity.length ? <DailyBars points={data.equity} /> : <p className="jd-empty">Daily results appear with your first closed cash trade.</p>}
+              {data.equity.length ? <DailyBars points={data.equity} unit={unit} /> : <p className="jd-empty">Daily results appear with your first closed cash trade.</p>}
             </section>
           </div>
 
           <div className="jd-row">
             <section className="jd-panel">
-              <MonthCalendar days={data.calendar} />
+              <MonthCalendar days={data.calendar} unit={unit} />
             </section>
             <section className="jd-panel">
               <div className="jd-panel-head">
                 <h3>Win rate by entry time</h3>
                 <span>New York time</span>
               </div>
-              {data.timeHeatmap.length ? <TimeHeatmap cells={data.timeHeatmap} /> : <p className="jd-empty">Appears once closed trades have an entry time.</p>}
+              {data.timeHeatmap.length ? <TimeHeatmap cells={data.timeHeatmap} unit={unit} /> : <p className="jd-empty">Appears once closed trades have an entry time.</p>}
               {unknownEntries > 0 && <p className="jd-sub mt-3">{unknownEntries} {unknownEntries === 1 ? 'trade has' : 'trades have'} no entry time and {unknownEntries === 1 ? 'is' : 'are'} left out.</p>}
             </section>
           </div>
 
           <div className="jd-row jd-row-even">
-            <Breakdown title="By symbol" data={data.bySymbol} />
-            <Breakdown title="By setup tag" data={data.byTag} />
-            <Breakdown title="By session" data={data.bySession} />
-            <Breakdown title="By weekday" data={data.byWeekday} />
+            <Breakdown title="By symbol" data={data.bySymbol} unit={unit} />
+            <Breakdown title="By setup tag" data={data.byTag} unit={unit} />
+            <Breakdown title="By session" data={data.bySession} unit={unit} />
+            <Breakdown title="By weekday" data={data.byWeekday} unit={unit} />
           </div>
         </>
       )}
