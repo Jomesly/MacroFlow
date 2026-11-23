@@ -89,6 +89,15 @@ describe('dated narrative ingestion', () => {
     expect(events.every(event => event.timestamp === asOf && event.sourceName === 'Publisher')).toBe(true);
   });
 
+  it('reads only the lead of a long Finnhub summary, like RSS', async () => {
+    const summary = `<p>Prior 52.8</p>${' Detail.'.repeat(80)} Optimism returns to markets.`;
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => [
+      { id: 1, headline: 'UK November flash services PMI 52.0 vs 53.0 expected', summary, datetime: Date.parse(asOf) / 1000, url: 'https://example.com/uk-pmi', source: 'Forexlive' },
+    ] })));
+    const events = await fetchNews();
+    expect(events.map(event => `${event.category}:${event.value}`)).toEqual(['pmi:miss']);
+  });
+
   it('reads Finnhub general, forex and crypto news once each and merges a story listed twice', async () => {
     const article = (id: number, headline: string, url: string) => ({ id, headline, summary: '', datetime: Date.parse(asOf) / 1000, url, source: 'Publisher' });
     const fetchMock = vi.fn(async (url: string) => ({ ok: true, json: async () =>

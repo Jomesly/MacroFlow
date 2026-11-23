@@ -44,6 +44,21 @@ describe('word sense and growth direction', () => {
   it('reads accelerating economic growth as a beat', () => expect(gdp('US economic growth accelerates to 3.1% in third quarter')).toContain('beat'));
 });
 
+describe('found in local testing on 2026-11-23', () => {
+  it('does not read a bank’s rate forecast as the Fed itself', () =>
+    expect(fed(articleText('Federal Reserve: Consecutive hikes and sticky inflation – TD Securities',
+      'TD Securities economists Oscar Munoz and Eli Nir expect the Federal Reserve to deliver three consecutive rate hikes starting in December, with scope for further tightening later in the cycle.', 400))).toEqual([]));
+  it('does not read a generic hike forecast by economists as Fed tone', () =>
+    expect(fed('Economists expect two more rate hikes next year')).toEqual([]));
+  it('does not read the S&P PMI data provider as the S&P 500', () =>
+    expect(sentiment(articleText('British Pound pulls back from session highs following soft UK Flash PMIs',
+      "The British Pound (GBP) trims earlier gains against the US Dollar (USD) on Monday, as preliminary UK S&P Purchasing Managers' Index (PMI) figures fell short in November.", 400))
+      .filter(([symbol]) => symbol === 'US500')).toEqual([]));
+  it('still reads the S&P 500 itself', () => expect(sentiment('S&P 500 falls as yields climb')).toContainEqual(['US500', 'bearish']));
+  it('strips markup from article text', () =>
+    expect(articleText('UK PMI 52.0 vs 53.0 expected', '<ul><li style="vertical-align: baseline; margin: 0">Prior 52.8</li></ul>')).toBe('UK PMI 52.0 vs 53.0 expected. Prior 52.8'));
+});
+
 const keys = (t: string) => classifyHeadline(t).map(e => `${e.category}:${e.value}:${e.country ?? ''}`);
 describe('release headlines', () => {
   it.each([

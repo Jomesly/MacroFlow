@@ -450,5 +450,28 @@
     "expect": [
       "gdp:beat"
     ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Federal Reserve: Consecutive hikes and sticky inflation – TD Securities. TD Securities economists Oscar Munoz and Eli Nir expect the Federal Reserve to deliver three consecutive rate hikes starting in December, with scope for further tightening later in the cycle.",
+    "expect": []
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "British Pound pulls back from session highs following soft UK Flash PMIs. The British Pound (GBP) trims earlier gains against the US Dollar (USD) on Monday, as preliminary UK S&P Purchasing Managers' Index (PMI) figures fell short in November.",
+    "expect": [
+      "asset_sentiment:bearish:GBPUSD",
+      "pmi:miss"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "UK November flash services PMI 52.0 vs 53.0 expected. Prior 52.8\nManufacturing PMI 52.7 vs 53.0 expected\nPrior 52.8\nComposite PMI 52.3 vs 53.1 expected\nPrior 52.9\nKey Findings: UK private sector output growth slows in November, despite fastest upturn in manufacturing output for over two years",
+    "expect": [
+      "pmi:miss"
+    ]
   }
 ]

@@ -4,6 +4,7 @@ import { getCached, setCache } from './cache';
 
 const BASE_URL = 'https://finnhub.io/api/v1';
 const CACHE_KEY = 'finnhub_news_v10';
+const MAX_SUMMARY_CHARS = 400;
 export const FINNHUB_CATEGORIES = ['general', 'forex', 'crypto'] as const;
 const CACHE_TTL = 300_000;
 const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000;
@@ -53,7 +54,8 @@ export async function fetchNews(): Promise<MacroEvent[]> {
       if (!article.datetime || !Number.isFinite(publishedMs) || publishedMs > Date.now() || Date.now() - publishedMs > MAX_ARTICLE_AGE_MS) continue;
       const publishedAt = new Date(publishedMs).toISOString();
 
-      const text = articleText(article.headline, article.summary);
+      // Finnhub summaries can be whole articles; rules read a headline and its lead, as for RSS.
+      const text = articleText(article.headline, article.summary, MAX_SUMMARY_CHARS);
       const classifiedList = classifyHeadline(text);
       for (const classified of classifiedList) {
         const key = `${article.url || article.id}:${classified.category}:${classified.value}:${classified.country ?? ''}:${classified.symbol ?? ''}`;

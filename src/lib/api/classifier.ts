@@ -258,7 +258,8 @@ const ASSET_SUBJECTS: [AssetSymbol, string][] = [
   ['AUDUSD', 'aud\\s*[/\\-]?\\s*usd|aussie'],
   ['USDCAD', 'usd\\s*[/\\-]?\\s*cad'],
   ['NZDUSD', 'nzd\\s*[/\\-]?\\s*usd|kiwi'],
-  ['US500', 's&p(?:[ -]?500)?|sp500|us500|spy'],
+  // "S&P Global" and "S&P PMI" name the data provider, not the index.
+  ['US500', 's&p(?!\\s*(?:global|purchasing|pmi|ratings?)\\b)(?:[ -]?500)?|sp500|us500|spy'],
   ['USDJPY', 'usd\\s*[/\\-]?\\s*jpy|dollar[- ]yen'],
   ['GBPUSD', 'gbp\\s*[/\\-]?\\s*usd|pound[- ]dollar|sterling|cable'],
   ['XAUUSD', 'xau\\s*[/\\-]?\\s*usd|gold'],
@@ -385,8 +386,9 @@ function classifyNarratives(text: string): SentimentResult[] {
   ];
   // Someone urging the Fed to act describes their wish, not Fed policy.
   const advocacy = /\b(urges?|urging|calls? on|press(?:es)?|pressures?|wants?)\b[^.]{0,20}\b(fed|federal reserve)\b/i.test(policyText);
+  const analyst = isAnalystView(text);
   for (const [category, subject, symbol] of banks) {
-    if (category === 'fed_tone' && advocacy) continue;
+    if (analyst || (category === 'fed_tone' && advocacy)) continue;
     const bankMatch = new RegExp(`\\b(?:${subject})\\b`, 'i').exec(policyText);
     if (bankMatch && POLICY_NEGATION.test(policyText.slice(Math.max(0, bankMatch.index - 30), bankMatch.index))) continue;
     for (const { clause, index } of narrativeMatches(policyText, subject)) {
@@ -412,8 +414,11 @@ function classifyNarratives(text: string): SentimentResult[] {
  * subject that ends a headline borrows the verb that opens the article body.
  */
 export function articleText(headline: string | undefined, body: string | undefined, maxBody = Infinity): string {
-  const title = (headline ?? '').trim();
-  const lead = (body ?? '').trim().slice(0, maxBody);
+  // Some providers send HTML summaries; markup words must never become signals.
+  const plain = (value: string | undefined) => (value ?? '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+    .replace(/[^\S\n]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{2,}/g, '\n').trim();
+  const title = plain(headline);
+  const lead = plain(body).slice(0, maxBody);
   if (!title || !lead) return title || lead;
   return `${title}${/[.!?]$/.test(title) ? '' : '.'} ${lead}`;
 }
@@ -436,6 +441,16 @@ export function releaseHeadlineSignal(text: string): { category: EventCategory; 
   return classifyEconomicEvent(direction.name, higher ? 1 : 0, higher ? 0 : 1);
 }
 
+/**
+ * A bank's or economist's forecast ("… – TD Securities", "economists expect three hikes")
+ * is a view about a central bank, not the bank's policy, so it carries no policy tone.
+ */
+export function isAnalystView(text: string): boolean {
+  const firstLine = text.split(/\n/)[0].split(/[.!?](?:\s+|$)/)[0];
+  return /\s[–—]\s[A-Z][\w&'.]*(?:\s[A-Z][\w&'.]*){0,3}\s*$/.test(firstLine)
+    || /\b(economists?|strategists?|analysts?|research team)\b[^.]{0,80}\b(expects?|expected|sees?|forecasts?|predicts?|projects?)\b/i.test(text);
+}
+
 /** A roundup lists unrelated stories; one quoted line is not the article's signal. */
 const ROUNDUP_TITLE = /\b(market news|news wrap|morning (?:wrap|briefing|call)|what are the main events|week ahead|live(?: blog| updates)?:|daily recap|top stories)\b/i;
 
@@ -451,8 +466,10 @@ export function classifyHeadline(text: string): SentimentResult[] {
     results.push({ ...release, impact: ['inflation', 'employment'].includes(release.category) ? 'high' : 'medium',
       title: text.length > 80 ? text.slice(0, 77) + '...' : text, description: text, country: inferCountry(text) });
   }
+  const analyst = isAnalystView(text);
   for (const rule of RULES) {
     if (rule.category === 'dollar_strength' || rule.category === 'risk_sentiment') continue;
+    if (analyst && POLICY_CATEGORIES.has(rule.category)) continue;
     if (POLICY_CATEGORIES.has(rule.category) && /\b(fed|federal reserve|fomc|boe|bank of england|boj|bank of japan|ecb|european central bank|snb|swiss national bank|rba|reserve bank of australia|boc|bank of canada|rbnz|reserve bank of new zealand)\b/i.test(text)) continue;
     // Price verbs near an upcoming release do not describe the economic measure.
     if (rule.category === 'inflation' && !/\b(cpi|ppi|inflation|pce(?: price index)?)\s+(?:(?:is|was|has|have|remains?|came(?: in)?|comes(?: in)?|printed|prints)\s+)?(?:ris\w*|ros\w*|fell|fall\w*|drop\w*|cool\w*|accelerat\w*|slow\w*|climb\w*|hot\w*|high\w*|low\w*|beat\w*|miss\w*|up\b|down\b|sticky|moderate)/i.test(text)) continue;
