@@ -271,7 +271,7 @@ const CLAUSE_BREAK = /[.!?;:,]|\b(?:as|amid|while|after|because|but|ahead|despit
 const isAsserted = (clause: string) => !/\b(not|no|never|fails?|failed|unlikely|may|might|could|if|whether)\b/i.test(clause);
 const COORDINATED_SUBJECTS = new RegExp(`^(?:\\s*(?:,\\s*(?:and\\s+)?|and\\s+|&\\s*)(?:${ASSET_SUBJECTS.map(([, subject]) => subject).join('|')})\\b)+`, 'i');
 
-function narrativeClauses(text: string, subject: string): string[] {
+function narrativeMatches(text: string, subject: string): { clause: string; index: number }[] {
   // Do not consume the tail: a second named subject needs its own clause.
   const pattern = new RegExp(`\\b(?:${subject})\\b`, 'gi');
   return [...text.matchAll(pattern)].flatMap(match => {
@@ -280,8 +280,33 @@ function narrativeClauses(text: string, subject: string): string[] {
     if (/\b(?:if|whether|could|may|might)\s+(?:the\s+)?$/i.test(prefix)) return [];
     const tail = text.slice(match.index + match[0].length).replace(COORDINATED_SUBJECTS, '');
     if (/^[- ](?:listed|miners?|mining|producers?|company|companies|demand|etfs?)\b/i.test(tail)) return [];
-    return [tail.split(CLAUSE_BREAK)[0].slice(0, 90)];
+    return [{ clause: tail.split(CLAUSE_BREAK)[0].slice(0, 90), index: match.index }];
   });
+}
+
+function narrativeClauses(text: string, subject: string): string[] {
+  return narrativeMatches(text, subject).map(match => match.clause);
+}
+
+const EXPECTATION_REVERSAL = /\b(kill(?:s|ed|ing)?|remov\w*|price[sd]? out|pricing out|scrap\w*|abandon\w*|unwind\w*|slash\w*|wip(?:e|es|ed|ing) out|eras(?:e|es|ed|ing)|dash(?:es|ed|ing)?|block\w*)\b/i;
+const SPECULATIVE = /\b(could|may|might|would)\b/i;
+
+/**
+ * Words just before a central bank's name can reverse the move after it:
+ * "kills Fed hike bets" is a dovish repricing, and "could block Fed hikes" is speculation.
+ */
+export function expectationShift(windowBeforeBank: string): 'reverse' | 'speculative' | null {
+  if (SPECULATIVE.test(windowBeforeBank)) return 'speculative';
+  return EXPECTATION_REVERSAL.test(windowBeforeBank) ? 'reverse' : null;
+}
+
+/** The same sentence before `index`, cut after its last clause break, at most 60 characters. */
+function windowBefore(text: string, index: number): string {
+  const sentence = text.slice(0, index).split(/[.!?](?:\s+|$)|\n/).at(-1) ?? '';
+  const breaks = [...sentence.matchAll(new RegExp(CLAUSE_BREAK.source, 'gi'))];
+  const last = breaks.at(-1);
+  const clause = last ? sentence.slice(last.index + last[0].length) : sentence;
+  return clause.slice(-60);
 }
 
 function clauseDirection(clause: string): 'bullish' | 'bearish' | null {
@@ -354,15 +379,19 @@ function classifyNarratives(text: string): SentimentResult[] {
   for (const [category, subject, symbol] of banks) {
     const bankMatch = new RegExp(`\\b(?:${subject})\\b`, 'i').exec(policyText);
     if (bankMatch && POLICY_NEGATION.test(policyText.slice(Math.max(0, bankMatch.index - 30), bankMatch.index))) continue;
-    for (const clause of narrativeClauses(policyText, subject)) {
+    for (const { clause, index } of narrativeMatches(policyText, subject)) {
       if (!isAsserted(clause)) continue;
       if (/\b(?:cut\w*|lower\w*|rais\w*|hik\w*)\b.{0,45}\b(?:forecasts?|projections?|estimates?|outlook)\b/i.test(clause)
         && !/\b(rates?|policy|borrowing costs?)\b/i.test(clause)) continue;
+      const shift = expectationShift(windowBefore(policyText, index));
+      if (shift === 'speculative') continue;
       const dovish = /\b(dovish|cuts?|cutting|eas\w*)\b/i.test(clause) || /\blower\w*\s+(?:(?:interest|cash|official cash|policy)\s+)?(?:rates?|borrowing costs?)\b/i.test(clause);
       const hawkish = /\b(hawkish|hikes?|hiking|tight\w*|taper\w*)\b/i.test(clause) || /\brais\w*\s+(?:(?:interest|cash|official cash|policy)\s+)?(?:rates?|borrowing costs?)\b/i.test(clause);
-      const delayed = /\b(delay\w*|postpon\w*)\b/i.test(clause);
-      if (dovish) add(category, delayed ? 'hawkish' : 'dovish', symbol, 'high');
-      if (hawkish) add(category, delayed ? 'dovish' : 'hawkish', symbol, 'high');
+      // A delayed move, or bets on a move being priced out, point the other way.
+      const flipped = /\b(delay\w*|postpon\w*)\b/i.test(clause) !== (shift === 'reverse');
+      const impact: EventImpact = shift === 'reverse' ? 'medium' : 'high';
+      if (dovish) add(category, flipped ? 'hawkish' : 'dovish', symbol, impact);
+      if (hawkish) add(category, flipped ? 'dovish' : 'hawkish', symbol, impact);
     }
   }
   return results;
