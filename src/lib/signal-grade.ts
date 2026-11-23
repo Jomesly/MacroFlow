@@ -11,7 +11,8 @@ export interface SignalGradeResult { grade: 'A' | 'B' | 'none'; side: 'long' | '
  * Changing one changes what a signal is: bump FORECAST_VERSION so the track record restarts.
  */
 export const MIN_SIGNAL_SCORE = 30;
-const MIN_MACRO_SCORE = 10;
+/** One data series is a data point, not a backdrop. */
+const MIN_ECONOMIC_SERIES = 2;
 const MIN_AGREEMENT = 0.7;
 const EVENT_WINDOW_HOURS = 4;
 
@@ -42,7 +43,9 @@ export function gradeSignal(result: BiasResult, ctx: { asOf: string; calendar: C
   const sign = Math.sign(result.biasScore);
   const supports = (score: number) => score * sign > 0;
   const supportingNews = result.events.filter(event => isHeadline(event) && supports(event.scoreChange));
-  const macro = result.forecast?.components?.macro;
+  const economic = result.events.filter(event => event.evidenceType === 'trend' || event.evidenceType === 'surprise');
+  const economicNet = economic.reduce((sum, event) => sum + event.scoreChange, 0);
+  const supportingSeries = economic.filter(event => supports(event.scoreChange)).length;
   const coverage = assessMacroCoverage(result.symbol, result.events, ctx.asOf, result.biasScore);
   const countryNames = (countries: string[]) => countries.map(country => COUNTRY_NAMES[country] ?? country).join(', ');
   const total = result.events.reduce((sum, event) => sum + Math.abs(event.scoreChange), 0);
@@ -51,7 +54,8 @@ export function gradeSignal(result: BiasResult, ctx: { asOf: string; calendar: C
   const passed: Record<GradeCheckId, boolean> = {
     fresh_news: freshAt(result.forecast?.latestNewsAt, ctx.asOf, FRESH_NEWS_HOURS)
       && supportingNews.some(event => freshAt(event.timestamp, ctx.asOf, FRESH_NEWS_HOURS)),
-    macro_match: !!macro && supports(macro.score) && Math.abs(macro.score) >= MIN_MACRO_SCORE
+    // Economic data only: dollar and yield moves are judged once, in market_confirms.
+    macro_match: supports(economicNet) && supportingSeries >= MIN_ECONOMIC_SERIES
       && result.alignment?.context.complete === true && coverage.missingCountries.length === 0
       && coverage.supportingCountries.length === coverage.requiredCountries.length,
     two_sources: new Set(supportingNews.map(event => event.sourceName).filter(Boolean)).size >= 2,
@@ -69,7 +73,9 @@ export function gradeSignal(result: BiasResult, ctx: { asOf: string; calendar: C
       ? `Structured macro data is missing for: ${countryNames(coverage.missingCountries)}.`
       : coverage.supportingCountries.length !== coverage.requiredCountries.length
         ? 'Structured evidence from each relevant economy must support this direction.'
-        : result.alignment?.context.complete !== true ? 'The economic context is incomplete.' : undefined,
+        : supportingSeries < MIN_ECONOMIC_SERIES || !supports(economicNet)
+          ? 'At least two economic data series must support this direction; dollar and yield moves are checked separately.'
+          : result.alignment?.context.complete !== true ? 'The economic context is incomplete.' : undefined,
     no_event_risk: !ctx.calendarVerified ? ctx.calendarIssue ?? 'The calendar could not be verified.' : undefined,
     healthy_inputs: ctx.inputIssue,
   };

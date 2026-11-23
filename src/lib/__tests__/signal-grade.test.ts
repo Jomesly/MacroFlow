@@ -60,8 +60,16 @@ describe('macro-matched signal grade', () => {
     const single = { ...confirmation(base(), 'flat'), events: base().events.map(e => ({ ...e, sourceName: 'Reuters' })) };
     expect(grade(single)).toBe('none');
   });
-  it('needs the macro backdrop to point the same way', () =>
-    expect(grade(forecast(base(), { components: { news: { score: 50, weight: 0.7 }, macro: { score: -12, weight: 0.3 } } }))).toBe('none'));
+  it('needs the economic data to point the same way', () =>
+    expect(grade({ ...base(), events: base().events.map(event => event.evidenceType === 'trend' ? { ...event, scoreChange: -5 } : event) })).toBe('none'));
+  it('does not need a dollar move to lift the economic backdrop over a size bar', () =>
+    expect(grade(forecast(base(), { components: { news: { score: 50, weight: 0.7 }, macro: { score: 4, weight: 0.3 } } }))).toBe('A'));
+  it('does not let a dollar or yield move stand in for a second economic series', () => {
+    const oneSeries: BiasResult = { ...base(), symbol: 'XAUUSD', name: 'Gold', events: base().events.filter(event => event.country !== 'GB') };
+    const result = gradeSignal(oneSeries, ctx);
+    expect(result.grade).toBe('none');
+    expect(result.checks.find(check => check.id === 'macro_match')?.detail).toContain('two');
+  });
   it('cannot treat a US-only backdrop as complete UK macro support', () => {
     const result = gradeSignal({ ...base(), events: base().events.filter(event => event.country !== 'GB') }, ctx);
     expect(result.grade).toBe('none');
