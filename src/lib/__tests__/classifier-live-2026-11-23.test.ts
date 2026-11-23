@@ -30,3 +30,16 @@ describe('roundups and advocacy', () => {
   it('keeps a Fed official’s own words', () =>
     expect(fed('Fed’s Waller says a December hike is likely').map(r => r.value)).toEqual(['hawkish']));
 });
+
+const sentiment = (t: string) => classifyHeadline(t).filter(e => e.category === 'asset_sentiment').map(e => [e.symbol, e.value]);
+const gdp = (t: string) => classifyHeadline(t).filter(e => e.category === 'gdp').map(e => e.value);
+describe('word sense and growth direction', () => {
+  it('does not read a company ("treasury firm") as prices firming', () =>
+    expect(sentiment(articleText('This Swedish bitcoin treasury firm lost 30 BTC trading part of its own stack',
+      'Stockholm-listed H100 moved a slice of its bitcoin into a derivatives book.', 400))).toEqual([]));
+  it('still reads "Gold firmed" as bullish', () => expect(sentiment('Gold firmed after soft CPI')).toEqual([['XAUUSD', 'bullish']]));
+  it('does not read a growth forecast at risk of downgrade as a beat', () =>
+    expect(gdp("France's 2027 economic growth forecast of 1% at risk of being downgraded, minister says")).not.toContain('beat'));
+  it('does not read "GDP growth slows" as a beat', () => expect(gdp('UK GDP growth slows to 0.1% in third quarter')).not.toContain('beat'));
+  it('reads accelerating economic growth as a beat', () => expect(gdp('US economic growth accelerates to 3.1% in third quarter')).toContain('beat'));
+});

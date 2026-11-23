@@ -148,9 +148,10 @@ const RULES: Rule[] = [
   { patterns: [/(?<!\bsteve )\bjobs\b.{0,40}\b(miss|weak|fall|drop|disappoint)/i], category: 'employment', value: 'weak', impact: 'medium' },
 
   // ── GDP ──
-  { patterns: [/\bgdp\b.{0,40}\b(beat|above|strong|up\b|revised.*up\b|growth)/i], category: 'gdp', value: 'beat', impact: 'high' },
+  // "GDP growth" or "economic growth" alone names the measure, not its direction.
+  { patterns: [/\bgdp\b.{0,40}\b(beat|above|strong|up\b|revised.*up\b)/i], category: 'gdp', value: 'beat', impact: 'high' },
   { patterns: [/\bgdp\b.{0,40}\b(miss|below|weak|down\b|contraction|revised.*down\b)/i], category: 'gdp', value: 'miss', impact: 'high' },
-  { patterns: [/\beconomic\b.{0,40}\b(growth|expansion|strong)/i], category: 'gdp', value: 'beat', impact: 'medium' },
+  { patterns: [/\beconomic (?:growth|expansion)\b.{0,30}\b(accelerat\w*|beat\w*|strong\w*|pick(?:s|ed)? up|rebound\w*|surg\w*)\b/i], category: 'gdp', value: 'beat', impact: 'medium' },
   { patterns: [/\beconomic\b.{0,40}\b(slow|contraction|weak|recession)/i], category: 'gdp', value: 'miss', impact: 'medium' },
   { patterns: [/\brecession\b(?!.{0,30}\b(ease|eases|easing|fade|fades|fading|recede|recedes|averted|avoid))/i], category: 'gdp', value: 'miss', impact: 'high' },
 
@@ -265,7 +266,8 @@ const ASSET_SUBJECTS: [AssetSymbol, string][] = [
   ['US100', 'nasdaq(?:[ -]?100)?|us100|nas100|ustec|qqq'],
   ['DJ30', 'dow(?: jones(?:[ -]30)?)?|djia|dj30|us30|ws30|dia'],
 ];
-const UP = /\b(rall(?:y|ies|ied|ying)|ris(?:e|es|ing)|rose|climb\w*|surge\w*|gain\w*|advanc\w*|bullish|higher|up|strengthen\w*|rebound\w*|recover\w*|firm\w*|soar\w*|jump\w*|leap\w*)\b/i;
+// "firm" alone is usually a company ("treasury firm"), so only its verb forms count.
+const UP = /\b(rall(?:y|ies|ied|ying)|ris(?:e|es|ing)|rose|climb\w*|surge\w*|gain\w*|advanc\w*|bullish|higher|up|strengthen\w*|rebound\w*|recover\w*|firm(?:ed|ing|er)|firms? up|soar\w*|jump\w*|leap\w*)\b/i;
 const DOWN = /\b(fall\w*|fell|drop\w*|slid\w*|slip\w*|plung\w*|declin\w*|bearish|lower|down|weaken\w*|retreat\w*|slump\w*|soften\w*|tumbl\w*|sink\w*|sank|sell[ -]?off|sell[ -]?offs)\b/i;
 const CLAUSE_BREAK = /[.!?;:,]|\b(?:as|amid|while|after|because|but|ahead|despite|due|on|and|with)\b/i;
 const isAsserted = (clause: string) => !/\b(not|no|never|fails?|failed|unlikely|may|might|could|if|whether)\b/i.test(clause);
