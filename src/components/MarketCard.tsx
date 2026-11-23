@@ -15,6 +15,14 @@ import type { BiasResult } from "@/lib/types";
 import type { BoardTile } from "@/lib/market-board";
 import { marketIsOpen } from "@/lib/marketIsOpen";
 import { biasWord, convictionLabel } from "@/lib/market-factors";
+import { ageHours, ageLabel, FRESH_NEWS_HOURS } from "@/lib/freshness";
+
+/** Measured at the read's issue time, which refreshes every five minutes, so cards need no ticking clock. */
+function newsAge(forecast: NonNullable<BiasResult["forecast"]>): string {
+  const latest = forecast.latestNewsAt;
+  if (!latest || ageHours(latest, forecast.issuedAt) > FRESH_NEWS_HOURS) return `No news in ${FRESH_NEWS_HOURS} h`;
+  return `Newest news ${ageLabel(latest, forecast.issuedAt)}`;
+}
 
 /** Every row shares one scale, so a small move never looks like a large one. */
 function BiasHistory({ data, scale }: { data: BiasResult; scale: number }) {
@@ -159,6 +167,7 @@ export default function MarketCard({
               data.forecast && <span className="market-window">4h</span>
             )}
           </span>
+          {data.forecast && <span className="market-conviction">{newsAge(data.forecast)}</span>}
         </span>
         {!data.forecast && <BiasHistory data={data} scale={historyScale} />}
         <CaretRight

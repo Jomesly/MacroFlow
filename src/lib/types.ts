@@ -158,6 +158,8 @@ export interface BiasResult {
     limitations: string[];
     sourceCount: number;
     latestEvidenceAt: string | null;
+    /** Newest scored headline; null when the read has no news. */
+    latestNewsAt: string | null;
     macroBiasScore: number;
     probability: null;
   };

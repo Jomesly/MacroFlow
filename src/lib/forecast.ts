@@ -1,9 +1,10 @@
 import { scoreMacroAlignment } from './alignment';
 import { calculateBias } from './engine';
 import { selectEventsAsOf } from './macro-context';
+import { FRESH_NEWS_HOURS, headlineWeight } from './freshness';
 import type { AssetSymbol, BiasResult, Direction, MacroContext, MacroEvent, ScoredEvent } from './types';
 
-export const FORECAST_VERSION = 'macro-factors-v3-4h-2026-11-12';
+export const FORECAST_VERSION = 'macro-factors-v4-4h-2026-11-23';
 
 function articleKey(event: MacroEvent): string {
   if (event.url) {
@@ -13,6 +14,11 @@ function articleKey(event: MacroEvent): string {
     } catch { /* Fall back to the headline when a provider supplies an invalid URL. */ }
   }
   return event.description.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/** Math.round sends halves up (-22.5 → -22), which made bearish reads a point weaker than bullish ones. */
+function roundSymmetric(value: number): number {
+  return Math.sign(value) * Math.round(Math.abs(value));
 }
 
 function forecastDirection(score: number): Direction {
@@ -48,7 +54,7 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
       const headline = !event.evidenceType || event.evidenceType === 'headline';
       const ageHours = (Date.parse(asOf) - Date.parse(event.timestamp)) / 3_600_000;
       // News has a six-hour half-life. Slow economic trends serve as a weak prior.
-      const weight = headline ? (event.category === 'asset_sentiment' ? 1 : 0.8) * Math.pow(0.5, ageHours / 6)
+      const weight = headline ? headlineWeight(ageHours, event.category === 'asset_sentiment')
         : event.evidenceType === 'trend' ? 0.35 : 1;
       const scoreChange = Math.sign(scored.scoreChange) * Math.round(Math.abs(scored.scoreChange) * weight);
       if (!scoreChange) continue;
@@ -83,7 +89,7 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
     const newsRows = news;
     const macroRows = contributions.filter(row => !newsRows.includes(row));
     const components = {
-      news: newsRows.length ? { score: Math.max(-100, Math.min(100, Math.round(categoryScore(newsRows) * 1.5))), weight: 0 } : null,
+      news: newsRows.length ? { score: Math.max(-100, Math.min(100, roundSymmetric(categoryScore(newsRows) * 1.5))), weight: 0 } : null,
       macro: macroRows.length ? { score: categoryScore(macroRows), weight: 0 } : null,
     };
     // Fresh news leads; slower macro data and policy background set the backdrop.
@@ -92,7 +98,7 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
     } else {
       for (const component of Object.values(components)) if (component) component.weight = 1;
     }
-    const score = Math.round(Object.values(components).reduce((sum, component) => sum + (component ? component.score * component.weight : 0), 0));
+    const score = roundSymmetric(Object.values(components).reduce((sum, component) => sum + (component ? component.score * component.weight : 0), 0));
     const direction = forecastDirection(score);
     const sourceCount = new Set(newsRows.map(({ event }) => event.sourceName).filter(Boolean)).size;
     const allContributions = contributions;
@@ -105,6 +111,10 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
     if (macro.alignment?.status !== 'aligned') limitations.push('Macro alignment is unconfirmed.');
     if (!allContributions.length) limitations.push('No fresh directional inputs are available.');
     if (allContributions.some(({ scored }) => scored.scoreChange * score < 0) || (!score && allContributions.length)) limitations.push('Fresh inputs disagree on direction.');
+    const latestNewsAt = news.map(({ event }) => event.timestamp).sort().at(-1) ?? null;
+    if (latestNewsAt && Date.parse(asOf) - Date.parse(latestNewsAt) > FRESH_NEWS_HOURS * 3_600_000) {
+      limitations.push('No news in the last 6 hours; this read leans on older stories and the macro backdrop.');
+    }
     // A trader's conviction: a strong lean, backed by more than one outlet, that
     // the slower macro backdrop does not contradict.
     const macroAgrees = !components.macro || components.macro.score * score >= 0;
@@ -123,7 +133,7 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
       forecast: { modelVersion: FORECAST_VERSION, horizonHours: 4, issuedAt: asOf,
         expiresAt: new Date(Date.parse(asOf) + 4 * 3_600_000).toISOString(), basis, summary: label, limitations, sourceCount,
         components, marketMove: price?.marketMove, macroSignal: macro.signal,
-        latestEvidenceAt: allContributions.map(({ event }) => event.timestamp).sort().at(-1) ?? null,
+        latestEvidenceAt: allContributions.map(({ event }) => event.timestamp).sort().at(-1) ?? null, latestNewsAt,
         macroBiasScore: macro.biasScore, probability: null },
     };
   });

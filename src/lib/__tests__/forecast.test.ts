@@ -58,7 +58,7 @@ describe('USD/JPY news coverage', () => {
 
   it('decays older stories and rejects expired, future, and malformed timestamps', () => {
     const fresh = predict(news('USD/JPY rallies'));
-    const old = predict(news('USD/JPY rallies', '2026-11-11T00:00:00.000Z'));
+    const old = predict(news('USD/JPY rallies', '2026-11-11T06:00:00.000Z'));
     expect(old.biasScore).toBeGreaterThan(0);
     expect(old.biasScore).toBeLessThan(fresh.biasScore);
     for (const timestamp of ['2026-11-10T12:00:00.000Z', '2026-11-12T12:00:00.000Z', 'invalid']) {
@@ -67,7 +67,7 @@ describe('USD/JPY news coverage', () => {
   });
 
   it('weights equally old bullish and bearish narratives symmetrically', () => {
-    const timestamp = '2026-11-11T00:00:00.000Z';
+    const timestamp = '2026-11-11T06:00:00.000Z';
     expect(predict(news('USD/JPY rallies', timestamp)).biasScore)
       .toBe(-predict(news('USD/JPY falls', timestamp)).biasScore);
   });
@@ -84,7 +84,7 @@ describe('USD/JPY news coverage', () => {
   });
 
   it('lets recent opposing news reverse an older narrative', () => {
-    const events = [...news('USD/JPY rallies', '2026-11-11T00:00:00.000Z'), ...news('USD/JPY plunges', asOf, 'https://example.com/new')];
+    const events = [...news('USD/JPY rallies', '2026-11-11T06:00:00.000Z'), ...news('USD/JPY plunges', asOf, 'https://example.com/new')];
     expect(predict(events).biasScore).toBeLessThan(0);
     expect(predict(events).forecast?.limitations).toContain('Fresh inputs disagree on direction.');
   });
@@ -102,5 +102,30 @@ describe('USD/JPY news coverage', () => {
   it('keeps no-input and exactly balanced forecasts neutral', () => {
     expect(predict([])).toMatchObject({ direction: 'neutral', biasScore: 0, conviction: 'low', forecast: { basis: 'unavailable' } });
     expect(predict([...news('USD/JPY rallies'), ...news('USD/JPY falls', asOf, 'https://example.com/opposing')]).direction).toBe('neutral');
+  });
+});
+
+describe('fresh-news rules', () => {
+  const NO_FRESH_NEWS = 'No news in the last 6 hours; this read leans on older stories and the macro backdrop.';
+  const at = (hoursAgo: number) => new Date(Date.parse(asOf) - hoursAgo * 3_600_000).toISOString();
+  const headlines = (result: ReturnType<typeof predict>) => result.events.filter(e => !e.evidenceType || e.evidenceType === 'headline');
+
+  it('drops a headline older than 12 hours', () => {
+    const result = predict(news('USD/JPY rallies as the yen weakens', at(13)));
+    expect(headlines(result)).toEqual([]);
+    expect(result.forecast?.latestNewsAt).toBeNull();
+  });
+
+  it('keeps a 7-hour-old headline but says there is no fresh news', () => {
+    const result = predict(news('USD/JPY rallies as the yen weakens', at(7)));
+    expect(headlines(result)).toHaveLength(1);
+    expect(result.forecast?.latestNewsAt).toBe(at(7));
+    expect(result.forecast?.limitations).toContain(NO_FRESH_NEWS);
+  });
+
+  it('does not warn when news is under 6 hours old', () => {
+    const result = predict(news('USD/JPY rallies as the yen weakens', at(1)));
+    expect(result.forecast?.latestNewsAt).toBe(at(1));
+    expect(result.forecast?.limitations).not.toContain(NO_FRESH_NEWS);
   });
 });

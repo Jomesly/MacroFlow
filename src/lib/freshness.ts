@@ -1,5 +1,18 @@
 /** News loses half its weight every six hours; see docs/news-forecast.md. */
 export const NEWS_HALF_LIFE_HOURS = 6;
+/** Older headlines have mostly been priced in for a four-hour forecast and are dropped. */
+export const MAX_HEADLINE_AGE_HOURS = 12;
+/** A read without a headline this recent is flagged as leaning on older news. */
+export const FRESH_NEWS_HOURS = 6;
+
+/**
+ * A headline's scoring weight: direct reporting on the asset starts at full weight,
+ * other channels at 80%, and both halve every six hours until the 12-hour cut-off.
+ */
+export function headlineWeight(ageHours: number, direct: boolean): number {
+  if (!(ageHours >= 0 && ageHours < MAX_HEADLINE_AGE_HOURS)) return 0;
+  return (direct ? 1 : 0.8) * 0.5 ** (ageHours / NEWS_HALF_LIFE_HOURS);
+}
 
 /** Hours between `timestamp` and `now`; NaN when either is not a valid time. */
 export function ageHours(timestamp: string, now: string): number {
