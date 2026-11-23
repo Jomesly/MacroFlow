@@ -61,6 +61,8 @@ Conviction is a heuristic about the evidence, not a measured win rate. No histor
 
 Each news feed is retried once. If it still fails, its last successful stories (kept for up to six hours) stand in, and the combined set is refreshed after one minute instead of five. A feed outage therefore cannot silently drop a market's main news source and swing its reading. Stories still fade through the six-hour half-life. Cards are marked "outdated" when the dashboard cannot refresh its data. A failed news feed is named next to "Data sources" on the dashboard, and the server log records why it failed (`[rss] feed failed <name> <reason>`).
 
+On 2026-11-23, FXStreet returned HTTP 403 from the production runtime while its RSS feed still loaded locally. Following the rollout plan, Production's `RSS_FXSTREET` setting is empty, which disables this blocked feed and reports it as `empty`. Forex coverage continues through Finnhub forex news, InvestingLive and Yahoo Finance FX. The Preview setting is unchanged.
+
 ## Why this version changed
 
 Version 2.1 showed estimated up/down chances driven 60% by each market's own price trend. That duplicated the trader's technical analysis and hid the reasons behind the reading. Version 3 removes price from the score, drops the chance percentages, and puts the factors themselves on every card, so the dashboard answers the question "what could move this chart, and which way?"
