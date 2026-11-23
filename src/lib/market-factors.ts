@@ -10,6 +10,8 @@ export interface MarketFactor {
   /** News headlines versus slower economic data and market observations. */
   kind: 'news' | 'macro';
   source?: string;
+  /** When the story was published or the data became available, for its age. */
+  timestamp?: string;
 }
 
 const BANKS: Partial<Record<ScoredEvent['category'], string>> = {
@@ -63,7 +65,8 @@ export function marketFactors(item: BiasResult, limit = 3): MarketFactor[] {
     .sort((a, b) => supports(a) - supports(b) || Math.abs(b.scoreChange) - Math.abs(a.scoreChange) || a.id.localeCompare(b.id))
     .map((event): MarketFactor => ({ id: event.id, reason: factorReason(event), title: event.title,
       side: event.scoreChange > 0 ? 'bullish' : 'bearish',
-      kind: !event.evidenceType || event.evidenceType === 'headline' ? 'news' : 'macro', source: event.sourceName }))
+      kind: !event.evidenceType || event.evidenceType === 'headline' ? 'news' : 'macro', source: event.sourceName,
+      timestamp: event.timestamp }))
     .slice(0, limit);
 }
 

@@ -63,7 +63,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
                 <div><dt>Session</dt><dd>{marketIsOpen(symbol, new Date(now)) ? 'Market open' : 'Market closed'}</dd></div>
               </dl>
             </div>
-            {data.forecast ? <FactorList factors={marketFactors(data, 8)} detailed /> : <MarketBiasAxis data={data} />}
+            {data.forecast ? <FactorList factors={marketFactors(data, 8)} detailed now={now} /> : <MarketBiasAxis data={data} />}
           </section>}
         </div>
         {loading && !response && <div className="research-loading" role="status"><span>Loading {symbol} analysis</span><div /><div /><div /></div>}
@@ -106,7 +106,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             <p className="research-note">The bias covers fundamentals only. Your entry, stop loss and profit target come from your chart.</p>
           </section>
           <nav className="research-section-links" aria-label="Analysis sections"><a href="#market-drivers">Drivers</a><a href="#market-history">History</a>{marketFeatures.calendar && <a href="#economic-calendar">Upcoming releases</a>}</nav>
-          <MarketDrivers data={data} />
+          <MarketDrivers data={data} now={now} />
           <MarketBiasHistory data={data} />
           <div className="research-facts">
             <section className="research-fact" aria-labelledby="reference-chart-title"><h2 id="reference-chart-title">Price reference</h2><a className="research-fact-link" href={reference.url} target="_blank" rel="noopener noreferrer">Open chart on TradingView</a><p className="research-note">{reference.note}</p></section>

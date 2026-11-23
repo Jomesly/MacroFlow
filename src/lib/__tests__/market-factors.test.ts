@@ -10,6 +10,13 @@ const news = (text: string, source: string, path: string) =>
   classifyHeadline(text).map(row => createEventFromClassification(row, source, `https://${source}.example/${path}`, asOf));
 const usdjpy = (events: MacroEvent[]) => scoreMarketForecast(events, unknownContext(asOf), asOf, 'USDJPY')[0];
 
+describe('factor freshness', () => {
+  it('carries each factor’s publish time so the page can show its age', () => {
+    const result = usdjpy(news('USD/JPY rallies as the yen weakens', 'wire', 'fresh'));
+    expect(marketFactors(result).map(factor => factor.timestamp)).toEqual([asOf]);
+  });
+});
+
 describe('trader conviction from news and macro factors', () => {
   const bullish = [
     ...news('USD/JPY rallies as the yen weakens', 'wire', 'a'),

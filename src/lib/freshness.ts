@@ -1,0 +1,23 @@
+/** News loses half its weight every six hours; see docs/news-forecast.md. */
+export const NEWS_HALF_LIFE_HOURS = 6;
+
+/** Hours between `timestamp` and `now`; NaN when either is not a valid time. */
+export function ageHours(timestamp: string, now: string): number {
+  return (Date.parse(now) - Date.parse(timestamp)) / 3_600_000;
+}
+
+/** "45 min ago", "3 h ago": how old an input is, in words a trader scans quickly. */
+export function ageLabel(timestamp: string | undefined, now: string): string {
+  const hours = timestamp ? ageHours(timestamp, now) : NaN;
+  if (!Number.isFinite(hours)) return 'time unknown';
+  const minutes = hours * 60;
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${Math.floor(minutes)} min ago`;
+  if (hours < 48) return `${Math.floor(hours)} h ago`;
+  return `${Math.floor(hours / 24)} d ago`;
+}
+
+/** Share of a headline's original weight that is left after `ageHours`, as a whole percent. */
+export function weightLeftPercent(ageHours: number): number {
+  return Math.round(100 * 0.5 ** (Math.max(0, ageHours) / NEWS_HALF_LIFE_HOURS));
+}

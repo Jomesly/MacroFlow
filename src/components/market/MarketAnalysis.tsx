@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { BiasResult, HistoryEntry, ScoredEvent } from '@/lib/types';
 import { directionLabel, signed } from '@/lib/market/symbols';
+import { ageHours, ageLabel, weightLeftPercent } from '@/lib/freshness';
 
 const AXIS_ZONES = [
   { direction: 'bearish', label: 'Bearish', span: 50 },
@@ -27,7 +28,20 @@ export function MarketBiasAxis({ data }: { data: BiasResult }) {
 
 type Side = 'bull' | 'bear';
 
-function DriverGroup({ title, events, empty, side, strongest = 1, lead = false }: { title: string; events: ScoredEvent[]; empty: string; side?: Side; strongest?: number; lead?: boolean }) {
+/** "3 h ago · counts 71%": how old a driver is and how much of its weight is left. Headlines fade; data does not. */
+function DriverAge({ event, now }: { event: ScoredEvent; now: number }) {
+  if (!now || !event.timestamp) return null;
+  const at = new Date(now).toISOString();
+  const headline = !event.evidenceType || event.evidenceType === 'headline';
+  return (
+    <span className="research-driver-age">
+      <time dateTime={event.timestamp}>{ageLabel(event.timestamp, at)}</time>
+      {headline ? ` · counts ${weightLeftPercent(ageHours(event.timestamp, at))}%` : ''}
+    </span>
+  );
+}
+
+function DriverGroup({ title, events, empty, side, strongest = 1, lead = false, now = 0 }: { title: string; events: ScoredEvent[]; empty: string; side?: Side; strongest?: number; lead?: boolean; now?: number }) {
   return (
     <div className={`research-driver-group${lead ? ' is-lead' : ''}`}>
       <h3>{title} <span>({events.length})</span></h3>
@@ -36,7 +50,7 @@ function DriverGroup({ title, events, empty, side, strongest = 1, lead = false }
           <details>
             <summary>
               {side && <span aria-hidden="true" className={`research-driver-bar is-${side}`} style={{ '--strength': Math.max(0.08, Math.abs(event.scoreChange) / strongest), '--order': order } as CSSProperties} />}
-              <span className="research-driver-title">{event.title}<span>{event.impact} impact</span></span>
+              <span className="research-driver-title">{event.title}<span>{event.impact} impact</span><DriverAge event={event} now={now} /></span>
               <span className="research-contribution">{signed(event.scoreChange)}<span>score input</span></span>
             </summary>
             <div className="research-driver-body">
@@ -51,7 +65,7 @@ function DriverGroup({ title, events, empty, side, strongest = 1, lead = false }
   );
 }
 
-export function MarketDrivers({ data }: { data: BiasResult }) {
+export function MarketDrivers({ data, now = 0 }: { data: BiasResult; now?: number }) {
   const bullish = data.events.filter((event) => event.scoreChange > 0);
   const bearish = data.events.filter((event) => event.scoreChange < 0);
   const unscored = data.events.filter((event) => event.scoreChange === 0);
@@ -78,8 +92,8 @@ export function MarketDrivers({ data }: { data: BiasResult }) {
       )}
       {/* Bearish sits left and bullish right, matching the score axis above. */}
       <div className="research-driver-columns">
-        <DriverGroup title={neutral ? 'Bearish drivers' : negative ? 'Supporting drivers' : 'Opposing drivers'} events={bearish} side="bear" strongest={strongest} lead={negative} empty={neutral ? 'No bearish drivers in this read.' : negative ? 'No drivers support the current direction.' : 'No opposing drivers in this read.'} />
-        <DriverGroup title={neutral ? 'Bullish drivers' : negative ? 'Opposing drivers' : 'Supporting drivers'} events={bullish} side="bull" strongest={strongest} lead={!negative} empty={neutral ? 'No bullish drivers in this read.' : negative ? 'No opposing drivers in this read.' : 'No drivers support the current direction.'} />
+        <DriverGroup now={now} title={neutral ? 'Bearish drivers' : negative ? 'Supporting drivers' : 'Opposing drivers'} events={bearish} side="bear" strongest={strongest} lead={negative} empty={neutral ? 'No bearish drivers in this read.' : negative ? 'No drivers support the current direction.' : 'No opposing drivers in this read.'} />
+        <DriverGroup now={now} title={neutral ? 'Bullish drivers' : negative ? 'Opposing drivers' : 'Supporting drivers'} events={bullish} side="bull" strongest={strongest} lead={!negative} empty={neutral ? 'No bullish drivers in this read.' : negative ? 'No opposing drivers in this read.' : 'No drivers support the current direction.'} />
       </div>
       {unscored.length > 0 && <DriverGroup title="Unscored context" events={unscored} empty="" />}
     </section>
