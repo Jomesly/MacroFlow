@@ -25,6 +25,8 @@ export interface BucketStats {
 export interface CalendarDay extends BucketStats {
   date: string;
   breakeven: number;
+  /** Saved screenshots across the day's trades; set by the analytics route. */
+  screenshots?: number;
 }
 
 export interface DayExtreme {

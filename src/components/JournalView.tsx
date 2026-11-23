@@ -70,7 +70,17 @@ export default function JournalView({
   const [fundsAccount, setFundsAccount] = useState<TradingAccount | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importVersion, setImportVersion] = useState(0);
-  useEffect(() => { const openHistory = () => setTab('history'); window.addEventListener('journal-open-history', openHistory); return () => window.removeEventListener('journal-open-history', openHistory); }, []);
+  const [focusTradeId, setFocusTradeId] = useState<string | null>(null);
+  useEffect(() => {
+    // Optional detail.tradeId opens that trade's editor (e.g. from the P&L calendar day view).
+    const openHistory = (event: Event) => {
+      const tradeId = (event as CustomEvent<{ tradeId?: unknown } | null>).detail?.tradeId;
+      setFocusTradeId(typeof tradeId === 'string' ? tradeId : null);
+      setTab('history');
+    };
+    window.addEventListener('journal-open-history', openHistory);
+    return () => window.removeEventListener('journal-open-history', openHistory);
+  }, []);
   const loadAccounts = useCallback(async () => {
     setAccountsLoading(true); setAccountsError('');
     try {
@@ -232,7 +242,7 @@ export default function JournalView({
                   </div>
                   {tab === 'history' && (
                     <div className="journal-history-content">
-                      <TradeHistory ref={historyRef} journalAccountId={selectedAccount || undefined} accounts={accounts} />
+                      <TradeHistory ref={historyRef} journalAccountId={selectedAccount || undefined} accounts={accounts} focusTradeId={focusTradeId} onFocusHandled={() => setFocusTradeId(null)} />
                     </div>
                   )}
                   {tab === 'analytics' && <Analytics journalAccountId={selectedAccount || undefined} />}

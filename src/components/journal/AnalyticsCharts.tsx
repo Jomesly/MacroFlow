@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { animate, motion, useReducedMotion } from 'motion/react';
-import { CaretLeft, CaretRight } from '@phosphor-icons/react';
+import { Camera, CaretLeft, CaretRight } from '@phosphor-icons/react';
 import type { BucketStats, CalendarDay, EquityPoint, TimeCell } from '@/lib/analytics';
 import { compactMoney, signedMoney, type MoneyUnit } from '@/lib/money-format';
 
@@ -226,7 +226,13 @@ function heat(share: number): string {
   return `${Math.round(45 + 55 * Math.min(1, share))}%`;
 }
 
-export function MonthCalendar({ days, unit }: { days: CalendarDay[]; unit?: MoneyUnit }) {
+export function MonthCalendar({ days, unit, onSelectDay, selectedDate }: {
+  days: CalendarDay[];
+  unit?: MoneyUnit;
+  /** Makes traded days buttons that open the day's trades. */
+  onSelectDay?: (day: CalendarDay) => void;
+  selectedDate?: string | null;
+}) {
   const byDate = useMemo(() => new Map(days.map((d) => [d.date, d])), [days]);
   const latest = days.length ? days[days.length - 1].date.slice(0, 7) : new Date().toISOString().slice(0, 7);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -284,16 +290,30 @@ export function MonthCalendar({ days, unit }: { days: CalendarDay[]; unit?: Mone
                   if (cell === null) return <td key={i} className="is-outside" />;
                   if (typeof cell === 'number') return <td key={i}><span className="day">{cell}</span></td>;
                   const tone = toneOf(cell.net);
+                  const shots = cell.screenshots ?? 0;
+                  const summary = `${fmtDay(cell.date)}: ${cell.wins}W / ${cell.losses}L / ${cell.breakeven}BE, net ${fmtMoney(cell.net, unit)}${shots ? `, ${shots} ${shots === 1 ? 'screenshot' : 'screenshots'}` : ''}`;
+                  const content = (
+                    <>
+                      <span className="day">{Number(cell.date.slice(8))}</span>
+                      {shots > 0 && <span className="shots" aria-hidden="true"><Camera size={11} weight="fill" />{shots}</span>}
+                      <span className="net">{cell.net === null ? `${cell.wins}W ${cell.losses}L` : fmtCompact(cell.net, unit)}</span>
+                      <span className="meta">{cell.trades} {cell.trades === 1 ? 'trade' : 'trades'}{cell.winRate !== null && ` · ${fmtPct(cell.winRate)}`}</span>
+                    </>
+                  );
                   return (
                     <td
                       key={i}
                       data-tone={tone}
+                      data-selected={selectedDate === cell.date ? '' : undefined}
+                      className={onSelectDay ? 'is-clickable' : undefined}
                       style={{ '--jd-heat': heat(peak ? Math.abs(cell.net ?? 0) / peak : 0) } as React.CSSProperties}
-                      title={`${fmtDay(cell.date)}: ${cell.wins}W / ${cell.losses}L / ${cell.breakeven}BE, net ${fmtMoney(cell.net, unit)}`}
+                      title={onSelectDay ? undefined : summary}
                     >
-                      <span className="day">{Number(cell.date.slice(8))}</span>
-                      <span className="net">{cell.net === null ? `${cell.wins}W ${cell.losses}L` : fmtCompact(cell.net, unit)}</span>
-                      <span className="meta">{cell.trades} {cell.trades === 1 ? 'trade' : 'trades'}{cell.winRate !== null && ` · ${fmtPct(cell.winRate)}`}</span>
+                      {onSelectDay ? (
+                        <button type="button" className="jd-cal-hit" aria-haspopup="dialog" aria-label={`${summary}. Show trades${shots ? ' and screenshots' : ''}.`} title={summary} onClick={() => onSelectDay(cell)}>
+                          {content}
+                        </button>
+                      ) : content}
                     </td>
                   );
                 })}

@@ -1,8 +1,10 @@
 'use client';
 import { journalFetch } from '@/lib/journal-fetch';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AnalyticsResult } from '@/lib/analytics';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { AnalyticsResult, CalendarDay } from '@/lib/analytics';
+import DayTradesPanel from '@/components/journal/DayTradesPanel';
+import { journalFeatures } from '@/lib/journal-features';
 import { TRADE_SYMBOLS } from '@/lib/types';
 import {
   Breakdown,
@@ -54,19 +56,23 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
   const [range, setRange] = useState<Range>('all');
   const [fromFilter, setFromFilter] = useState('');
   const [toFilter, setToFilter] = useState('');
+  const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const requestVersion = useRef(0);
+  // One query string for the summary and the day drill-down, so both agree.
+  const filters = useMemo(() => {
+    const q = new URLSearchParams();
+    if (journalAccountId) q.set('tradingAccount', journalAccountId);
+    if (symbolFilter) q.set('symbol', symbolFilter);
+    if (fromFilter) q.set('from', fromFilter);
+    if (toFilter) q.set('to', toFilter);
+    return q.toString();
+  }, [journalAccountId, symbolFilter, fromFilter, toFilter]);
 
   const load = useCallback(async () => {
     const version = ++requestVersion.current;
     setLoading(true);
     try {
-      const q = new URLSearchParams();
-      if (journalAccountId) q.set('tradingAccount', journalAccountId);
-      if (symbolFilter) q.set('symbol', symbolFilter);
-      if (fromFilter) q.set('from', fromFilter);
-      if (toFilter) q.set('to', toFilter);
-
-      const aRes = await journalFetch(`/api/journal/analytics?${q.toString()}`);
+      const aRes = await journalFetch(`/api/journal/analytics?${filters}`);
       if (!aRes.ok) throw new Error(`HTTP ${aRes.status}`);
       const aJson = await aRes.json();
       if (version !== requestVersion.current) return;
@@ -80,7 +86,7 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
     } finally {
       if (version === requestVersion.current) setLoading(false);
     }
-  }, [symbolFilter, fromFilter, toFilter, journalAccountId]);
+  }, [filters]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch; all setState occurs after await resolves
@@ -264,8 +270,10 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
 
           <div className="jd-row">
             <section className="jd-panel">
-              <MonthCalendar days={data.calendar} unit={unit} />
+              <MonthCalendar days={data.calendar} unit={unit} onSelectDay={setSelectedDay} selectedDate={selectedDay?.date} />
+              <p className="jd-sub mt-3">Select a day to see its trades{journalFeatures.screenshots ? ' and screenshots' : ''}.</p>
             </section>
+            {selectedDay && <DayTradesPanel key={`${selectedDay.date}:${filters}`} day={selectedDay} filters={filters} unit={unit} onClose={() => setSelectedDay(null)} />}
             <section className="jd-panel">
               <div className="jd-panel-head">
                 <h3>Win rate by entry time</h3>

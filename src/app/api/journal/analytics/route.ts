@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireJournalAccess } from '@/lib/auth';
-import { listTrades } from '@/lib/journal';
-import { computeAnalytics, filterTrades } from '@/lib/analytics';
+import { computeAnalytics } from '@/lib/analytics';
+import { loadAnalyticsView } from '@/lib/analytics-view';
+import { journalFeatures } from '@/lib/journal-features';
+import { screenshotCountsByTrade } from '@/lib/screenshots';
+import { tradeDay } from '@/lib/trade-dates';
 import { TradingAccountError } from '@/lib/trading-account-types';
-import { requireOwnedTradingAccount } from '@/lib/trading-accounts';
 import { currencyPrecision } from '@/lib/account-money';
 
 export const dynamic = 'force-dynamic';
-
-function parseList(value: string | null): string[] | undefined {
-  if (!value) return undefined;
-  const items = value.split(',').map((s) => s.trim()).filter(Boolean);
-  return items.length > 0 ? items : undefined;
-}
 
 /**
  * GET /api/journal/analytics?account=1,2&symbol=XAUUSD&tag=Sweep&from=...&to=...
@@ -23,27 +19,29 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return auth.response;
 
   try {
-    const params = request.nextUrl.searchParams;
-    const accountParam = parseList(params.get('account'));
-    const accountIds = accountParam
-      ?.map(Number)
-      .filter((n) => Number.isInteger(n));
+    const { trades, moneyComparable, currency } = await loadAnalyticsView(auth.userId, request.nextUrl.searchParams);
+    const analytics = computeAnalytics(trades, {}, currency ? currencyPrecision(currency) : 2);
 
-    const trades = await listTrades(auth.userId, params.get('tradingAccount') ?? undefined);
-    const filtered = filterTrades(trades, {
-      accountIds,
-      symbols: parseList(params.get('symbol')),
-      tags: parseList(params.get('tag')),
-      from: params.get('from') ?? undefined,
-      to: params.get('to') ?? undefined,
-    });
-    // Aggregating different accounts can mix currencies. Keep counts and R;
-    // monetary figures are only meaningful for one journal/broker account.
-    const moneyAccounts = new Set(filtered.filter(t => t.result !== null && t.pnlAmount !== null).map(t => t.journalAccountId ?? t.brokerAccountId));
-    const moneyComparable = moneyAccounts.size <= 1;
-    const moneyAccountId = moneyComparable ? filtered.find(t => t.result !== null && t.pnlAmount !== null)?.journalAccountId : undefined;
-    const currency = moneyAccountId ? (await requireOwnedTradingAccount(auth.userId, moneyAccountId)).currency : null;
-    const analytics = computeAnalytics(moneyComparable ? filtered : filtered.map(t => ({ ...t, pnlAmount: null })), {}, currency ? currencyPrecision(currency) : 2);
+    // Mark calendar days that have screenshots. This is a hint only: a
+    // screenshot outage must never take the analytics page down with it.
+    if (journalFeatures.screenshots && analytics.calendar.length) {
+      try {
+        const counts = await screenshotCountsByTrade(auth.userId);
+        if (counts.size) {
+          const byDay = new Map<string, number>();
+          for (const trade of trades) {
+            const count = trade.result !== null ? counts.get(trade.id) : undefined;
+            if (count) byDay.set(tradeDay(trade), (byDay.get(tradeDay(trade)) ?? 0) + count);
+          }
+          for (const day of analytics.calendar) {
+            const count = byDay.get(day.date);
+            if (count) day.screenshots = count;
+          }
+        }
+      } catch (error) {
+        console.error('[journal] analytics screenshot counts failed:', error);
+      }
+    }
 
     return NextResponse.json({ analytics, moneyComparable, currency, timestamp: new Date().toISOString() }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {

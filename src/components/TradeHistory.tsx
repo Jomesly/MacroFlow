@@ -3,7 +3,7 @@ import { journalFetch } from '@/lib/journal-fetch';
 import { tradeDateLabel, tradeDay } from '@/lib/trade-dates';
 import { useSetupTags } from '@/lib/use-setup-tags';
 
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
+import { useCallback, useEffect, useEffectEvent, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import TradeScreenshots, { type TradeScreenshotsHandle } from './TradeScreenshots';
 import { journalFeatures } from '@/lib/journal-features';
 import { Trade, TradeApiResponse, TradeResult, TradesApiResponse } from '@/lib/types';
@@ -46,7 +46,14 @@ function formatPnl(trade: Trade): { text: string; color: string; title?: string 
 
 export type TradeHistoryHandle = { canLeave: () => boolean };
 
-export default function TradeHistory({ journalAccountId, accounts = [], ref }: { journalAccountId?: string; accounts?: TradingAccount[]; ref?: Ref<TradeHistoryHandle> }) {
+export default function TradeHistory({ journalAccountId, accounts = [], ref, focusTradeId, onFocusHandled }: {
+  journalAccountId?: string;
+  accounts?: TradingAccount[];
+  ref?: Ref<TradeHistoryHandle>;
+  /** Opens this trade's editor once trades load, e.g. from the calendar day view. */
+  focusTradeId?: string | null;
+  onFocusHandled?: () => void;
+}) {
   const setupTags = useSetupTags();
   const screenshotEditor = useRef<TradeScreenshotsHandle>(null);
   useImperativeHandle(ref, () => ({ canLeave: () => screenshotEditor.current?.canLeave() ?? true }), []);
@@ -117,6 +124,21 @@ export default function TradeHistory({ journalAccountId, accounts = [], ref }: {
     setActionError('');
     setConfirmDeleteId(null);
   };
+
+  // Open the requested trade in edit mode (screenshots are pasted there).
+  const openFocusedTrade = useEffectEvent((id: string) => {
+    const trade = trades.find((row) => row.id === id);
+    if (trade) {
+      setExpandedId(trade.id);
+      startEdit(trade);
+      requestAnimationFrame(() => document.getElementById(`trade-record-${trade.id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+    }
+    onFocusHandled?.();
+  });
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off jump requested by another journal view, after trades load
+    if (focusTradeId && !loading) openFocusedTrade(focusTradeId);
+  }, [focusTradeId, loading]);
 
   const cancelEdit = () => {
     if (screenshotEditor.current?.canLeave() === false) return;
@@ -279,7 +301,7 @@ export default function TradeHistory({ journalAccountId, accounts = [], ref }: {
         const synced = trade.brokerAccountId !== null;
 
         return (
-          <div key={trade.id} className="trade-record border-b border-zinc-800/50 last:border-0">
+          <div key={trade.id} id={`trade-record-${trade.id}`} className="trade-record border-b border-zinc-800/50 last:border-0">
             {!journalAccountId && <p className="trade-record-account">{account ? tradingAccountLabel(account) : 'My journal'}</p>}
             <button
               type="button"

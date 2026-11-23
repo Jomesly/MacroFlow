@@ -81,6 +81,42 @@ export async function screenshotGallery(userId: string, tradeId: string) {
   };
 }
 
+export type TradeScreenshot = ReturnType<typeof publicScreenshot>;
+// Keep each `in (...)` list well inside PostgREST's URL length limit.
+const TRADE_ID_BATCH = 150;
+
+/** Saved (ready) screenshots for several of the owner's trades, keyed by trade id. */
+export async function screenshotsForTrades(userId: string, tradeIds: string[]): Promise<Map<string, TradeScreenshot[]>> {
+  const ids = [...new Set(tradeIds.filter(id => uuid.test(id)))];
+  const byTrade = new Map<string, TradeScreenshot[]>();
+  for (let start = 0; start < ids.length; start += TRADE_ID_BATCH) {
+    const { data, error } = await supabase.from('journal_trade_screenshots').select(columns)
+      .eq('user_id', userId).eq('state', 'ready').in('trade_id', ids.slice(start, start + TRADE_ID_BATCH))
+      .order('trade_id').order('slot');
+    if (error) databaseFailure(error);
+    for (const row of (data ?? []) as ScreenshotRow[]) {
+      const list = byTrade.get(row.trade_id) ?? [];
+      list.push(publicScreenshot(row));
+      byTrade.set(row.trade_id, list);
+    }
+  }
+  return byTrade;
+}
+
+/** Number of saved screenshots per trade for all of the owner's trades. */
+export async function screenshotCountsByTrade(userId: string): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.from('journal_trade_screenshots').select('trade_id,id')
+      .eq('user_id', userId).eq('state', 'ready').order('id').range(offset, offset + 999);
+    if (error) databaseFailure(error);
+    const page = (data ?? []) as { trade_id: string }[];
+    for (const row of page) counts.set(row.trade_id, (counts.get(row.trade_id) ?? 0) + 1);
+    if (page.length < 1000) break;
+  }
+  return counts;
+}
+
 async function findScreenshot(userId: string, tradeId: string, selector: ScreenshotSelector) {
   let query = supabase.from('journal_trade_screenshots').select(columns)
     .eq('user_id', userId).eq('trade_id', tradeId).eq('state', 'ready');
