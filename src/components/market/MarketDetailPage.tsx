@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowDownRight, ArrowUpRight, Minus } from '@phosphor-icons/react';
+import { ArrowDownRight, ArrowUpRight, Check, Minus, X } from '@phosphor-icons/react';
+import { gradeBadge } from '@/lib/signal-grade';
 import type { AssetSymbol, BiasApiResponse } from '@/lib/types';
 import { consistentBiasReading } from '@/lib/bias-reading';
 import { referenceCharts } from '@/lib/market/instruments';
@@ -58,6 +59,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
               <dl>
                 <div><dt>Strength</dt><dd>{data.direction === 'neutral' ? '—' : `${Math.abs(Math.round(data.biasPercent))}%`}</dd></div>
                 <div><dt>Conviction</dt><dd>{data.conviction}</dd></div>
+                {data.grade && <div><dt>Signal</dt><dd>{gradeBadge(data.grade)}</dd></div>}
                 <div><dt>Drivers</dt><dd>{counts.bullish} bullish / {counts.bearish} bearish</dd></div>
                 <div><dt>News sources</dt><dd>{data.forecast?.sourceCount ?? '—'}</dd></div>
                 <div><dt>Session</dt><dd>{marketIsOpen(symbol, new Date(now)) ? 'Market open' : 'Market closed'}</dd></div>
@@ -84,6 +86,17 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
               <div><dt>Bias call</dt><dd>{data.signal.replaceAll('_', ' ')}</dd></div>
             </dl>}
             <ul>{data.forecast.limitations.map(limitation => <li key={limitation}>{limitation}</li>)}</ul>
+          </section>}
+          {data.grade && <section className="research-fact" aria-labelledby="signal-checks-title">
+            <h2 id="signal-checks-title">Signal checks</h2>
+            <p><strong>{gradeBadge(data.grade)}</strong></p>
+            <p className="research-note">A signal needs fresh news and the macro backdrop pointing the same way. All seven checks make an A signal; missing only one of &ldquo;two sources&rdquo; or &ldquo;dollar and yield moves&rdquo; makes a B signal. Anything else is a lean, with no buy or sell call.</p>
+            <ul className="signal-checks">{data.grade.checks.map(check => (
+              <li key={check.id} className={check.passed ? 'is-passed' : 'is-failed'}>
+                {check.passed ? <Check size={14} weight="bold" aria-hidden="true" /> : <X size={14} weight="bold" aria-hidden="true" />}
+                <span className="sr-only">{check.passed ? 'Passed: ' : 'Not met: '}</span>{check.label}
+              </li>
+            ))}</ul>
           </section>}
           {data.alignment && <section className="research-fact" aria-labelledby="alignment-title">
             <h2 id="alignment-title">Four-hour macro alignment</h2>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gradeSignal, signalFromGrade } from '../signal-grade';
+import { gradeBadge, gradeSignal, signalFromGrade } from '../signal-grade';
 import { unknownContext } from '../macro-context';
 import type { AlignmentAssessment, BiasResult, CalendarEvent, ScoredEvent } from '../types';
 
@@ -71,6 +71,15 @@ describe('macro-matched signal grade', () => {
   it('gives no signal below a score of 30', () =>
     expect(gradeSignal({ ...base(), biasScore: 29, biasPercent: 29, direction: 'weakly_bullish' }, ctx)).toMatchObject({ grade: 'none', side: null }));
   it('gives no signal when inputs are unhealthy', () => expect(grade(base(), { inputsHealthy: false })).toBe('none'));
+});
+
+describe('grade badge', () => {
+  it.each([
+    [{ grade: 'A' as const, side: 'long' as const, checks: [] }, 'A signal · Long'],
+    [{ grade: 'B' as const, side: 'short' as const, checks: [] }, 'B signal · Short'],
+    [{ grade: 'none' as const, side: null, checks: [] }, 'Lean only'],
+    [undefined, 'Lean only'],
+  ])('%j -> %s', (graded, badge) => expect(gradeBadge(graded)).toBe(badge));
 });
 
 describe('trade signal from grade', () => {

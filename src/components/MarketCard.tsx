@@ -16,6 +16,7 @@ import type { BoardTile } from "@/lib/market-board";
 import { marketIsOpen } from "@/lib/marketIsOpen";
 import { biasWord, convictionLabel } from "@/lib/market-factors";
 import { ageHours, ageLabel, FRESH_NEWS_HOURS } from "@/lib/freshness";
+import { gradeBadge } from "@/lib/signal-grade";
 
 /** Measured at the read's issue time, which refreshes every five minutes, so cards need no ticking clock. */
 function newsAge(forecast: NonNullable<BiasResult["forecast"]>): string {
@@ -131,7 +132,7 @@ export default function MarketCard({
         href={`/markets/${data.symbol}`}
         onClick={onNavigate}
         className="market-card-main"
-        aria-label={`${data.symbol}: ${bias}${strength === null ? "" : `, ${strength}% strength`}, ${convictionLabel(data).toLowerCase()}${outdated ? ", outdated read" : ""}. View full analysis.`}
+        aria-label={`${data.symbol}: ${bias}${strength === null ? "" : `, ${strength}% strength`}, ${convictionLabel(data).toLowerCase()}${data.forecast ? `, ${gradeBadge(data.grade).replace(" · ", " ").toLowerCase()}` : ""}${outdated ? ", outdated read" : ""}. View full analysis.`}
       >
         <span className="market-id">
           <h3>{data.symbol}</h3>
@@ -167,6 +168,7 @@ export default function MarketCard({
               data.forecast && <span className="market-window">4h</span>
             )}
           </span>
+          {data.forecast && <span className="market-grade" data-grade={data.grade?.grade ?? 'none'}>{gradeBadge(data.grade)}</span>}
           {data.forecast && <span className="market-conviction">{newsAge(data.forecast)}</span>}
         </span>
         {!data.forecast && <BiasHistory data={data} scale={historyScale} />}

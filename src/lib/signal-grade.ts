@@ -62,6 +62,12 @@ export function gradeSignal(result: BiasResult, ctx: { asOf: string; calendar: C
   return { grade, side: grade === 'none' ? null : sign > 0 ? 'long' : 'short', checks };
 }
 
+/** "A signal · Long", "B signal · Short" or "Lean only": the words on cards and market pages. */
+export function gradeBadge(graded: SignalGradeResult | undefined): string {
+  if (!graded || graded.grade === 'none' || !graded.side) return 'Lean only';
+  return `${graded.grade} signal · ${graded.side === 'long' ? 'Long' : 'Short'}`;
+}
+
 /** The buy/sell call shown to traders: A is strong, B is plain, anything else is no call. */
 export function signalFromGrade(graded: SignalGradeResult): TradeSignal {
   if (graded.grade === 'none' || !graded.side) return 'neutral';

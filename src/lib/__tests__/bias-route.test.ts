@@ -6,6 +6,7 @@ import { FORECAST_VERSION, scoreMarketForecast } from '../forecast';
 import { classifyHeadline, createEventFromClassification } from '../api/classifier';
 import { getHistory, recordDailySnapshot } from '../redis';
 import { getEvents } from '../events';
+import { signalFromGrade } from '../signal-grade';
 import { GET } from '../../app/api/bias/route';
 
 vi.mock('../events', () => ({ getEvents: vi.fn() }));
@@ -23,9 +24,11 @@ describe('live bias route', () => {
     const response = await GET(new NextRequest('http://localhost/api/bias?symbol=US100'));
     expect(response.headers.get('cache-control')).toBe('no-store');
     const body = await response.json();
-    expect(body.data).toMatchObject(JSON.parse(JSON.stringify(scoreMarketForecast(inputs.events, inputs.context, asOf, 'US100'))));
+    // Everything but the call comes from the shared scorer; the call follows the grade.
+    const scored = scoreMarketForecast(inputs.events, inputs.context, asOf, 'US100').map(result => ({ ...result, signal: body.data[0].signal }));
+    expect(body.data).toMatchObject(JSON.parse(JSON.stringify(scored)));
     expect(body.data[0].alignment.context.regime).toBe('growth_sensitive');
-    expect(body.data[0].signal).toBe(scoreMarketForecast(inputs.events, inputs.context, asOf, 'US100')[0].signal);
+    expect(body.data[0].signal).toBe(signalFromGrade(body.data[0].grade));
     expect(body.sourceHealth.economic_calendar).toBe('failed');
     const { getCalendar } = await import('../calendar');
     expect(getCalendar).not.toHaveBeenCalled();
@@ -39,8 +42,9 @@ describe('live bias route', () => {
       sourceHealth: { rss: 'ok', fred: 'failed', market_data: 'empty' }, nextEvent: null });
     const body = await (await GET(new NextRequest('http://localhost/api/bias?symbol=USDJPY'))).json();
     expect(body.data).toHaveLength(1);
+    // A news-only lean with no macro backdrop is "Lean only": shown, but no buy/sell call.
     expect(body.data[0]).toMatchObject({ symbol: 'USDJPY', direction: 'weakly_bullish', conviction: 'low',
-      forecast: { basis: 'news', modelVersion: FORECAST_VERSION, macroSignal: 'neutral' }, signal: 'buy' });
+      forecast: { basis: 'news', modelVersion: FORECAST_VERSION, macroSignal: 'neutral' }, signal: 'neutral', grade: { grade: 'none', side: null } });
     expect(body.sourceHealth.fred).toBe('failed');
     expect(body.data[0].forecast.probability).toBeNull();
     expect(body.data[0].probability.status).toBe('unavailable');
@@ -86,5 +90,28 @@ describe('live bias route', () => {
     const body = await (await GET(new NextRequest(`http://localhost/api/bias?symbol=${symbol}`))).json();
     expect(body.data).toHaveLength(1);
     expect(body.data[0]).toMatchObject({ symbol, direction, conviction: 'low', forecast: { basis: 'news' } });
+  });
+  it('grades every market and takes the buy/sell call from the grade', async () => {
+    const asOf = '2026-11-10T12:00:00.000Z';
+    vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
+    const inputs = buildMacroInputs(contextFixture(), asOf);
+    vi.mocked(getEvents).mockResolvedValue({ ...inputs, source: 'live', cachedAt: asOf, sourceHealth: { fred: 'ok' }, nextEvent: null });
+    const body = await (await GET(new NextRequest('http://localhost/api/bias'))).json();
+    expect(body.data.length).toBeGreaterThan(1);
+    for (const result of body.data) {
+      expect(result.grade.checks).toHaveLength(7);
+      expect(result.signal).toBe(signalFromGrade(result.grade));
+    }
+  });
+  it('fails the event-risk check before a high-impact release for that market', async () => {
+    const asOf = '2026-11-11T12:00:00.000Z';
+    vi.useFakeTimers(); vi.setSystemTime(new Date(asOf));
+    const events = classifyHeadline('USD/JPY rallies').map(row => createEventFromClassification(row, 'News', 'https://example.com/story', asOf));
+    const cpi = { id: 'cpi', title: 'CPI', currency: 'USD', time: '2026-11-11T13:00:00.000Z', impact: 'high' as const,
+      forecast: '3.0%', previous: '3.1%', actual: null, affects: ['USDJPY'] };
+    vi.mocked(getEvents).mockResolvedValue({ events, context: unknownContext(asOf), source: 'live', cachedAt: asOf, sourceHealth: { rss: 'ok' },
+      nextEvent: null, calendarEvidence: { fetchedAt: asOf, archiveStatus: 'ok', events: [cpi], archivedForecasts: [] } });
+    const body = await (await GET(new NextRequest('http://localhost/api/bias?symbol=USDJPY'))).json();
+    expect(body.data[0].grade.checks.find((check: { id: string }) => check.id === 'no_event_risk')).toMatchObject({ passed: false });
   });
 });

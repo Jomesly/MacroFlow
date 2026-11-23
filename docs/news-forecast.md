@@ -1,6 +1,6 @@
 # Four-hour news and macro bias
 
-The dashboard and `/api/bias` use `macro-factors-v3-4h-2026-11-12` across all 12 markets. Each market card is a quick read of three things, and the full analysis page behind it holds the reasons:
+The dashboard and `/api/bias` use `macro-factors-v4-4h-2026-11-23` across all 12 markets. Each market card is a quick read of three things, and the full analysis page behind it holds the reasons:
 
 1. **Bias**: bullish, bearish or neutral for the next four hours, with a **strength percentage** (the size of the lean on a 0–100 scale, not a win rate).
 2. **Conviction**: high, medium or low, showing how firmly the factors point one way.
@@ -12,7 +12,7 @@ Technical analysis is left to the trader. Price action is **not scored**, so the
 
 - **News** includes every classified headline: direct reporting on the asset, central-bank actions and tone, risk sentiment, earnings, crypto regulation, geopolitics, currency strength and yield headlines.
 - **Macro backdrop** includes structured economic data: release surprises against consensus, economic trends and dollar/yield market observations.
-- Each headline has a six-hour half-life. Each story gets one net vote, and direct reporting on the asset takes priority over causal mappings from the same story. Duplicate URLs and titles merge. Within each category only the strongest bullish and bearish contribution counts, so repeated stories cannot manufacture confirmation.
+- Each headline has a six-hour half-life and drops out after 12 hours. The market page shows each driver's age and how much of its weight is left, and each card shows when its newest news arrived. A read with no headline from the last 6 hours says so. Each story gets one net vote, and direct reporting on the asset takes priority over causal mappings from the same story. Duplicate URLs and titles merge. Within each category only the strongest bullish and bearish contribution counts, so repeated stories cannot manufacture confirmation.
 - Fresh asset quotes are still fetched and shown on the market page as price context. They never enter the score or the factor list.
 
 ## Score and weights
@@ -27,13 +27,29 @@ The news component is 1.5 × its category total, capped at ±100. The macro comp
 | Medium | Score magnitude at least 30, backed by two news sources or by macro data that points the same way |
 | Low | Any weaker nonzero lean |
 
-High conviction issues a strong buy or strong sell call. Medium and low conviction issue buy or sell calls. A market with no fresh factors is neutral and says so instead of inventing a lean. Stale or baseline API snapshots suppress all buy/sell calls.
+Conviction describes the lean. It no longer issues buy or sell calls on its own; signals do.
+
+## Signals: news and macro must match
+
+A buy or sell call needs a score of at least 30 and these checks ([plan](plans/2026-11-23-macro-matched-signals.md)):
+
+| Check | Passes when |
+| --- | --- |
+| Fresh news (under 6 h) supports it | The newest scored headline, and at least one supporting headline, are at most 6 hours old |
+| Macro backdrop points the same way | The macro component has the score's sign and a size of at least 10 |
+| Two or more news sources agree | At least two outlets among the supporting headlines |
+| At least 70% of the evidence agrees | Supporting score inputs make up at least 70% of all inputs |
+| Dollar and yield moves confirm | Market observations confirm, in the macro score's direction |
+| No high-impact release in the next 4 h | No high-impact calendar release for this market within the forecast window |
+| All data feeds are live | Inputs are live, not stale, and at most 5 minutes old |
+
+All seven make an **A signal** (strong buy or strong sell). Missing only one of "two sources" or "dollar and yield moves" makes a **B signal** (buy or sell). Anything else is **Lean only**: the bias is shown, with no call. The market page lists every check and whether it passed.
 
 Conviction is a heuristic about the evidence, not a measured win rate. No historical accuracy claim is implied. The legacy calibrated `probability` stays unavailable, and `forecast.probability` is null.
 
 ## Feed resilience
 
-Each news feed is retried once. If it still fails, its last successful stories (kept for up to six hours) stand in, and the combined set is refreshed after one minute instead of five. A feed outage therefore cannot silently drop a market's main news source and swing its reading. Stories still fade through the six-hour half-life. Cards are marked "outdated" when the dashboard cannot refresh its data.
+Each news feed is retried once. If it still fails, its last successful stories (kept for up to six hours) stand in, and the combined set is refreshed after one minute instead of five. A feed outage therefore cannot silently drop a market's main news source and swing its reading. Stories still fade through the six-hour half-life. Cards are marked "outdated" when the dashboard cannot refresh its data. A failed news feed is named next to "Data sources" on the dashboard, and the server log records why it failed (`[rss] feed failed <name> <reason>`).
 
 ## Why this version changed
 
