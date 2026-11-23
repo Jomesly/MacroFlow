@@ -2490,6 +2490,19 @@ button:active:not(:disabled),
 .review-stats dd { margin-top: .5rem; font-size: 1.4rem; font-variant-numeric: tabular-nums; }
 .trade-screenshots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
 .trade-screenshots img { width: 100%; height: 8rem; object-fit: contain; border: 1px solid #3f3f46; border-radius: .5rem; }
+.trade-screenshot-section { padding-top: 1rem; border-top: 1px solid #3f3f46; }
+.trade-screenshot-heading, .trade-screenshot-caption { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.trade-screenshot-paste { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; border: 1px dashed #71717a; border-radius: .65rem; padding: 1rem; color: #e4e4e7; font-size: .8125rem; }
+.trade-screenshot-paste:focus-visible { outline: 2px solid #a1a1aa; outline-offset: 3px; }
+.trade-screenshot-paste small { flex-basis: 100%; color: #a1a1aa; font-size: .75rem; }
+.trade-screenshot-paste kbd { border: 1px solid #52525b; border-radius: .25rem; padding: .1rem .3rem; font-size: .75rem; }
+.trade-screenshot-add { margin-left: auto; padding: .4rem .75rem; border: 1px solid #71717a; border-radius: .4rem; white-space: nowrap; }
+.trade-screenshot-caption { min-height: 2rem; font-size: .75rem; color: #a1a1aa; }
+.trade-screenshot-caption button, .trade-screenshot-actions button { color: #e4e4e7; text-decoration: underline; text-underline-offset: .2rem; }
+.trade-screenshot-actions { display: flex; gap: 1rem; margin-top: .5rem; font-size: .75rem; }
+.trade-screenshot-section button { cursor: pointer; }
+.trade-screenshot-section button:disabled { cursor: not-allowed; opacity: .5; }
+.trade-screenshot-section button:focus-visible, .trade-screenshots a:focus-visible { outline: 2px solid #a1a1aa; outline-offset: 3px; }
 @media (max-width: 640px) { .review-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .trade-screenshots { grid-template-columns: 1fr; } }
 
 /* Market research: the page takes the market's own fill, and every figure is

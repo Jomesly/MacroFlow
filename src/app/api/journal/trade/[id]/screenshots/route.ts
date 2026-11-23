@@ -2,17 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireJournalAccess } from '@/lib/auth';
 import { journalFeatures } from '@/lib/journal-features';
 import {
-  listScreenshots,
+  screenshotGallery,
   readScreenshot,
-  removeScreenshots,
+  removeScreenshot,
   requireOwnedTrade,
   ScreenshotError,
   SCREENSHOT_MAX_BYTES,
   SCREENSHOT_SLOTS,
   uploadScreenshot,
+  type ScreenshotSelector,
 } from '@/lib/screenshots';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 60;
 type Context = { params: Promise<{ id: string }> };
 const headers = {
   'Cache-Control': 'private, no-store',
@@ -42,33 +45,48 @@ async function handle(
           error instanceof ScreenshotError
             ? error.message
             : 'Screenshots are temporarily unavailable',
+        ...(error instanceof ScreenshotError ? {
+          code: error.code,
+          ...(error.newUploadRequired ? { newUploadRequired: true } : {}),
+          ...(error.retryAfter ? { retryAfter: error.retryAfter } : {}),
+        } : {}),
       },
       {
         status: error instanceof ScreenshotError ? error.status : 503,
-        headers,
+        headers: {
+          ...headers,
+          ...(error instanceof ScreenshotError && error.retryAfter ? { 'Retry-After': String(error.retryAfter) } : {}),
+        },
       },
     );
   }
 }
 
-function slotOf(request: NextRequest) {
+function selectorOf(request: NextRequest): ScreenshotSelector {
+  const imageId = request.nextUrl.searchParams.get('imageId');
   const slot = request.nextUrl.searchParams.get('slot');
+  if (request.nextUrl.searchParams.has('imageId')) {
+    if (slot !== null || !imageId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(imageId)) {
+      throw new ScreenshotError('Invalid screenshot', 400, 'SCREENSHOT_INVALID_ID');
+    }
+    return { imageId };
+  }
   if (
     !slot ||
     !SCREENSHOT_SLOTS.includes(slot as (typeof SCREENSHOT_SLOTS)[number])
   )
     throw new ScreenshotError('Invalid screenshot', 400);
-  return slot;
+  return { slot };
 }
 
 export async function GET(request: NextRequest, context: Context) {
   return handle(request, context, async (user, id) => {
-    if (!request.nextUrl.searchParams.has('slot'))
+    if (!request.nextUrl.searchParams.has('slot') && !request.nextUrl.searchParams.has('imageId'))
       return NextResponse.json(
-        { screenshots: await listScreenshots(user, id) },
+        await screenshotGallery(user, id),
         { headers },
       );
-    const image = await readScreenshot(user, id, slotOf(request));
+    const image = await readScreenshot(user, id, selectorOf(request));
     return new Response(image, {
       headers: {
         ...headers,
@@ -85,7 +103,7 @@ export async function POST(request: NextRequest, context: Context) {
     // Read a bounded body before decoding multipart data (also handles absent/false Content-Length).
     const maxBody = SCREENSHOT_MAX_BYTES + 64 * 1024;
     if (Number(request.headers.get('content-length')) > maxBody)
-      throw new ScreenshotError('Choose an image up to 3 MB', 413);
+      throw new ScreenshotError('Choose an image up to 3 MiB', 413);
     if (!request.body) throw new ScreenshotError('Choose an image', 400);
     const reader = request.body.getReader();
     const chunks: Uint8Array[] = [];
@@ -96,7 +114,7 @@ export async function POST(request: NextRequest, context: Context) {
       length += value.byteLength;
       if (length > maxBody) {
         await reader.cancel();
-        throw new ScreenshotError('Choose an image up to 3 MB', 413);
+        throw new ScreenshotError('Choose an image up to 3 MiB', 413);
       }
       chunks.push(value);
     }
@@ -117,20 +135,16 @@ export async function POST(request: NextRequest, context: Context) {
     const file = form.get('image');
     if (!(file instanceof File))
       throw new ScreenshotError('Choose an image', 400);
-    const slot = await uploadScreenshot(
+    const clientUploadId = form.get('clientUploadId');
+    if (typeof clientUploadId !== 'string') throw new ScreenshotError('Invalid screenshot upload identity.', 400, 'SCREENSHOT_INVALID_UPLOAD_ID');
+    const screenshot = await uploadScreenshot(
       user,
       id,
       new Uint8Array(await file.arrayBuffer()),
+      clientUploadId,
     );
-    try {
-      await requireOwnedTrade(user, id);
-    } catch (error) {
-      if (error instanceof ScreenshotError && error.status === 404)
-        await removeScreenshots(user, id, [slot]);
-      throw error;
-    }
     return NextResponse.json(
-      { screenshots: await listScreenshots(user, id) },
+      { screenshot, ...await screenshotGallery(user, id) },
       { status: 201, headers },
     );
   });
@@ -138,7 +152,7 @@ export async function POST(request: NextRequest, context: Context) {
 
 export async function DELETE(request: NextRequest, context: Context) {
   return handle(request, context, async (user, id) => {
-    await removeScreenshots(user, id, [slotOf(request)]);
+    await removeScreenshot(user, id, selectorOf(request));
     return new Response(null, { status: 204, headers });
   });
 }

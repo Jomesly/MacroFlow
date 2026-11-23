@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 const statusFile = process.env.MACROFLOW_ACCOUNT_TEST_STATUS;
 if (!statusFile) throw new Error('Start scripts/start-account-eval.ps1 and set MACROFLOW_ACCOUNT_TEST_STATUS to its local status.json.');
 const local = JSON.parse(readFileSync(statusFile, 'utf8').replace(/^\uFEFF/, '')) as Record<string, string>;
-if (!['http://127.0.0.1:55421', 'http://127.0.0.1:55621'].includes(local.API_URL)) throw new Error('Account tests require a disposable local evaluation project on port 55421 or 55621.');
+if (!['http://127.0.0.1:55421', 'http://127.0.0.1:55621', 'http://127.0.0.1:55721'].includes(local.API_URL)) throw new Error('Account tests require a disposable local evaluation project on port 55421, 55621, or 55721.');
 const admin = createClient(local.API_URL, local.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const password = 'MacroFlow-Account-Test-2026!';
 const origin = process.env.MACROFLOW_ACCOUNT_TEST_BASE_URL || 'http://localhost:3001';

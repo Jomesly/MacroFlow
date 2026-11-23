@@ -3,8 +3,8 @@ import { journalFetch } from '@/lib/journal-fetch';
 import { tradeDateLabel, tradeDay } from '@/lib/trade-dates';
 import { useSetupTags } from '@/lib/use-setup-tags';
 
-import { useCallback, useEffect, useState } from 'react';
-import TradeScreenshots from './TradeScreenshots';
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
+import TradeScreenshots, { type TradeScreenshotsHandle } from './TradeScreenshots';
 import { journalFeatures } from '@/lib/journal-features';
 import { Trade, TradeApiResponse, TradeResult, TradesApiResponse } from '@/lib/types';
 import { type TradingAccount, tradingAccountLabel } from '@/lib/trading-account-types';
@@ -44,8 +44,12 @@ function formatPnl(trade: Trade): { text: string; color: string; title?: string 
   return { text: pnl.text, color: PNL_TONE_CLASS[pnl.tone], title: pnl.kind === 'cash' ? 'Net cash P&L' : pnl.kind === 'percent' ? 'Price change' : undefined };
 }
 
-export default function TradeHistory({ journalAccountId, accounts = [] }: { journalAccountId?: string; accounts?: TradingAccount[] }) {
+export type TradeHistoryHandle = { canLeave: () => boolean };
+
+export default function TradeHistory({ journalAccountId, accounts = [], ref }: { journalAccountId?: string; accounts?: TradingAccount[]; ref?: Ref<TradeHistoryHandle> }) {
   const setupTags = useSetupTags();
+  const screenshotEditor = useRef<TradeScreenshotsHandle>(null);
+  useImperativeHandle(ref, () => ({ canLeave: () => screenshotEditor.current?.canLeave() ?? true }), []);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -92,6 +96,7 @@ export default function TradeHistory({ journalAccountId, accounts = [] }: { jour
   };
 
   const toggleExpand = (id: string) => {
+    if (screenshotEditor.current?.canLeave() === false) return;
     setExpandedId((prev) => (prev === id ? null : id));
     setEditingId(null);
     setConfirmDeleteId(null);
@@ -114,6 +119,7 @@ export default function TradeHistory({ journalAccountId, accounts = [] }: { jour
   };
 
   const cancelEdit = () => {
+    if (screenshotEditor.current?.canLeave() === false) return;
     setEditingId(null);
     setActionError('');
   };
@@ -162,7 +168,9 @@ export default function TradeHistory({ journalAccountId, accounts = [] }: { jour
       }
       const json: TradeApiResponse = await res.json();
       setTrades((prev) => prev.map((t) => (t.id === id ? json.trade : t)));
-      setEditingId(null);
+      if (screenshotEditor.current?.hasUnsaved()) {
+        setActionError('Trade fields saved. Screenshots are still saving or need your attention.');
+      } else setEditingId(null);
       window.dispatchEvent(new Event('macroflow:journal-updated'));
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to update trade');
@@ -391,7 +399,7 @@ export default function TradeHistory({ journalAccountId, accounts = [] }: { jour
                     <p className="trade-cash-result">Net cash P&amp;L: <strong>{trade.pnlAmountExact != null && account?.currency ? formatMoney(trade.pnlAmountExact, account.currency) : 'Unknown'}</strong>{trade.closedAt && <span> · Closed {tradeDateLabel(trade, true)}</span>}</p>
                     {trade.tradeGroupId && <p className="capture-help">This record belongs to a shared entry. Changes here affect this account only.</p>}
                     {trade.importInfo && <p className="capture-help">Imported from CSV · Original {trade.importInfo.dateMeaning === 'close' ? 'closing' : 'entry'} date: {trade.importInfo.sourceDate} ({trade.importInfo.timezone}).{trade.importInfo.datePrecision === 'date' ? ' Time unknown.' : ''}{trade.importInfo.dateMeaning === 'close' ? ' Entry date unknown.' : ''}</p>}
-                    {journalFeatures.screenshots && <TradeScreenshots tradeId={trade.id} />}
+                    {journalFeatures.screenshots && <TradeScreenshots key={`view-${trade.id}`} tradeId={trade.id} />}
                     {actionError && <p className="text-xs text-red-400">{actionError}</p>}
 
                     <div className="flex items-center gap-2 pt-1">
@@ -433,14 +441,14 @@ export default function TradeHistory({ journalAccountId, accounts = [] }: { jour
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-4" onPaste={(event) => screenshotEditor.current?.paste(event)}>
                     {!synced ? <>
                       <label className="capture-checkbox"><input type="checkbox" checked={editOpen} onChange={event => setEditOpen(event.target.checked)} />Keep this trade open / reopen it</label>
                       <div className="capture-grid">
                         <label className="capture-field">Entry price<input type="number" step="any" value={editEntry} onChange={event => setEditEntry(event.target.value)} /></label>
                         {!editOpen && <><label className="capture-field">Closing date &amp; time<input type="datetime-local" step="1" required value={editClosedAt} onChange={event => setEditClosedAt(event.target.value)} /></label><label className="capture-field">Net P&amp;L · {account?.currency || 'currency unset'}<input type="text" inputMode="decimal" value={editNet} disabled={editUnknown} onChange={event => setEditNet(event.target.value)} placeholder="After trading fees" /></label><label className="capture-checkbox"><input type="checkbox" checked={editUnknown} onChange={event => setEditUnknown(event.target.checked)} />Cash P&amp;L is unknown</label></>}
                       </div>
-                    </> : <p className="funds-notice">Execution details are managed by MT5 sync. You can update your notes and tags.</p>}
+                    </> : <p className="funds-notice">Execution details are managed by MT5 sync. You can update your notes and tags{journalFeatures.screenshots ? ', and attach screenshots' : ''}.</p>}
                     {!synced && !editOpen && <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -525,6 +533,8 @@ export default function TradeHistory({ journalAccountId, accounts = [] }: { jour
                         className={FIELD_CLS + ' resize-y'}
                       />
                     </div>
+
+                    {journalFeatures.screenshots && <TradeScreenshots key={`edit-${trade.id}`} ref={screenshotEditor} tradeId={trade.id} editable />}
 
                     {actionError && <p className="text-xs text-red-400">{actionError}</p>}
 

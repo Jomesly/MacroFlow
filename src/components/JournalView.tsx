@@ -12,7 +12,7 @@ import {
   PlugsConnected,
 } from '@phosphor-icons/react';
 import LogTradeForm from '@/components/LogTradeForm';
-import TradeHistory from '@/components/TradeHistory';
+import TradeHistory, { type TradeHistoryHandle } from '@/components/TradeHistory';
 import Analytics from '@/components/Analytics';
 import WeeklyReview from '@/components/WeeklyReview';
 import ConnectAccount from '@/components/ConnectAccount';
@@ -58,6 +58,7 @@ export default function JournalView({
 }) {
   const [tab, setTab] = useState<JournalTab>(initialTab);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const historyRef = useRef<TradeHistoryHandle>(null);
   const reduce = useReducedMotion();
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState('');
@@ -98,6 +99,7 @@ export default function JournalView({
   }, [loadAccounts]);
 
   const selectAccount = (id: string) => {
+    if (id !== selectedAccount && historyRef.current?.canLeave() === false) return;
     setSelectedAccount(id);
     setCaptureAccounts(accounts.some(a => a.id === id && a.brokerAccountId === null) ? [id] : []);
     const scope = id || '__all';
@@ -153,7 +155,7 @@ export default function JournalView({
               aria-controls="journal-panel"
               tabIndex={tab === item.value ? 0 : -1}
               disabled={savingTrade}
-              onClick={() => setTab(item.value)}
+              onClick={() => { if (item.value !== tab && historyRef.current?.canLeave() === false) return; setTab(item.value); }}
               onKeyDown={(event) => {
                 let next = index;
                 if (event.key === 'ArrowRight')
@@ -164,6 +166,7 @@ export default function JournalView({
                 else if (event.key === 'End') next = tabs.length - 1;
                 else return;
                 event.preventDefault();
+                if (tabs[next].value !== tab && historyRef.current?.canLeave() === false) return;
                 setTab(tabs[next].value);
                 tabRefs.current[next]?.focus();
               }}
@@ -229,7 +232,7 @@ export default function JournalView({
                   </div>
                   {tab === 'history' && (
                     <div className="journal-history-content">
-                      <TradeHistory journalAccountId={selectedAccount || undefined} accounts={accounts} />
+                      <TradeHistory ref={historyRef} journalAccountId={selectedAccount || undefined} accounts={accounts} />
                     </div>
                   )}
                   {tab === 'analytics' && <Analytics journalAccountId={selectedAccount || undefined} />}

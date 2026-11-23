@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireJournalAccess } from '@/lib/auth';
 import { deleteTrade, updateTrade, JournalStorageError, JournalValidationError } from '@/lib/journal';
 import { TradeApiResponse } from '@/lib/types';
-import { journalFeatures } from '@/lib/journal-features';
 import { TradingAccountError } from '@/lib/trading-account-types';
-import { removeScreenshots, requireOwnedTrade, ScreenshotError } from '@/lib/screenshots';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,17 +64,14 @@ export async function DELETE(
   }
 
   try {
-    if (journalFeatures.screenshots) {
-      await requireOwnedTrade(auth.userId, id);
-      await removeScreenshots(auth.userId, id);
-    }
+    // The database deletion trigger records screenshot cleanup atomically, even
+    // when screenshot intake is disabled or deletion originates in a bulk purge.
     const deleted = await deleteTrade(auth.userId, id);
     if (!deleted) {
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }
     return new NextResponse(null, { status: 204 });
   } catch (err) {
-    if (err instanceof ScreenshotError) return NextResponse.json({ error: err.message }, { status: err.status });
     if (err instanceof JournalStorageError) {
       return NextResponse.json({ error: 'Journal storage unavailable' }, { status: 503 });
     }
