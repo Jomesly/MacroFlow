@@ -70,3 +70,15 @@ describe('release headlines', () => {
     ['US initial jobless claims 230K vs 220K expected', 'employment:weak:US'],
   ])('%s', (text, expected) => expect(keys(text)).toContain(expected));
 });
+
+describe('2026-11-24 live misreads behind the gold B signal', () => {
+  it('does not take Fed tone from background in a story about something else', () =>
+    expect(fed(articleText('Solana recovers some ground amid general short-covering as traders await new catalysts',
+      'Solana has been under some heavy pressure as the global stock market rout depressed further the risk sentiment and intensified growth concerns. The market has been pricing in an economic slowdown over the next 6–12 months, driven by Fed tightening, the prolonged US-Iran stalemate, limited fiscal impulse and concerns about an AI bubble burst.', 400))).toEqual([]));
+  it('still reads Fed news that the headline is about', () =>
+    expect(fed(articleText('Dollar firms as Fed officials signal another hike', 'Two Fed officials said further tightening may be needed.', 400)).map(r => r.value)).toEqual(['hawkish']));
+  it('scores nothing from an article that covers an earlier week', () =>
+    expect(classifyHeadline(articleText('SPY And Gold Fell Together. Did Bonds Save 60/40?',
+      "Update, Nov 23: In Monday morning trading, SPY rose about 5% and the Nasdaq 100 fund (QQQ) about 7%, after Nvidia's board reinstated Jensen Huang as CEO. This article covers last week's fall, with figures at Friday's close.", 400))).toEqual([]));
+  it('still reads a same-day gold move', () => expect(sentiment('Gold fell as the dollar jumped')).toContainEqual(['XAUUSD', 'bearish']));
+});

@@ -317,6 +317,19 @@ function policySentences(text: string): string[] {
   return text.split(/[.!?;](?:\s+|$)|\n|\s+(?:while|whereas|however|but)\s+/i).filter(Boolean);
 }
 
+const POLICY_HEADLINE = /\b(fed|federal reserve|fomc|boe|bank of england|boj|bank of japan|ecb|european central bank|snb|swiss national bank|rba|reserve bank of australia|boc|bank of canada|rbnz|reserve bank of new zealand|central banks?|powell|lagarde|bailey|ueda|rates?|hikes?|cuts?|tighten\w*|eas(?:e|ing)|policy|policymakers?)\b/i;
+
+/**
+ * Sentences that may carry policy tone. When the headline is about something else
+ * (a Solana rebound), a central bank in the body is background ("driven by Fed
+ * tightening"), not news, so only the headline's own sentences count.
+ */
+function policyContextSentences(text: string): string[] {
+  const headline = text.split(/[.!?](?:\s+|$)|\n/)[0];
+  const sentences = policySentences(text);
+  return POLICY_HEADLINE.test(headline) ? sentences : sentences.filter(sentence => headline.includes(sentence.trim()));
+}
+
 function unassertedPolicyContext(before: string, clause: string): boolean {
   const context = `${before} ${clause}`;
   return /\b(could|may|might|would|whether|if|possible|potential|possibility)\b/i.test(context)
@@ -397,7 +410,7 @@ function classifyNarratives(text: string): SentimentResult[] {
     ['rbnz_tone', 'rbnz|reserve bank of new zealand'],
   ];
   // Someone urging the Fed to act describes their wish, not Fed policy.
-  for (const sentence of policySentences(policyText)) {
+  for (const sentence of policyContextSentences(policyText)) {
     const advocacy = /\b(urges?|urging|calls? on|press(?:es)?|pressures?|wants?)\b[^.]{0,20}\b(fed|federal reserve)\b/i.test(sentence);
     for (const [category, subject, symbol] of banks) {
       if (isAnalystView(sentence) || (category === 'fed_tone' && advocacy)) continue;
@@ -473,9 +486,13 @@ export function isAnalystView(text: string): boolean {
 /** A roundup lists unrelated stories; one quoted line is not the article's signal. */
 const ROUNDUP_TITLE = /\b(market news|news wrap|morning (?:wrap|briefing|call)|what are the main events|week ahead|live(?: blog| updates)?:|daily recap|top stories)\b/i;
 
+/** "This article covers last week's fall, with figures at Friday's close": a look back, not today's news. */
+const RECAP_ARTICLE = /\b(?:this|the) (?:article|story|piece|report|update) (?:covers|reviews|recaps|looks back at)\b|\bfigures (?:are )?(?:as of|at) (?:last )?\w+day[’']?s? close\b|\b(?:week|month) in review\b|\bweekly (?:recap|wrap(?:-up)?|review)\b/i;
+
 export function classifyHeadline(text: string): SentimentResult[] {
   if (TECHNICAL_ARTICLE.test(text)) return [];
   if (ROUNDUP_TITLE.test(text.split(/[.!?](?:\s+|$)|\n/)[0])) return [];
+  if (RECAP_ARTICLE.test(text)) return [];
   const foreignEquityOnly = FOREIGN_EQUITY.test(text) && !GLOBAL_EQUITY.test(text);
   const seen = new Set<string>();
   const results: SentimentResult[] = [...cryptoPolicySignals(text), ...classifyNarratives(text).filter(row => row.category !== 'risk_sentiment' || !foreignEquityOnly || !!row.symbol)];
@@ -491,7 +508,7 @@ export function classifyHeadline(text: string): SentimentResult[] {
     if (POLICY_CATEGORIES.has(rule.category) && /\b(fed|federal reserve|fomc|boe|bank of england|boj|bank of japan|ecb|european central bank|snb|swiss national bank|rba|reserve bank of australia|boc|bank of canada|rbnz|reserve bank of new zealand)\b/i.test(text)) continue;
     // Price verbs near an upcoming release do not describe the economic measure.
     if (rule.category === 'inflation' && !/\b(cpi|ppi|inflation|pce(?: price index)?)\s+(?:(?:is|was|has|have|remains?|came(?: in)?|comes(?: in)?|printed|prints)\s+)?(?:ris\w*|ros\w*|fell|fall\w*|drop\w*|cool\w*|accelerat\w*|slow\w*|climb\w*|hot\w*|high\w*|low\w*|beat\w*|miss\w*|up\b|down\b|sticky|moderate)/i.test(text)) continue;
-    const candidates = POLICY_CATEGORIES.has(rule.category) ? policySentences(text) : [text];
+    const candidates = POLICY_CATEGORIES.has(rule.category) ? policyContextSentences(text) : [text];
     for (const candidate of candidates) {
       if (POLICY_CATEGORIES.has(rule.category) && (isAnalystView(candidate) || unassertedPolicyContext(candidate, ''))) continue;
       for (const pattern of rule.patterns) {
