@@ -1,14 +1,14 @@
 import type { MacroEvent, MacroContext, SourceHealth, UpcomingEvent } from '../types';
 import { z } from 'zod';
 import { unknownContext } from '../macro-context';
-import { fetchNews } from './finnhub';
+import { fetchNews, getFinnhubNewsHealth } from './finnhub';
 import { fetchMarketData } from './twelvedata';
 import { fetchRssFeeds, getRssFeedHealth } from './rss';
 import { fetchFredInputs } from './fred';
 import { getCalendar, nextHighEvent } from '../calendar';
 import { coalesce, getCacheEntry, setCache } from './cache';
 
-const CACHE_KEY = 'merged_events_v13_macro_factors';
+const CACHE_KEY = 'merged_events_v14_macro_factors';
 const eventSchema = z.object({
   id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'yen_strength', 'asset_sentiment', 'price_momentum', 'other']),
   title: z.string(), description: z.string(), timestamp: z.iso.datetime(),
@@ -74,7 +74,8 @@ export async function fetchAllEvents(): Promise<CachedEvents & { stale?: boolean
     if (result.status === 'fulfilled') events.push(...result.value);
   });
   // Name each news feed, so "rss: ok" cannot hide a provider that dropped out.
-  Object.assign(sourceHealth, await getRssFeedHealth().catch(() => ({})));
+  Object.assign(sourceHealth, await getRssFeedHealth().catch(() => ({ feed_rss: 'failed' as const })));
+  Object.assign(sourceHealth, await getFinnhubNewsHealth().catch(() => ({ feed_finnhub: 'failed' as const })));
   sourceHealth.fred = fred.failed ? 'failed' : fred.context.complete ? 'ok' : 'empty';
   sourceHealth.calendar_archive = calendar?.archiveStatus ?? 'failed';
   sourceHealth.economic_calendar = !calendar || calendar.archiveStatus === 'failed' ? 'failed' : calendar.surprises.length ? 'ok' : 'empty';

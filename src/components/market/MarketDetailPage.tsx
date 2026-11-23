@@ -96,7 +96,9 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
             <ul className="signal-checks">{data.grade.checks.map(check => (
               <li key={check.id} className={check.passed ? 'is-passed' : 'is-failed'}>
                 {check.passed ? <Check size={14} weight="bold" aria-hidden="true" /> : <X size={14} weight="bold" aria-hidden="true" />}
-                <span className="sr-only">{check.passed ? 'Passed: ' : 'Not met: '}</span>{check.label}
+                <span><span className="sr-only">{check.passed ? 'Passed: ' : 'Not met: '}</span>{check.label}
+                  {check.detail && <small className="signal-check-detail">{check.detail}</small>}
+                </span>
               </li>
             ))}</ul>
           </section>}

@@ -893,6 +893,11 @@ p.source-alert {
 .signal-checks li.is-failed {
   color: var(--muted);
 }
+.signal-check-detail {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
 /* A read that could not refresh must not look as sure as a live one. */
 .market-card[data-outdated] {
   filter: saturate(0.45);

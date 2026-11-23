@@ -47,7 +47,7 @@ export async function getRssFeedHealth(): Promise<SourceHealth> {
 }
 
 export async function fetchRssFeeds(): Promise<MacroEvent[]> {
-  const cacheKey = 'rss_events_v11';
+  const cacheKey = 'rss_events_v12';
   const cached = await getCached<MacroEvent[]>(cacheKey);
   if (cached) return cached;
 
@@ -64,7 +64,7 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
         if (configured === '' && feed.defaultUrl) health[healthKey(feed.sourceName)] = 'empty';
         return [];
       }
-      const feedKey = `rss_feed_v1:${feed.sourceName}`;
+      const feedKey = `rss_feed_v2:${feed.sourceName}`;
 
       try {
         // One immediate retry covers a transient timeout or reset.

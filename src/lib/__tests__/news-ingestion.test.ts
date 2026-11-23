@@ -51,7 +51,7 @@ describe('dated narrative ingestion', () => {
     const duringOutage = await fetchRssFeeds();
     expect(duringOutage.filter(event => event.category === 'asset_sentiment')).toEqual(healthy.filter(event => event.category === 'asset_sentiment'));
     const { setCache } = await import('../api/cache');
-    expect(vi.mocked(setCache).mock.calls.at(-1)).toEqual(['rss_events_v11', duringOutage, 60_000]);
+    expect(vi.mocked(setCache).mock.calls.at(-1)).toEqual(['rss_events_v12', duringOutage, 60_000]);
     expect(await getRssFeedHealth()).toMatchObject({ feed_fxstreet: 'failed', feed_marketwatch_market_pulse: 'ok', feed_investinglive: 'empty' });
   });
 

@@ -153,6 +153,8 @@ export interface BiasResult {
     expiresAt: string;
     basis: 'news' | 'mixed' | 'macro' | 'unavailable';
     components?: { news: { score: number; weight: number } | null; macro: { score: number; weight: number } | null };
+    /** Minimum structured country coverage; missing domestic evidence cannot confirm an FX signal. */
+    macroCoverage?: import('./macro-coverage').MacroCoverage;
     /** Observed price context for display only; never scored. */
     marketMove?: import('./asset-momentum').MarketMove;
     macroSignal?: TradeSignal;

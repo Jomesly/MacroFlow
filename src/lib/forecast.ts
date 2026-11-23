@@ -2,9 +2,10 @@ import { scoreMacroAlignment } from './alignment';
 import { calculateBias } from './engine';
 import { selectEventsAsOf } from './macro-context';
 import { FRESH_NEWS_HOURS, headlineWeight } from './freshness';
+import { assessMacroCoverage, COUNTRY_NAMES } from './macro-coverage';
 import type { AssetSymbol, BiasResult, Direction, MacroContext, MacroEvent, ScoredEvent } from './types';
 
-export const FORECAST_VERSION = 'macro-factors-v4-4h-2026-11-23';
+export const FORECAST_VERSION = 'macro-factors-v5-4h-2026-11-23';
 
 function articleKey(event: MacroEvent): string {
   if (event.url) {
@@ -123,6 +124,10 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
       : Math.abs(score) >= 30 && (sourceCount >= 2 || macroSupports) ? 'medium' : 'low';
     const label = direction === 'neutral' ? 'No directional forecast' : `${direction.includes('bullish') ? 'Bullish' : 'Bearish'} lean for the next 4 hours`;
     const scoredEvents = allContributions.map(({ scored }) => scored).sort((a, b) => Math.abs(b.scoreChange) - Math.abs(a.scoreChange) || a.id.localeCompare(b.id));
+    const macroCoverage = assessMacroCoverage(macro.symbol, scoredEvents, asOf, score);
+    if (macroCoverage.missingCountries.length) {
+      limitations.push(`Structured macro data is missing for: ${macroCoverage.missingCountries.map(country => COUNTRY_NAMES[country] ?? country).join(', ')}. Macro confirmation is unavailable.`);
+    }
     return {
       ...macro, scoring: undefined, probability: { status: 'unavailable', target: 'macro-direction-close-4h', horizonHours: 4, direction: score > 0 ? 'up' : score < 0 ? 'down' : null, value: null, interval95: null, calibrationSamples: 0, validationSamples: 0, modelId: null, validUntil: null, reason: 'Experimental narrative forecast has no calibrated probability.' }, biasScore: score, biasPercent: score, direction,
       strength: Math.abs(score) > 50 ? 'strong' : Math.abs(score) > 25 ? 'moderate' : 'weak',
@@ -132,7 +137,7 @@ export function scoreMarketForecast(events: MacroEvent[], context: MacroContext,
       drivers: scoredEvents.map(event => `${event.scoreChange > 0 ? 'Bullish' : event.scoreChange < 0 ? 'Bearish' : 'Neutral'}: ${event.title}`),
       forecast: { modelVersion: FORECAST_VERSION, horizonHours: 4, issuedAt: asOf,
         expiresAt: new Date(Date.parse(asOf) + 4 * 3_600_000).toISOString(), basis, summary: label, limitations, sourceCount,
-        components, marketMove: price?.marketMove, macroSignal: macro.signal,
+        components, macroCoverage, marketMove: price?.marketMove, macroSignal: macro.signal,
         latestEvidenceAt: allContributions.map(({ event }) => event.timestamp).sort().at(-1) ?? null, latestNewsAt,
         macroBiasScore: macro.biasScore, probability: null },
     };

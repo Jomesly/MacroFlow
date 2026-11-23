@@ -1,8 +1,9 @@
 import { FRESH_NEWS_HOURS } from './freshness';
+import { assessMacroCoverage, COUNTRY_NAMES } from './macro-coverage';
 import type { BiasResult, CalendarEvent, ScoredEvent, TradeSignal } from './types';
 
 export type GradeCheckId = 'fresh_news' | 'macro_match' | 'two_sources' | 'agreement' | 'market_confirms' | 'no_event_risk' | 'healthy_inputs';
-export interface GradeCheck { id: GradeCheckId; passed: boolean; label: string }
+export interface GradeCheck { id: GradeCheckId; passed: boolean; label: string; detail?: string }
 export interface SignalGradeResult { grade: 'A' | 'B' | 'none'; side: 'long' | 'short' | null; checks: GradeCheck[] }
 
 /**
@@ -20,8 +21,8 @@ const LABELS: Record<GradeCheckId, string> = {
   two_sources: 'Two or more news sources agree',
   agreement: 'At least 70% of the evidence agrees',
   market_confirms: 'Dollar and yield moves confirm',
-  no_event_risk: 'No high-impact release in the next 4 h',
-  healthy_inputs: 'All data feeds are live',
+  no_event_risk: 'Verified calendar: no high-impact release in the next 4 h',
+  healthy_inputs: 'Required data is fresh and healthy',
 };
 /** Every signal needs these; an A signal also needs both of the others, a B signal one of them. */
 const REQUIRED: GradeCheckId[] = ['fresh_news', 'macro_match', 'agreement', 'no_event_risk', 'healthy_inputs'];
@@ -36,26 +37,44 @@ function freshAt(timestamp: string | null | undefined, asOf: string, hours: numb
 }
 
 /** A buy/sell signal only where fresh news and the macro backdrop point the same way. */
-export function gradeSignal(result: BiasResult, ctx: { asOf: string; calendar: CalendarEvent[]; inputsHealthy: boolean }): SignalGradeResult {
+export function gradeSignal(result: BiasResult, ctx: { asOf: string; calendar: CalendarEvent[]; inputsHealthy: boolean;
+  calendarVerified?: boolean; inputIssue?: string; calendarIssue?: string }): SignalGradeResult {
   const sign = Math.sign(result.biasScore);
   const supports = (score: number) => score * sign > 0;
   const supportingNews = result.events.filter(event => isHeadline(event) && supports(event.scoreChange));
   const macro = result.forecast?.components?.macro;
+  const coverage = assessMacroCoverage(result.symbol, result.events, ctx.asOf, result.biasScore);
+  const countryNames = (countries: string[]) => countries.map(country => COUNTRY_NAMES[country] ?? country).join(', ');
   const total = result.events.reduce((sum, event) => sum + Math.abs(event.scoreChange), 0);
   const agreeing = result.events.filter(event => supports(event.scoreChange)).reduce((sum, event) => sum + Math.abs(event.scoreChange), 0);
   const start = Date.parse(ctx.asOf), end = start + EVENT_WINDOW_HOURS * 3_600_000;
   const passed: Record<GradeCheckId, boolean> = {
     fresh_news: freshAt(result.forecast?.latestNewsAt, ctx.asOf, FRESH_NEWS_HOURS)
       && supportingNews.some(event => freshAt(event.timestamp, ctx.asOf, FRESH_NEWS_HOURS)),
-    macro_match: !!macro && supports(macro.score) && Math.abs(macro.score) >= MIN_MACRO_SCORE,
+    macro_match: !!macro && supports(macro.score) && Math.abs(macro.score) >= MIN_MACRO_SCORE
+      && result.alignment?.context.complete === true && coverage.missingCountries.length === 0
+      && coverage.supportingCountries.length === coverage.requiredCountries.length,
     two_sources: new Set(supportingNews.map(event => event.sourceName).filter(Boolean)).size >= 2,
     agreement: total > 0 && agreeing / total >= MIN_AGREEMENT,
-    market_confirms: result.alignment?.marketConfirmation === 'confirming' && supports(result.forecast?.macroBiasScore ?? 0),
-    no_event_risk: !ctx.calendar.some(event => event.impact === 'high' && event.affects.includes(result.symbol)
-      && Date.parse(event.time) > start && Date.parse(event.time) <= end),
+    market_confirms: result.alignment?.marketConfirmation === 'confirming' && supports(result.forecast?.macroBiasScore ?? 0)
+      && ['dollar_strength', 'yields'].every(category => result.events.some(event => event.category === category
+        && event.evidenceType === 'market' && event.country === 'US' && supports(event.scoreChange)
+        && freshAt(event.timestamp, ctx.asOf, 4))),
+    no_event_risk: ctx.calendarVerified === true && !ctx.calendar.some(event => event.impact === 'high' && event.affects.includes(result.symbol)
+      && Date.parse(event.time) >= start && Date.parse(event.time) <= end),
     healthy_inputs: ctx.inputsHealthy,
   };
-  const checks = (Object.keys(LABELS) as GradeCheckId[]).map(id => ({ id, passed: passed[id], label: LABELS[id] }));
+  const details: Partial<Record<GradeCheckId, string | undefined>> = {
+    macro_match: coverage.missingCountries.length
+      ? `Structured macro data is missing for: ${countryNames(coverage.missingCountries)}.`
+      : coverage.supportingCountries.length !== coverage.requiredCountries.length
+        ? 'Structured evidence from each relevant economy must support this direction.'
+        : result.alignment?.context.complete !== true ? 'The economic context is incomplete.' : undefined,
+    no_event_risk: !ctx.calendarVerified ? ctx.calendarIssue ?? 'The calendar could not be verified.' : undefined,
+    healthy_inputs: ctx.inputIssue,
+  };
+  const checks = (Object.keys(LABELS) as GradeCheckId[]).map(id => ({ id, passed: passed[id], label: LABELS[id],
+    ...(details[id] ? { detail: details[id] } : {}) }));
   const directional = result.direction !== 'neutral' && sign !== 0 && Math.abs(result.biasScore) >= MIN_SIGNAL_SCORE;
   const missing = CONFIRMING.filter(id => !passed[id]).length;
   const grade = !directional || !REQUIRED.every(id => passed[id]) ? 'none' : missing === 0 ? 'A' : missing === 1 ? 'B' : 'none';

@@ -291,7 +291,7 @@ function narrativeClauses(text: string, subject: string): string[] {
   return narrativeMatches(text, subject).map(match => match.clause);
 }
 
-const EXPECTATION_REVERSAL = /\b(kill(?:s|ed|ing)?|remov\w*|price[sd]? out|pricing out|scrap\w*|abandon\w*|unwind\w*|slash\w*|wip(?:e|es|ed|ing) out|eras(?:e|es|ed|ing)|dash(?:es|ed|ing)?|block\w*)\b/i;
+const EXPECTATION_REVERSAL = /\b(kill(?:s|ed|ing)?|remov\w*|price[sd]? out|pricing out|scrap\w*|abandon\w*|unwind\w*|par(?:e|es|ed|ing)(?: back)?|slash\w*|wip(?:e|es|ed|ing) out|eras(?:e|es|ed|ing)|dash(?:es|ed|ing)?|block\w*)\b/i;
 const SPECULATIVE = /\b(could|may|might|would)\b/i;
 
 /**
@@ -310,6 +310,18 @@ function windowBefore(text: string, index: number): string {
   const last = breaks.at(-1);
   const clause = last ? sentence.slice(last.index + last[0].length) : sentence;
   return clause.slice(-60);
+}
+
+/** A forecast or old policy reference cannot lend its direction to another sentence. */
+function policySentences(text: string): string[] {
+  return text.split(/[.!?;](?:\s+|$)|\n|\s+(?:while|whereas|however|but)\s+/i).filter(Boolean);
+}
+
+function unassertedPolicyContext(before: string, clause: string): boolean {
+  const context = `${before} ${clause}`;
+  return /\b(could|may|might|would|whether|if|possible|potential|possibility)\b/i.test(context)
+    || /\b(expect(?:s|ed|ing)?|forecasts?|predicts?|projects?)\b/i.test(before)
+    || /\b(last (?:week|month|year)|yesterday|earlier this (?:week|month|year))\b/i.test(context);
 }
 
 function clauseDirection(clause: string): 'bullish' | 'bearish' | null {
@@ -385,25 +397,29 @@ function classifyNarratives(text: string): SentimentResult[] {
     ['rbnz_tone', 'rbnz|reserve bank of new zealand'],
   ];
   // Someone urging the Fed to act describes their wish, not Fed policy.
-  const advocacy = /\b(urges?|urging|calls? on|press(?:es)?|pressures?|wants?)\b[^.]{0,20}\b(fed|federal reserve)\b/i.test(policyText);
-  const analyst = isAnalystView(text);
-  for (const [category, subject, symbol] of banks) {
-    if (analyst || (category === 'fed_tone' && advocacy)) continue;
-    const bankMatch = new RegExp(`\\b(?:${subject})\\b`, 'i').exec(policyText);
-    if (bankMatch && POLICY_NEGATION.test(policyText.slice(Math.max(0, bankMatch.index - 30), bankMatch.index))) continue;
-    for (const { clause, index } of narrativeMatches(policyText, subject)) {
-      if (!isAsserted(clause)) continue;
-      if (/\b(?:cut\w*|lower\w*|rais\w*|hik\w*)\b.{0,45}\b(?:forecasts?|projections?|estimates?|outlook)\b/i.test(clause)
-        && !/\b(rates?|policy|borrowing costs?)\b/i.test(clause)) continue;
-      const shift = expectationShift(windowBefore(policyText, index));
-      if (shift === 'speculative') continue;
-      const dovish = /\b(dovish|cuts?|cutting|eas\w*)\b/i.test(clause) || /\blower\w*\s+(?:(?:interest|cash|official cash|policy)\s+)?(?:rates?|borrowing costs?)\b/i.test(clause);
-      const hawkish = /\b(hawkish|hikes?|hiking|tight\w*|taper\w*)\b/i.test(clause) || /\brais\w*\s+(?:(?:interest|cash|official cash|policy)\s+)?(?:rates?|borrowing costs?)\b/i.test(clause);
-      // A delayed move, or bets on a move being priced out, point the other way.
-      const flipped = /\b(delay\w*|postpon\w*)\b/i.test(clause) !== (shift === 'reverse');
-      const impact: EventImpact = shift === 'reverse' ? 'medium' : 'high';
-      if (dovish) add(category, flipped ? 'hawkish' : 'dovish', symbol, impact);
-      if (hawkish) add(category, flipped ? 'dovish' : 'hawkish', symbol, impact);
+  for (const sentence of policySentences(policyText)) {
+    const advocacy = /\b(urges?|urging|calls? on|press(?:es)?|pressures?|wants?)\b[^.]{0,20}\b(fed|federal reserve)\b/i.test(sentence);
+    for (const [category, subject, symbol] of banks) {
+      if (isAnalystView(sentence) || (category === 'fed_tone' && advocacy)) continue;
+      for (const { clause, index } of narrativeMatches(sentence, subject)) {
+        if (!isAsserted(clause)) continue;
+        const before = sentence.slice(0, index);
+        if (unassertedPolicyContext(before, clause)) continue;
+        if (/\b(?:cut\w*|lower\w*|rais\w*|hik\w*)\b.{0,45}\b(?:forecasts?|projections?|estimates?|outlook)\b/i.test(clause)
+          && !/\b(rates?|policy|borrowing costs?)\b/i.test(clause)) continue;
+        let shift = expectationShift(windowBefore(sentence, index));
+        if (shift === 'speculative') continue;
+        if (!shift && /\b(bets?|expectations?|odds)\b/i.test(`${before} ${clause}`)
+          && /\b(ebb\w*|fad\w*|declin\w*|fall\w*|drop\w*)\b/i.test(clause)) shift = 'reverse';
+        if (POLICY_NEGATION.test(before.slice(-30)) && shift !== 'reverse') continue;
+        const dovish = /\b(dovish|cuts?|cutting|eas\w*)\b/i.test(clause) || /\blower\w*\s+(?:(?:interest|cash|official cash|policy)\s+)?(?:rates?|borrowing costs?)\b/i.test(clause);
+        const hawkish = /\b(hawkish|hikes?|hiking|tight\w*|taper\w*)\b/i.test(clause) || /\brais\w*\s+(?:(?:interest|cash|official cash|policy)\s+)?(?:rates?|borrowing costs?)\b/i.test(clause);
+        // A delayed move, or bets on a move being priced out, point the other way.
+        const flipped = /\b(delay\w*|postpon\w*)\b/i.test(clause) !== (shift === 'reverse');
+        const impact: EventImpact = shift === 'reverse' ? 'medium' : 'high';
+        if (dovish) add(category, flipped ? 'hawkish' : 'dovish', symbol, impact);
+        if (hawkish) add(category, flipped ? 'dovish' : 'hawkish', symbol, impact);
+      }
     }
   }
   return results;
@@ -469,29 +485,32 @@ export function classifyHeadline(text: string): SentimentResult[] {
     results.push({ ...release, impact: ['inflation', 'employment'].includes(release.category) ? 'high' : 'medium',
       title: text.length > 80 ? text.slice(0, 77) + '...' : text, description: text, country: inferCountry(text) });
   }
-  const analyst = isAnalystView(text);
   for (const rule of RULES) {
     if (rule.category === 'dollar_strength' || rule.category === 'risk_sentiment') continue;
-    if (analyst && POLICY_CATEGORIES.has(rule.category)) continue;
+    // An unnamed move in another sentence must not override a named bank's policy.
     if (POLICY_CATEGORIES.has(rule.category) && /\b(fed|federal reserve|fomc|boe|bank of england|boj|bank of japan|ecb|european central bank|snb|swiss national bank|rba|reserve bank of australia|boc|bank of canada|rbnz|reserve bank of new zealand)\b/i.test(text)) continue;
     // Price verbs near an upcoming release do not describe the economic measure.
     if (rule.category === 'inflation' && !/\b(cpi|ppi|inflation|pce(?: price index)?)\s+(?:(?:is|was|has|have|remains?|came(?: in)?|comes(?: in)?|printed|prints)\s+)?(?:ris\w*|ros\w*|fell|fall\w*|drop\w*|cool\w*|accelerat\w*|slow\w*|climb\w*|hot\w*|high\w*|low\w*|beat\w*|miss\w*|up\b|down\b|sticky|moderate)/i.test(text)) continue;
-    for (const pattern of rule.patterns) {
-      const match = pattern.exec(text);
-      if (!match) continue;
-      if (POLICY_CATEGORIES.has(rule.category) && isNegatedPolicyMove(text, match)) continue;
-      if (POLICY_CATEGORIES.has(rule.category) && policyForecastRevision(text, match)) continue;
-      const key = `${rule.category}:${rule.value}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        results.push({
-          category: rule.category,
-          value: rule.value,
-          impact: rule.impact,
-          title: text.length > 80 ? text.slice(0, 77) + '...' : text,
-          description: text,
-          country: COUNTRY_SENSITIVE_CATEGORIES.has(rule.category) || rule.category === 'yields' ? inferCountry(text) : undefined,
-        });
+    const candidates = POLICY_CATEGORIES.has(rule.category) ? policySentences(text) : [text];
+    for (const candidate of candidates) {
+      if (POLICY_CATEGORIES.has(rule.category) && (isAnalystView(candidate) || unassertedPolicyContext(candidate, ''))) continue;
+      for (const pattern of rule.patterns) {
+        const match = pattern.exec(candidate);
+        if (!match) continue;
+        if (POLICY_CATEGORIES.has(rule.category) && isNegatedPolicyMove(candidate, match)) continue;
+        if (POLICY_CATEGORIES.has(rule.category) && policyForecastRevision(candidate, match)) continue;
+        const key = `${rule.category}:${rule.value}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          results.push({
+            category: rule.category,
+            value: rule.value,
+            impact: rule.impact,
+            title: text.length > 80 ? text.slice(0, 77) + '...' : text,
+            description: text,
+            country: COUNTRY_SENSITIVE_CATEGORIES.has(rule.category) || rule.category === 'yields' ? inferCountry(text) : undefined,
+          });
+        }
       }
     }
   }

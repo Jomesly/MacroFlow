@@ -9,6 +9,7 @@ vi.mock('../api/cache', () => ({
 
 vi.mock('../api/finnhub', () => ({
   fetchNews: vi.fn(async () => []),
+  getFinnhubNewsHealth: vi.fn(async () => ({})),
 }));
 
 vi.mock('../api/twelvedata', () => ({
@@ -39,6 +40,17 @@ vi.mock('../calendar', async (importOriginal) => ({
 }));
 
 describe('fetchAllEvents source health', () => {
+  it('preserves a failed Finnhub desk even when another desk returned stories', async () => {
+    const { fetchNews, getFinnhubNewsHealth } = await import('../api/finnhub');
+    vi.mocked(fetchNews).mockResolvedValueOnce([{ id: 'desk-story', category: 'fed_tone', title: 'Fed hikes rates',
+      description: 'Fed hikes rates', timestamp: new Date().toISOString(), impact: 'high', value: 'hawkish', sourceName: 'Publisher' }]);
+    vi.mocked(getFinnhubNewsHealth).mockResolvedValueOnce({ feed_finnhub_general: 'ok', feed_finnhub_forex: 'failed', feed_finnhub_crypto: 'ok' });
+    const { fetchAllEvents } = await import('../api');
+    const result = await fetchAllEvents();
+    expect(result.sourceHealth.feed_finnhub_forex).toBe('failed');
+    expect(result.sourceHealth.finnhub).toBe('ok');
+    expect(result.sourceHealth.market_data).toBe('ok');
+  });
   it('reports ok and empty sources', async () => {
     const { fetchAllEvents } = await import('../api');
     const result = await fetchAllEvents();

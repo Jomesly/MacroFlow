@@ -2,6 +2,7 @@ import { getEvents } from './events';
 import { scoreMarketForecast } from './forecast';
 import { selectEventsAsOf } from './macro-context';
 import { gradeSignal, signalFromGrade, type SignalGradeResult } from './signal-grade';
+import { assessSignalInputs } from './signal-inputs';
 import type { AssetSymbol, BiasResult, DataSource, DxyContext, MacroEvent, SourceHealth, UpcomingEvent } from './types';
 
 export type GradedResult = BiasResult & { grade: SignalGradeResult };
@@ -32,11 +33,11 @@ function getDxyContext(events: MacroEvent[]): DxyContext | undefined {
 export async function buildBiasSnapshot(symbol?: AssetSymbol): Promise<BiasSnapshot> {
   const { events, source, cachedAt, sourceHealth, stale, context, nextEvent, calendarEvidence } = await getEvents();
   const asOf = new Date().toISOString();
-  const inputAge = Date.parse(asOf) - Date.parse(cachedAt);
-  const inputsHealthy = source === 'live' && !stale && Number.isFinite(inputAge) && inputAge >= 0 && inputAge <= 5 * 60_000;
+  const quality = assessSignalInputs({ asOf, cachedAt, source, stale, sourceHealth, context, calendarEvidence });
+  const { inputsHealthy } = quality;
   const calendar = calendarEvidence?.events ?? [];
   const results = scoreMarketForecast(events, context, asOf, symbol).map(result => {
-    const grade = gradeSignal(result, { asOf, calendar, inputsHealthy });
+    const grade = gradeSignal(result, { asOf, calendar, ...quality });
     return { ...result, grade, signal: signalFromGrade(grade) };
   });
   return { asOf, results, meta: { source, cachedAt, sourceHealth, stale, inputsHealthy, nextEvent, dxy: getDxyContext(selectEventsAsOf(events, asOf)) } };

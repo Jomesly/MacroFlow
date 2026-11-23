@@ -1,13 +1,26 @@
-import { MacroEvent } from '../types';
+import type { MacroEvent, SourceHealth, SourceStatus } from '../types';
 import { articleText, classifyHeadline, createEventFromClassification } from './classifier';
-import { getCached, setCache } from './cache';
+import { getCached, getCacheEntry, setCache } from './cache';
 
 const BASE_URL = 'https://finnhub.io/api/v1';
-const CACHE_KEY = 'finnhub_news_v10';
+const CACHE_KEY = 'finnhub_news_v11';
 const MAX_SUMMARY_CHARS = 400;
 export const FINNHUB_CATEGORIES = ['general', 'forex', 'crypto'] as const;
 const CACHE_TTL = 300_000;
+const DEGRADED_TTL = 60_000;
 const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000;
+
+/** Keep status beside the events it describes, including when the result is empty. */
+interface CachedNews { events: MacroEvent[]; health: SourceHealth }
+const deskHealth = (status: SourceStatus): SourceHealth => Object.fromEntries(
+  FINNHUB_CATEGORIES.map(category => [`feed_finnhub_${category}`, status]));
+
+/** Disabled desks are empty; configured desks without verified health are unavailable. */
+export async function getFinnhubNewsHealth(): Promise<SourceHealth> {
+  if (!process.env.FINNHUB_API_KEY) return deskHealth('empty');
+  const entry = await getCacheEntry<CachedNews>(CACHE_KEY);
+  return entry?.data?.health ?? deskHealth('failed');
+}
 
 interface FinnhubArticle {
   category: string;
@@ -22,11 +35,10 @@ interface FinnhubArticle {
 }
 
 export async function fetchNews(): Promise<MacroEvent[]> {
-  const cached = await getCached<MacroEvent[]>(CACHE_KEY);
-  if (cached) return cached;
-
   const apiKey = process.env.FINNHUB_API_KEY;
   if (!apiKey) return [];
+  const cached = await getCached<CachedNews>(CACHE_KEY);
+  if (cached && Array.isArray(cached.events) && cached.health) return cached.events;
 
   try {
     // General news alone misses most FX and crypto stories; read each desk and merge.
@@ -34,13 +46,20 @@ export async function fetchNews(): Promise<MacroEvent[]> {
       const res = await fetch(`${BASE_URL}/news?category=${category}&token=${apiKey}`, { signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error(`Finnhub ${category} HTTP ${res.status}`);
       const data: unknown = await res.json();
-      return Array.isArray(data) ? (data as FinnhubArticle[]).slice(0, 30) : [];
+      if (!Array.isArray(data)) throw new Error(`Finnhub ${category} returned an invalid news list`);
+      return (data as FinnhubArticle[]).slice(0, 30);
     }));
-    if (lists.every(list => list.status === 'rejected')) return [];
+    const health: SourceHealth = {};
+    lists.forEach((list, index) => {
+      health[`feed_finnhub_${FINNHUB_CATEGORIES[index]}`] = list.status === 'rejected' ? 'failed'
+        : list.value.length ? 'ok' : 'empty';
+    });
+    const degraded = lists.some(list => list.status === 'rejected');
     const articles = new Map<string, FinnhubArticle>();
     for (const list of lists) {
       if (list.status !== 'fulfilled') continue;
       for (const article of list.value) {
+        if (!article || typeof article !== 'object') continue;
         const id = String(article.url || article.id);
         if (!articles.has(id)) articles.set(id, article);
       }
@@ -66,9 +85,11 @@ export async function fetchNews(): Promise<MacroEvent[]> {
       }
     }
 
-    await setCache(CACHE_KEY, events, CACHE_TTL);
+    await setCache<CachedNews>(CACHE_KEY, { events, health }, degraded ? DEGRADED_TTL : CACHE_TTL);
     return events;
   } catch {
+    // A transport/parsing failure must not look like a successful but quiet news feed.
+    await setCache<CachedNews>(CACHE_KEY, { events: [], health: deskHealth('failed') }, DEGRADED_TTL);
     return [];
   }
 }
