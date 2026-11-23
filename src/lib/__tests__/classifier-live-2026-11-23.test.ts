@@ -19,3 +19,14 @@ describe('2026-11-23 live misreads: expectation shifts', () => {
     expect(fed(text).map(r => r.value)).toEqual(expected);
   });
 });
+
+describe('roundups and advocacy', () => {
+  const digest = articleText('investingLive Asia-Pacific market news: US futures hold 2% bounce',
+    "Waking up to green\nOCBC: AI rout becomes a growth shock as EM currencies take the dollar's strength\nJPMorgan's Kelly: tech correction overdue, stocks to bounce, Fed to hike once then pause", 400);
+  it('scores nothing from a market roundup', () => expect(classifyHeadline(digest)).toEqual([]));
+  it('scores nothing from "What are the main events for today?"', () =>
+    expect(classifyHeadline('What are the main events for today?')).toEqual([]));
+  it('ignores advocacy aimed at the Fed', () => expect(fed('Ackman urges Fed to cut rates')).toEqual([]));
+  it('keeps a Fed official’s own words', () =>
+    expect(fed('Fed’s Waller says a December hike is likely').map(r => r.value)).toEqual(['hawkish']));
+});

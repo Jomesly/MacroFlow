@@ -376,7 +376,10 @@ function classifyNarratives(text: string): SentimentResult[] {
     ['boc_tone', 'boc|bank of canada'],
     ['rbnz_tone', 'rbnz|reserve bank of new zealand'],
   ];
+  // Someone urging the Fed to act describes their wish, not Fed policy.
+  const advocacy = /\b(urges?|urging|calls? on|press(?:es)?|pressures?|wants?)\b[^.]{0,20}\b(fed|federal reserve)\b/i.test(policyText);
   for (const [category, subject, symbol] of banks) {
+    if (category === 'fed_tone' && advocacy) continue;
     const bankMatch = new RegExp(`\\b(?:${subject})\\b`, 'i').exec(policyText);
     if (bankMatch && POLICY_NEGATION.test(policyText.slice(Math.max(0, bankMatch.index - 30), bankMatch.index))) continue;
     for (const { clause, index } of narrativeMatches(policyText, subject)) {
@@ -408,8 +411,12 @@ export function articleText(headline: string | undefined, body: string | undefin
   return `${title}${/[.!?]$/.test(title) ? '' : '.'} ${lead}`;
 }
 
+/** A roundup lists unrelated stories; one quoted line is not the article's signal. */
+const ROUNDUP_TITLE = /\b(market news|news wrap|morning (?:wrap|briefing|call)|what are the main events|week ahead|live(?: blog| updates)?:|daily recap|top stories)\b/i;
+
 export function classifyHeadline(text: string): SentimentResult[] {
   if (TECHNICAL_ARTICLE.test(text)) return [];
+  if (ROUNDUP_TITLE.test(text.split(/[.!?](?:\s+|$)|\n/)[0])) return [];
   const foreignEquityOnly = FOREIGN_EQUITY.test(text) && !GLOBAL_EQUITY.test(text);
   const seen = new Set<string>();
   const results: SentimentResult[] = [...cryptoPolicySignals(text), ...classifyNarratives(text).filter(row => row.category !== 'risk_sentiment' || !foreignEquityOnly || !!row.symbol)];
