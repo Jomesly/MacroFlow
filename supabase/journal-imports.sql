@@ -119,7 +119,7 @@ begin
     duplicate:=public.journal_import_duplicate(p_user,account.id,batch.file_hash,row.row_number,item);
     if duplicate='duplicate' then raise exception using errcode='40001',message='A selected row was already imported. Review a new preview.'; end if;
     if (duplicate='possible' or row.status='possible') and not(row.row_number=any(p_keep)) then raise exception using errcode='40001',message='A possible duplicate appeared. Review a new preview or explicitly keep it.'; end if;
-    if item->>'symbol' not in ('XAUUSD','GBPUSD','US100','DJ30','BTCUSD') or item->>'direction' not in ('long','short') then raise exception using errcode='22023',message='Choose a supported symbol and direction.'; end if;
+    if item->>'symbol' not in ('XAUUSD','GBPUSD','US100','DJ30','BTCUSD','US500','EURUSD','USDJPY','USDCHF','AUDUSD','USDCAD','NZDUSD') or item->>'direction' not in ('long','short') then raise exception using errcode='22023',message='Choose a supported symbol and direction.'; end if;
     entry:=(item->>'entryPrice')::numeric; exit:=(item->>'exitPrice')::numeric;
     opened:=(item->>'timestamp')::timestamptz; closed:=(item->>'closedAt')::timestamptz; outcome:=item->>'result';
     net:=case when item->>'netPnl' is null then null else public.journal_money(item->>'netPnl',account.currency) end;

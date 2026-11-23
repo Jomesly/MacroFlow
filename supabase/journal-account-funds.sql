@@ -120,7 +120,7 @@ begin
   if (select count(distinct value->>'accountId') from jsonb_array_elements(p_payload->'accounts')) <> jsonb_array_length(p_payload->'accounts') then
     raise exception using errcode = '22023', message = 'Choose each account only once.';
   end if;
-  if coalesce(p_payload->>'symbol', '') not in ('XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD') or coalesce(p_payload->>'direction', '') not in ('long', 'short') then
+  if coalesce(p_payload->>'symbol', '') not in ('XAUUSD','GBPUSD','US100','DJ30','BTCUSD','US500','EURUSD','USDJPY','USDCHF','AUDUSD','USDCAD','NZDUSD') or coalesce(p_payload->>'direction', '') not in ('long', 'short') then
     raise exception using errcode = '22023', message = 'Choose a supported symbol and direction.';
   end if;
   if length(coalesce(p_payload->>'notes', '')) > 10000 or jsonb_typeof(p_payload->'setupTags') is distinct from 'array' or jsonb_array_length(p_payload->'setupTags') > 30 then

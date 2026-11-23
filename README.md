@@ -165,6 +165,7 @@ Copy [.env.example](.env.example) to `.env.local` only if a local configuration 
 Prepare the database using the [authentication setup guide](docs/auth-setup.md), then review the feature migrations you need:
 
 - [Trading accounts](docs/trading-accounts.md), [account funds](docs/account-funds.md), and [CSV imports](docs/journal-imports.md).
+- [Journal symbols](supabase/journal-trade-symbols.sql) after CSV imports, so manual entry and imports accept every dashboard market.
 - [Forecast archive schema](supabase/calendar-forecasts.sql) for verified consensus evidence.
 - [Private screenshot storage](supabase/journal-screenshots.sql) before enabling journal screenshots.
 

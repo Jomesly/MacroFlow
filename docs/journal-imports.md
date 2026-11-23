@@ -25,6 +25,8 @@ The review lists every row, with 20 records per page. Invalid and previously imp
 
 Apply `supabase/journal-imports.sql` **after** `supabase/journal-account-funds.sql`. It is additive and rerunnable. It creates owner-scoped batches, staged rows, a tag registry and imported-trade provenance. Manual and broker entries still require entry prices; only import-owned rows may omit them.
 
+Then apply `supabase/journal-trade-symbols.sql`. It is rerunnable and lets manual entry and CSV imports accept all twelve dashboard markets. It changes only the supported-symbol list inside the two installed functions and stops without changes if either function differs from the expected version.
+
 All HTTP routes require journal access and use server-side ownership checks. Browser database roles cannot read staged values or invoke import functions. The server parses and normalizes uploaded values; a commit uses privately staged rows and rechecks the account, opening version, selection, duplicate identity and validity in SQL.
 
 Account locking serializes concurrent imports. Exact file/row identities and original IDs identify previous imports. Matching executions without a stable ID are possible duplicates. A batch retry with the same selection returns its original result. A different selection on a committed batch fails. Imports do not modify existing trades.
