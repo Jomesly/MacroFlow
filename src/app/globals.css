@@ -854,8 +854,8 @@ p.source-alert {
 }
 /* A and B signals read as calls; a lean stays quiet. Colour keeps meaning direction only. */
 .market-grade {
-  font-size: 12px;
   font-weight: 700;
+  color: inherit;
 }
 .market-grade[data-grade='B'] {
   font-weight: 600;
@@ -864,8 +864,16 @@ p.source-alert {
   font-weight: 400;
   color: var(--card-soft);
 }
+/* One small supporting line on a card: signal record and newest-news age. */
+.market-meta {
+  font-size: 12px;
+  color: var(--card-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 /* Only a measured, proven record earns emphasis. */
-.market-conviction[data-proven] {
+.market-meta[data-proven] {
   color: var(--frost);
   font-weight: 600;
 }
@@ -3014,7 +3022,8 @@ p.source-alert {
 @media (min-width: 900px) {
   .market-grid {
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    grid-auto-rows: 176px;
+    /* Room for the signal and newest-news line under the conviction read. */
+    grid-auto-rows: 192px;
   }
   .market-card[data-size] {
     position: relative;

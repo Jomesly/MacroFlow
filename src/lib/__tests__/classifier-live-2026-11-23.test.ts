@@ -48,6 +48,8 @@ describe('found in local testing on 2026-11-23', () => {
   it('does not read a bank’s rate forecast as the Fed itself', () =>
     expect(fed(articleText('Federal Reserve: Consecutive hikes and sticky inflation – TD Securities',
       'TD Securities economists Oscar Munoz and Eli Nir expect the Federal Reserve to deliver three consecutive rate hikes starting in December, with scope for further tightening later in the cycle.', 400))).toEqual([]));
+  it.each(['Reuters', 'Bloomberg', 'CNBC'])('keeps Fed news credited to a news agency (– %s)', agency =>
+    expect(fed(`Fed hikes rates by 25 basis points – ${agency}`).map(r => r.value)).toEqual(['hawkish']));
   it('does not read a generic hike forecast by economists as Fed tone', () =>
     expect(fed('Economists expect two more rate hikes next year')).toEqual([]));
   it('does not read the S&P PMI data provider as the S&P 500', () =>

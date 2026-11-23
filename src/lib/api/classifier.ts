@@ -447,7 +447,10 @@ export function releaseHeadlineSignal(text: string): { category: EventCategory; 
  */
 export function isAnalystView(text: string): boolean {
   const firstLine = text.split(/\n/)[0].split(/[.!?](?:\s+|$)/)[0];
-  return /\s[–—]\s[A-Z][\w&'.]*(?:\s[A-Z][\w&'.]*){0,3}\s*$/.test(firstLine)
+  const credit = /\s[–—]\s([A-Z][\w&'.]*(?:\s[A-Z][\w&'.]*){0,3})\s*$/.exec(firstLine)?.[1];
+  // A news agency credit ("– Reuters") reports the news; a bank or broker credit is its own view.
+  const agency = credit && /^(reuters|bloomberg|cnbc|ap|afp|dow jones|marketwatch|investing\.com|the wall street journal|wsj|financial times|ft|yahoo finance|fxstreet|forexlive|investinglive)$/i.test(credit);
+  return (!!credit && !agency)
     || /\b(economists?|strategists?|analysts?|research team)\b[^.]{0,80}\b(expects?|expected|sees?|forecasts?|predicts?|projects?)\b/i.test(text);
 }
 

@@ -174,10 +174,13 @@ export default function MarketCard({
             ) : (
               data.forecast && <span className="market-window">4h</span>
             )}
+            {data.forecast && <span className="market-window market-grade" data-grade={data.grade?.grade ?? 'none'}>{gradeBadge(data.grade)}</span>}
           </span>
-          {data.forecast && <span className="market-grade" data-grade={data.grade?.grade ?? 'none'}>{gradeBadge(data.grade)}</span>}
-          {gradeDetail && <span className="market-conviction" data-proven={gradeDetail.startsWith('High probability') || undefined}>{gradeDetail}</span>}
-          {data.forecast && <span className="market-conviction">{newsAge(data.forecast)}</span>}
+          {data.forecast && (
+            <span className="market-meta" data-proven={gradeDetail.startsWith('High probability') || undefined}>
+              {gradeDetail ? `${gradeDetail} · ` : ''}{newsAge(data.forecast)}
+            </span>
+          )}
         </span>
         {!data.forecast && <BiasHistory data={data} scale={historyScale} />}
         <CaretRight
