@@ -144,6 +144,8 @@ export interface BiasResult {
   history: HistoryEntry[];
   lastUpdated: string;
   alignment?: AlignmentAssessment;
+  /** A/B/no signal from the macro-match checks; buy/sell calls follow it. */
+  grade?: import('./signal-grade').SignalGradeResult;
   forecast?: {
     modelVersion: string;
     horizonHours: 4;
