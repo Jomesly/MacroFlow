@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Check, Minus, X } from '@phosphor-icons/react';
 import { gradeBadge } from '@/lib/signal-grade';
+import { PROVEN_MIN_DAYS, PROVEN_MIN_LOWER_BOUND, PROVEN_MIN_SIGNALS, type TrackRecordResponse } from '@/lib/signals/track-record';
 import type { AssetSymbol, BiasApiResponse } from '@/lib/types';
 import { consistentBiasReading } from '@/lib/bias-reading';
 import { referenceCharts } from '@/lib/market/instruments';
@@ -23,6 +24,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
   const [technicalSide, setTechnicalSide] = useState('none');
   const { data: response, loading, error, refresh } = useMarketResource<BiasApiResponse>(`/api/bias?symbol=${symbol}`, 300_000, 'no-store');
   const now = useMarketClock();
+  const { data: trackRecord } = useMarketResource<TrackRecordResponse>('/api/signals/track-record', 900_000);
   const data = response?.data.map(consistentBiasReading).find((entry) => entry.symbol === symbol);
   const reference = referenceCharts[symbol];
   const degraded = response?.sourceHealth && Object.values(response.sourceHealth).some((status) => status === 'failed');
@@ -97,6 +99,21 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
                 <span className="sr-only">{check.passed ? 'Passed: ' : 'Not met: '}</span>{check.label}
               </li>
             ))}</ul>
+          </section>}
+          {trackRecord && <section className="research-fact" aria-labelledby="track-record-title">
+            <h2 id="track-record-title">Track record</h2>
+            <p className="research-note">Every A and B signal is recorded hourly and checked four hours later against the price. &ldquo;High probability&rdquo; appears only after {PROVEN_MIN_SIGNALS} results on {PROVEN_MIN_DAYS} different days, with the 95% range still at least {Math.round(PROVEN_MIN_LOWER_BOUND * 100)}% right.{!trackRecord.available && ' Results are not available yet.'}</p>
+            <div className="research-history-table" tabIndex={0} role="region" aria-label="Signal results"><table>
+              <caption>Signal results for this model version</caption>
+              <thead><tr><th scope="col">Signals</th><th scope="col">Results</th><th scope="col">Right</th><th scope="col">95% range</th><th scope="col">Average move</th></tr></thead>
+              <tbody>{([['All markets', trackRecord.overall], [symbol, trackRecord.bySymbol[symbol]]] as const).flatMap(([scope, grades]) => (['A', 'B'] as const).map(grade => {
+                const stats = grades?.[grade];
+                return <tr key={`${scope}-${grade}`}><th scope="row">{scope} / {grade}</th><td>{stats?.n ?? 0}</td>
+                  <td>{stats?.hitRate == null ? '—' : `${Math.round(stats.hitRate * 100)}%`}</td>
+                  <td>{stats?.interval95 ? `${Math.round(stats.interval95[0] * 100)}–${Math.round(stats.interval95[1] * 100)}%` : '—'}</td>
+                  <td>{stats?.avgReturnBps == null ? '—' : `${signed(stats.avgReturnBps)} bps`}</td></tr>;
+              }))}</tbody>
+            </table></div>
           </section>}
           {data.alignment && <section className="research-fact" aria-labelledby="alignment-title">
             <h2 id="alignment-title">Four-hour macro alignment</h2>

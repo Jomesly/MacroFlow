@@ -45,6 +45,16 @@ A buy or sell call needs a score of at least 30 and these checks ([plan](plans/2
 
 All seven make an **A signal** (strong buy or strong sell). Missing only one of "two sources" or "dollar and yield moves" makes a **B signal** (buy or sell). Anything else is **Lean only**: the bias is shown, with no call. The market page lists every check and whether it passed.
 
+## Track record and "High probability"
+
+An hourly job (`POST /api/signals/run`, scheduled by `supabase/signal-schedule.sql`) records every A and B signal in `signal_outcomes`, at most one per market every 5 hours, and checks it four hours later:
+
+- Entry is the open of the first hourly bar after the signal, within one hour. Exit is the close four contiguous hourly bars later.
+- A move in the signal's direction is a win. A flat or opposite move is a loss.
+- A closed market or a missing hour makes the signal void; void signals are not counted.
+
+`GET /api/signals/track-record` summarizes results for the current model version only; a new version starts a new record. A grade is labelled **High probability** only after at least 100 results, on at least 30 different days, with the lower edge of the 95% Wilson range at or above 55%. That is roughly 65% right at 100 signals, or 61% at 300. Until then cards say "Unproven · n/100 results". These thresholds were fixed before any result was recorded; they are not tuned on outcomes.
+
 Conviction is a heuristic about the evidence, not a measured win rate. No historical accuracy claim is implied. The legacy calibrated `probability` stays unavailable, and `forecast.probability` is null.
 
 ## Feed resilience

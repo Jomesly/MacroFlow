@@ -34,6 +34,7 @@ import PanelErrorBoundary from '@/components/market/PanelErrorBoundary';
 import { marketFeatures } from '@/lib/market/features';
 import { useMarketClock } from '@/components/market/useMarketClock';
 import { failedFeeds } from '@/lib/feed-health';
+import type { TrackRecordResponse } from '@/lib/signals/track-record';
 
 type Filter = 'all' | 'bullish' | 'bearish' | 'neutral';
 const SOURCE_LABELS: Record<DataSource, string> = {
@@ -253,6 +254,17 @@ export default function Home() {
     };
   }, [fetchBias]);
 
+  // Measured signal results change at most hourly; one read per visit is enough.
+  const [trackRecord, setTrackRecord] = useState<TrackRecordResponse | null>(null);
+  useEffect(() => {
+    let active = true;
+    fetch('/api/signals/track-record')
+      .then((result) => (result.ok ? (result.json() as Promise<TrackRecordResponse>) : null))
+      .then((json) => { if (active && json) setTrackRecord(json); })
+      .catch(() => { /* Cards then say "Unproven"; nothing may look proven without data. */ });
+    return () => { active = false; };
+  }, []);
+
   const data = response?.data.map(consistentBiasReading) ?? [];
   const visible = data
     .filter(
@@ -468,6 +480,7 @@ export default function Home() {
                   index={index}
                   historyScale={historyScale}
                   outdated={!!error || !!response?.stale}
+                  trackRecord={trackRecord}
                 />
               ))}
             </AnimatePresence>

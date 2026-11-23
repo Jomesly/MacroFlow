@@ -864,6 +864,11 @@ p.source-alert {
   font-weight: 400;
   color: var(--card-soft);
 }
+/* Only a measured, proven record earns emphasis. */
+.market-conviction[data-proven] {
+  color: var(--frost);
+  font-weight: 600;
+}
 .signal-checks {
   list-style: none;
   margin: 0.5rem 0 0;

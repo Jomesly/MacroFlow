@@ -17,6 +17,7 @@ import { marketIsOpen } from "@/lib/marketIsOpen";
 import { biasWord, convictionLabel } from "@/lib/market-factors";
 import { ageHours, ageLabel, FRESH_NEWS_HOURS } from "@/lib/freshness";
 import { gradeBadge } from "@/lib/signal-grade";
+import { gradeLabel, type TrackRecord } from "@/lib/signals/track-record";
 
 /** Measured at the read's issue time, which refreshes every five minutes, so cards need no ticking clock. */
 function newsAge(forecast: NonNullable<BiasResult["forecast"]>): string {
@@ -63,6 +64,7 @@ export default function MarketCard({
   index = 0,
   historyScale = 100,
   outdated = false,
+  trackRecord = null,
 }: {
   data: BiasResult;
   /** Board placement; on wide screens the tile's size follows its conviction. */
@@ -73,7 +75,12 @@ export default function MarketCard({
   historyScale?: number;
   /** The read could not be refreshed; conviction must not be presented as current. */
   outdated?: boolean;
+  /** Measured signal results; "High probability" shows only when a grade has earned it. */
+  trackRecord?: TrackRecord | null;
 }) {
+  const gradeDetail = data.grade && data.grade.grade !== "none"
+    ? gradeLabel(data.grade, trackRecord?.overall[data.grade.grade]).detail
+    : "";
   const [flip, setFlip] = useState<string | null>(null);
   const reduce = useReducedMotion();
   const positive = data.direction.includes("bullish");
@@ -169,6 +176,7 @@ export default function MarketCard({
             )}
           </span>
           {data.forecast && <span className="market-grade" data-grade={data.grade?.grade ?? 'none'}>{gradeBadge(data.grade)}</span>}
+          {gradeDetail && <span className="market-conviction" data-proven={gradeDetail.startsWith('High probability') || undefined}>{gradeDetail}</span>}
           {data.forecast && <span className="market-conviction">{newsAge(data.forecast)}</span>}
         </span>
         {!data.forecast && <BiasHistory data={data} scale={historyScale} />}
