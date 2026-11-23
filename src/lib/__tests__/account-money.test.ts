@@ -44,6 +44,12 @@ describe('multi-account trade validation', () => {
       { closedAt: '2026-01-01T11:00:00Z', result: 'win', netPnl: '-50' },
     ]) expect(tradeBatchSchema.safeParse({ ...batch(), accounts: [{ accountId, ...execution }] }).success).toBe(false);
   });
+  it('validates manual trade symbols against every dashboard market', () => {
+    expect(tradeBatchSchema.safeParse({ ...batch(), symbol: 'USDCAD' }).success).toBe(true);
+    expect(tradeBatchSchema.safeParse({ ...batch(), symbol: 'US500' }).success).toBe(true);
+    expect(tradeBatchSchema.safeParse({ ...batch(), symbol: 'NZDUSD' }).success).toBe(true);
+    expect(tradeBatchSchema.safeParse({ ...batch(), symbol: 'EURGBP' }).success).toBe(false);
+  });
   it('keeps explicitly unknown cash results null instead of zero', () => {
     const parsed = tradeBatchSchema.parse({ ...batch(), accounts: [{ accountId, result: 'win', closedAt: '2026-01-01T11:00:00Z', netPnl: null }] });
     expect(normalizeBatch(parsed).accounts[0].netPnl).toBeNull();

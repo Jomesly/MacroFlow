@@ -219,13 +219,19 @@ export interface EventsApiResponse {
 
 // ── Trading Journal ─────────────────────────────────────────────────
 
-export type TradeSymbol = 'XAUUSD' | 'GBPUSD' | 'US100' | 'DJ30' | 'BTCUSD';
+/** Every dashboard market can be journaled. */
+export type TradeSymbol = AssetSymbol;
 
 export type TradeDirection = 'long' | 'short';
 
 export type TradeResult = 'win' | 'loss' | 'breakeven';
 
-export const TRADE_SYMBOLS: TradeSymbol[] = ['XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD'];
+// The database enforces this list for manual and imported trades (see
+// supabase/journal-trade-symbols.sql); changing it needs a matching migration.
+export const TRADE_SYMBOLS: TradeSymbol[] = [
+  'XAUUSD', 'GBPUSD', 'US100', 'DJ30', 'BTCUSD', 'US500',
+  'EURUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
+];
 
 export const SETUP_TAGS = ['Sweep', 'IFVG', 'Fib', 'Asian Range'];
 

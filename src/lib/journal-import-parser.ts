@@ -2,6 +2,7 @@ import { parse } from 'csv-parse/browser/esm/sync';
 import { DateTime, IANAZone } from 'luxon';
 import { moneyUnits, normalizeMoney } from './account-money';
 import { TRADE_SYMBOLS } from './types';
+import { normalizeTradeSymbol } from './trade-symbols';
 import { IMPORT_BYTES, IMPORT_LIMIT, type ImportedTrade, type ImportOptions, type ImportRow } from './journal-import-types';
 
 export function readImportCsv(content: string, delimiter = ',') {
@@ -81,7 +82,7 @@ export function normalizeImportRows(content: string, options: ImportOptions, cur
     let trade: ImportedTrade | null = null;
     try {
       const rawSymbol = read('symbol');
-      const symbol = (Object.hasOwn(options.aliases, rawSymbol) ? options.aliases[rawSymbol] : null) || ({ GOLD: 'XAUUSD', NAS100: 'US100', NASDAQ: 'US100', US30: 'DJ30', DOW: 'DJ30', 'BTC/USD': 'BTCUSD', 'XAU/USD': 'XAUUSD', 'GBP/USD': 'GBPUSD' } as Record<string, string>)[rawSymbol.toUpperCase()] || rawSymbol.toUpperCase();
+      const symbol = (Object.hasOwn(options.aliases, rawSymbol) ? options.aliases[rawSymbol] : null) || normalizeTradeSymbol(rawSymbol) || rawSymbol.toUpperCase();
       if (!(TRADE_SYMBOLS as readonly string[]).includes(symbol)) throw new Error(`Unsupported symbol “${rawSymbol}”. Correct it or add a symbol match.`);
       const rawDirection = read('direction').toLowerCase();
       const directions = { buy: 'long', long: 'long', sell: 'short', short: 'short' } as const;

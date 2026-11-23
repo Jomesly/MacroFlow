@@ -42,10 +42,62 @@ describe('normalizeSymbol', () => {
     expect(normalizeSymbol('XAUUSDm')).toBe('XAUUSD');
   });
 
-  it('rejects unknown symbols', () => {
-    expect(normalizeSymbol('EURUSD')).toBeNull();
-    expect(normalizeSymbol('GOLD')).toBeNull();
-    expect(normalizeSymbol('')).toBeNull();
+  // Every market on the dashboard must be journal-able: USDCAD was rejected
+  // outright even before its broker suffix was considered.
+  it.each([
+    ['XAUUSD', 'XAUUSD'], ['GBPUSD', 'GBPUSD'], ['US100', 'US100'], ['DJ30', 'DJ30'],
+    ['BTCUSD', 'BTCUSD'], ['US500', 'US500'], ['EURUSD', 'EURUSD'], ['USDJPY', 'USDJPY'],
+    ['USDCHF', 'USDCHF'], ['AUDUSD', 'AUDUSD'], ['USDCAD', 'USDCAD'], ['NZDUSD', 'NZDUSD'],
+  ])('accepts dashboard market %s', (raw, want) => {
+    expect(normalizeSymbol(raw)).toBe(want);
+  });
+
+  it.each([
+    ['USDCAD+', 'USDCAD'], // Bybit
+    ['XAUUSD+', 'XAUUSD'], // Bybit gold
+    ['EURUSD+', 'EURUSD'],
+    ['GBPUSD#', 'GBPUSD'],
+    ['AUDUSD_i', 'AUDUSD'],
+    ['NZDUSD-ECN', 'NZDUSD'],
+    ['USDJPY.r', 'USDJPY'],
+    ['USDCHFm', 'USDCHF'], // Exness standard
+    ['EURUSDc', 'EURUSD'], // Exness cent
+    ['XAUUSDpro', 'XAUUSD'],
+    ['#US500', 'US500'],
+  ])('strips broker decoration from %s', (raw, want) => {
+    expect(normalizeSymbol(raw)).toBe(want);
+  });
+
+  it.each([
+    ['SPX500', 'US500'],
+    ['SP500', 'US500'],
+    ['US500.cash', 'US500'],
+    ['NAS100', 'US100'],
+    ['USTEC', 'US100'],
+    ['NDX100', 'US100'],
+    ['US100Cash', 'US100'],
+    ['US30', 'DJ30'],
+    ['DJI30', 'DJ30'],
+    ['WS30', 'DJ30'],
+    ['GOLD', 'XAUUSD'],
+    ['BTCUSDT', 'BTCUSD'],
+    ['EUR/USD', 'EURUSD'],
+    ['XAU_USD', 'XAUUSD'],
+  ])('maps broker name %s to its market', (raw, want) => {
+    expect(normalizeSymbol(raw)).toBe(want);
+  });
+
+  // A wrong market is worse than a rejected row: these must not be guessed.
+  it.each([
+    ['EURGBP'], // pair MacroFlow does not cover
+    ['XAUEUR'], // gold priced in euros
+    ['GOLDEUR'],
+    ['US30Y'], // 30-year Treasury yield, not the Dow
+    ['US2000'], // Russell 2000
+    [''],
+    ['+'],
+  ])('rejects %s', (raw) => {
+    expect(normalizeSymbol(raw)).toBeNull();
   });
 });
 
@@ -80,8 +132,8 @@ describe('mapEaTrade', () => {
   });
 
   it('returns a row error for unsupported symbols', () => {
-    const mapped = mapEaTrade(eaTrade({ symbol: 'EURUSD' }));
-    expect(mapped).toMatchObject({ field: 'symbol' });
+    const mapped = mapEaTrade(eaTrade({ symbol: 'EURGBP' }));
+    expect(mapped).toMatchObject({ field: 'symbol', message: 'unsupported symbol EURGBP' });
   });
 });
 
@@ -103,11 +155,42 @@ describe('validateIngestBody', () => {
       ea_version: '1.0',
       account_login: '123',
       server: 'Test-Server',
-      trades: [eaTrade(), eaTrade({ ticket: 'x2', symbol: 'EURUSD' })],
+      trades: [eaTrade(), eaTrade({ ticket: 'x2', symbol: 'EURGBP' })],
     });
     expect(rows).toHaveLength(1);
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatchObject({ index: 1, field: 'symbol' });
+  });
+
+  // Regression: a Bybit MT5 account's two USDCAD+ shorts were rejected on
+  // every sync with "unsupported symbol USDCAD+". Synthetic tickets/login;
+  // prices, side and volume mirror the real deals (EA v1.2 sends position side).
+  it('ingests Bybit USDCAD+ shorts as USDCAD', () => {
+    const { rows, errors } = validateIngestBody({
+      ea_version: '1.2',
+      account_login: '1000001',
+      server: 'Bybit-Live-7',
+      currency: 'USD',
+      trades: [
+        eaTrade({
+          ticket: '900002', symbol: 'USDCAD+', side: 'sell', volume: 0.2,
+          entry_time: Date.UTC(2026, 10, 23, 0, 25, 17) / 1000, exit_time: Date.UTC(2026, 10, 23, 0, 27, 25) / 1000,
+          entry_price: 1.43368, exit_price: 1.4337, sl: null, tp: null,
+          profit: -0.28, commission: 0, swap: 0, risk_amount: null,
+        }),
+        eaTrade({
+          ticket: '900001', symbol: 'USDCAD+', side: 'sell', volume: 0.2,
+          entry_time: Date.UTC(2026, 10, 23, 0, 17, 10) / 1000, exit_time: Date.UTC(2026, 10, 23, 0, 20, 24) / 1000,
+          entry_price: 1.43375, exit_price: 1.4339, sl: null, tp: null,
+          profit: -2.09, commission: 0, swap: 0, risk_amount: null,
+        }),
+      ],
+    });
+    expect(errors).toEqual([]);
+    expect(rows.map((r) => [r.broker_trade_id, r.symbol, r.direction, r.result, r.pnl_amount])).toEqual([
+      ['900002', 'USDCAD', 'short', 'loss', -0.28],
+      ['900001', 'USDCAD', 'short', 'loss', -2.09],
+    ]);
   });
 
   it('rejects oversized batches and bad shapes', () => {

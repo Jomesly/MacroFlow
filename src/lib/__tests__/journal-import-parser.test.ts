@@ -65,6 +65,12 @@ describe('CSV import normalization', () => {
     expect(report).toContain("\"'=HYPERLINK");
     expect(importPreviewSchema.safeParse({ filename: 'journal.csv', content: csv, target: { newAccount: { brokerName: 'Firm', accountNumber: '001', currency: 'USD' } }, options: opts }).success).toBe(true);
   });
+  it('recognizes MT5 broker symbol names the same way EA sync does', () => {
+    const csv = 'Date,Symbol,Direction,Result\n2025-01-10,USDCAD+,Sell,Win\n2025-01-10,SPX500,Buy,Win\n2025-01-10,EUR/USD,Buy,Loss\n2025-01-10,NZDUSD,Sell,Loss\n2025-01-10,EURGBP,Buy,Win';
+    const rows = normalize(csv);
+    expect(rows.map(row => row.trade?.symbol ?? row.status)).toEqual(['USDCAD', 'US500', 'EURUSD', 'NZDUSD', 'invalid']);
+    expect(rows[4].errors[0]).toMatch(/Unsupported symbol “EURGBP”/);
+  });
   it('reads Notion month names and rejects inherited object names as directions or outcomes', () => {
     const csv = 'Date,Symbol,Direction,Result\n"January 10, 2025",XAUUSD,Buy,Win';
     expect(normalize(csv, { dateFormat: 'Notion' })[0].trade?.timestamp).toBe('2025-01-09T16:00:00.000Z');

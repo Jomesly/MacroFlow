@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { TRADE_SYMBOLS, TradeDirection, TradeResult, TradeSymbol } from './types';
+import { TradeDirection, TradeResult, TradeSymbol } from './types';
+import { normalizeTradeSymbol } from './trade-symbols';
 
 // ── Limits ──────────────────────────────────────────────────────────────
 
@@ -58,20 +59,11 @@ export function keyPrefix(rawKey: string): string {
 }
 
 // ── Symbol normalization ────────────────────────────────────────────────
-// MT5 symbols carry broker suffixes (XAUUSD.pro, EURUSDm). Strip them and
-// accept only the journal's known symbols; everything else is rejected
-// with a per-row error so one exotic symbol never blocks a whole sync.
+// MT5 symbols carry broker decoration (USDCAD+, XAUUSD.pro, EURUSDm) or
+// broker names (SPX500, NAS100). Map them to the journal's markets; anything
+// else is a per-row error so one exotic symbol never blocks a whole sync.
 
-export function normalizeSymbol(raw: string): TradeSymbol | null {
-  const upper = raw.toUpperCase();
-  const base = upper.split(/[.\-]/)[0];
-  const candidates = [base];
-  if (base.endsWith('M') && base.length > 1) candidates.push(base.slice(0, -1));
-  for (const c of candidates) {
-    if ((TRADE_SYMBOLS as string[]).includes(c)) return c as TradeSymbol;
-  }
-  return null;
-}
+export const normalizeSymbol = normalizeTradeSymbol;
 
 // ── Mapping EA trade → trades row ───────────────────────────────────────
 
