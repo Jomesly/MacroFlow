@@ -1,6 +1,6 @@
 # Four-hour news and macro bias
 
-The dashboard and `/api/bias` use `macro-factors-v5-4h-2026-11-23` across all 12 markets. Each market card is a quick read of three things, and the full analysis page behind it holds the reasons:
+The dashboard and `/api/bias` use `macro-factors-v6-4h-2026-11-24` across all 12 markets. Each market card is a quick read of three things, and the full analysis page behind it holds the reasons:
 
 1. **Bias**: bullish, bearish or neutral for the next four hours, with a **strength percentage** (the size of the lean on a 0–100 scale, not a win rate).
 2. **Conviction**: high, medium or low, showing how firmly the factors point one way.
@@ -37,7 +37,7 @@ A buy or sell call needs a score of at least 30 and these checks ([plan](plans/2
 | Check | Passes when |
 | --- | --- |
 | Fresh news (under 6 h) supports it | The newest scored headline, and at least one supporting headline, are at most 6 hours old |
-| Macro backdrop points the same way | The macro component has the score's sign and a size of at least 10, the US context is complete, and structured evidence from every required economy supports the direction |
+| Macro backdrop points the same way | Economic data alone (trends and release surprises) has the score's sign, with at least two supporting series; the US context is complete; and structured evidence from every required economy supports the direction. Dollar and yield moves are judged only in "Dollar and yield moves confirm", so a price move is never counted twice |
 | Two or more news sources agree | At least two outlets among the supporting headlines |
 | At least 70% of the evidence agrees | Supporting score inputs make up at least 70% of all inputs |
 | Dollar and yield moves confirm | Fresh measured US dollar and US yield observations both support the direction, alongside aggregate market confirmation |
@@ -58,9 +58,10 @@ Version 5 changes signal eligibility and policy interpretation, so it starts a s
 
 An hourly job (`POST /api/signals/run`, scheduled by `supabase/signal-schedule.sql`) records every A and B signal in `signal_outcomes`, at most one per market every 5 hours, and checks it four hours later:
 
-- Entry is the open of the first hourly bar after the signal, within one hour. Exit is the close four contiguous hourly bars later.
+- Entry is the open of the first hourly bar after the signal, within one hour. Exit is the close of the fourth hourly bar. The four trading hours may span one short pause, such as the daily futures break (22:00–23:00 UTC), but must finish within five hours.
+- Prices come from near-24-hour series: stock indices use futures (ES=F, NQ=F, YM=F) because the cash indices only trade 14:30–21:00 UTC; gold uses GC=F, Bitcoin BTC-USD and currencies their Yahoo FX pairs.
 - A move in the signal's direction is a win. A flat or opposite move is a loss.
-- A closed market or a missing hour makes the signal void; void signals are not counted.
+- A closed market, or a window that cannot complete four trading hours within five hours, makes the signal void; void signals are not counted.
 
 `GET /api/signals/track-record` summarizes results for the current model version only; a new version starts a new record. A grade is labelled **High probability** only after at least 100 results, on at least 30 different days, with the lower edge of the 95% Wilson range at or above 55%. That is roughly 65% right at 100 signals, or 61% at 300. Until then cards say "Unproven · n/100 results". These thresholds were fixed before any result was recorded; they are not tuned on outcomes.
 
