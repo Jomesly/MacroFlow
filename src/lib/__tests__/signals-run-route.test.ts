@@ -20,6 +20,7 @@ vi.mock('../bias-snapshot', () => ({ buildBiasSnapshot: vi.fn() }));
 vi.mock('../api/intraday', () => ({ fetchYahooHourly: vi.fn(async () => ({ bars: [] })) }));
 
 import { buildBiasSnapshot } from '../bias-snapshot';
+import { fetchYahooHourly } from '../api/intraday';
 import { POST } from '../../app/api/signals/run/route';
 
 const SECRET = 'a'.repeat(64);
@@ -54,6 +55,13 @@ describe('hourly signal job', () => {
     expect(response.status).toBe(200);
     expect(state.upserts).toEqual([[expect.objectContaining({ id: 'GBPUSD:2026-11-23T09', grade: 'A', side: 'long', outcome: 'open' })]]);
     expect(await response.json()).toMatchObject({ recorded: 1 });
+  });
+
+  it('resolves stock index signals on near-24-hour futures, not the cash index', async () => {
+    vi.mocked(buildBiasSnapshot).mockResolvedValue(snapshot(false) as never);
+    state.openRows = [{ ...openRow, id: 'US500:2026-11-23T02', symbol: 'US500' }];
+    await POST(request(`Bearer ${SECRET}`));
+    expect(vi.mocked(fetchYahooHourly)).toHaveBeenCalledWith('ES=F', 'ES=F', '5d');
   });
 
   it('records nothing during a feed outage but still resolves older signals', async () => {

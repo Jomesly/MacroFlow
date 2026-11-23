@@ -3,9 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildBiasSnapshot } from '@/lib/bias-snapshot';
 import { FORECAST_VERSION } from '@/lib/forecast';
 import { fetchYahooHourly } from '@/lib/api/intraday';
-import { MARKET_REFERENCES } from '@/lib/asset-momentum';
 import { selectNewSignals, SIGNAL_SPACING_MS } from '@/lib/signals/record';
-import { resolveSignal } from '@/lib/signals/resolve';
+import { RESOLUTION_TICKERS, resolveSignal } from '@/lib/signals/resolve';
 import { fromDbRow, toDbRow, type SignalDbRow } from '@/lib/signals/types';
 import type { AssetSymbol } from '@/lib/types';
 
@@ -55,9 +54,10 @@ export async function POST(request: NextRequest) {
 
   let resolved = 0, voided = 0;
   for (const [symbol, rows] of bySymbol) {
-    const reference = MARKET_REFERENCES[symbol];
-    // A price outage leaves the signal open for the next run rather than guessing.
-    const bars = reference ? await fetchYahooHourly(symbol, reference.ticker, '5d').then(dataset => dataset.bars, () => null) : null;
+    const ticker = RESOLUTION_TICKERS[symbol];
+    // A price outage leaves the signal open for the next run rather than guessing. The ticker
+    // doubles as the instrument name, so index futures are not cut to cash-session hours.
+    const bars = ticker ? await fetchYahooHourly(ticker, ticker, '5d').then(dataset => dataset.bars, () => null) : null;
     if (!bars) continue;
     for (const row of rows) {
       const result = resolveSignal(fromDbRow(row), bars, asOf);

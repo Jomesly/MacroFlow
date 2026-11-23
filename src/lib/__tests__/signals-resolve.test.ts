@@ -28,6 +28,17 @@ describe('resolving a signal after four hours', () => {
     expect(resolveSignal({ issuedAt, side: 'long' }, bars.filter((_, i) => i !== 2), later)).toMatchObject({ outcome: 'void', returnBps: null }));
   it('stays open until the four hours have closed', () =>
     expect(resolveSignal({ issuedAt, side: 'long' }, bars, '2026-11-23T13:30:00.000Z')).toMatchObject({ outcome: 'open', entryAt: null }));
+  it('counts four trading hours across the one-hour daily futures break', () => {
+    const futures = [bar('2026-11-23T19:00:00.000Z', 1, 1.002), bar('2026-11-23T20:00:00.000Z', 1.002, 1.004),
+      bar('2026-11-23T21:00:00.000Z', 1.004, 1.006), bar('2026-11-23T23:00:00.000Z', 1.006, 1.01)];
+    expect(resolveSignal({ issuedAt: '2026-11-23T18:05:00.000Z', side: 'long' }, futures, '2026-11-24T00:30:00.000Z'))
+      .toMatchObject({ outcome: 'win', entryAt: '2026-11-23T19:00:00.000Z', exitAt: '2026-11-24T00:00:00.000Z', returnBps: 100 });
+  });
+  it('still voids a window broken by an overnight close', () => {
+    const cash = [bar('2026-11-23T19:30:00.000Z', 1, 1.01), bar('2026-11-23T20:30:00.000Z', 1.01, 1.02),
+      bar('2026-11-24T14:30:00.000Z', 1.02, 1.03), bar('2026-11-24T15:30:00.000Z', 1.03, 1.04)];
+    expect(resolveSignal({ issuedAt: '2026-11-23T18:35:00.000Z', side: 'long' }, cash, '2026-11-24T18:00:00.000Z')).toMatchObject({ outcome: 'void' });
+  });
   it('voids a signal issued while the market is closed, never a loss', () => {
     const weekend = [bar('2026-11-22T22:00:00.000Z', 1.2, 1.21)];
     expect(resolveSignal({ issuedAt: '2026-11-21T10:05:00.000Z', side: 'long' }, weekend, '2026-11-21T17:00:00.000Z')).toMatchObject({ outcome: 'void' });
