@@ -26,7 +26,7 @@ interface FeedConfig {
   maxItems: number;
 }
 
-const FEEDS: FeedConfig[] = [
+export const RSS_FEEDS: readonly FeedConfig[] = [
   { envKey: 'RSS_EQUITIES', defaultUrl: 'https://finance.yahoo.com/rss/headline?s=QQQ,SPY,DIA', sourceName: 'Yahoo Finance equities', maxItems: 30 },
   { defaultUrl: 'https://feeds.content.dowjones.io/public/rss/mw_marketpulse', sourceName: 'MarketWatch Market Pulse', maxItems: 30 },
   { envKey: 'RSS_MARKETWATCH', sourceName: 'marketwatch', maxItems: 8 },
@@ -56,7 +56,7 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
   let degraded = false;
 
   const results = await Promise.allSettled(
-    FEEDS.map(async (feed) => {
+    RSS_FEEDS.map(async (feed) => {
       const configured = feed.envKey ? process.env[feed.envKey] : undefined;
       const url = configured ?? feed.defaultUrl;
       if (!url) {

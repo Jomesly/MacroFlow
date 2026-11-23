@@ -19,7 +19,7 @@ const POLICY_CATEGORIES = new Set<EventCategory>([
 ]);
 
 /** Named central banks whose policy moves must never be read as the Fed's. */
-const OTHER_CENTRAL_BANKS = "bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc|rbnz|reserve bank of new zealand";
+const OTHER_CENTRAL_BANKS = "bank of england|boe|ecb|european central bank|boj|bank of japan|rba|reserve bank of australia|pboc|people's bank of china|snb|swiss national bank|bank of canada|boc|rbnz|reserve bank of new zealand|bank indonesia|bi|reserve bank of india|rbi|banxico|bank of mexico|bank of korea|cbrt|central bank of turkey|norges bank|riksbank|sarb";
 
 type Rule = { patterns: RegExp[]; category: EventCategory; value: string; impact: EventImpact };
 
@@ -335,7 +335,10 @@ function classifyNarratives(text: string): SentimentResult[] {
     results.push({ category, value, symbol, impact, title: text.length > 80 ? text.slice(0, 77) + '...' : text, description: text });
   };
   for (const [symbol, subject] of ASSET_SUBJECTS) {
-    for (const clause of narrativeClauses(text, subject)) {
+    // "Bitcoin rebounds after a brutal Nasdaq sell-off": the earlier move is background, not a new call.
+    const background = narrativeMatches(text, subject).filter(({ index }) =>
+      /\b(?:after|following)\s+(?:(?:a|an|the|last week[’']?s|this week[’']?s|yesterday[’']?s|brutal|sharp|heavy|steep|big|recent|historic)\s+)*$/i.test(text.slice(0, index)));
+    for (const clause of narrativeClauses(text, subject).filter(clause => !background.some(row => row.clause === clause))) {
       const direction = clauseDirection(clause);
       if (direction) {
         add('asset_sentiment', direction, symbol);
@@ -359,6 +362,8 @@ function classifyNarratives(text: string): SentimentResult[] {
   }
   for (const clause of text.split(CLAUSE_BREAK)) {
     if (!isAsserted(clause)) continue;
+    // "During Friday's risk-off session" describes an earlier session, not today's mood.
+    if (/\b(?:yesterday|last (?:week|session|month)|(?:mon|tues|wednes|thurs|fri|satur|sun)day[’']s)\b/i.test(clause)) continue;
     if (/\b(risk[ -]?off|safe[ -]?haven|turmoil|crisis|fear|panic)\b/i.test(clause)) add('risk_sentiment', 'risk_off');
     if (/\b(risk[ -]?on|optimism|euphoria)\b/i.test(clause)) add('risk_sentiment', 'risk_on');
   }

@@ -1,0 +1,454 @@
+[
+  {
+    "source": "Yahoo Finance equities",
+    "publishedAt": "2026-11-22T17:07:15.000Z",
+    "text": "Members of Congress Must Disclose Their Stock Trades. NANC Copies the Democrats’ Buys Into One ETF. One small ETF tracks what Democratic lawmakers report buying and selling, yet its filings arrive weeks late and its fee dwarfs the S&P 500 benchmark. Does a congressional paper trail give investors any real edge over SPY?",
+    "expect": []
+  },
+  {
+    "source": "Yahoo Finance equities",
+    "publishedAt": "2026-11-23T03:07:37.000Z",
+    "text": "Biotech Funds Slide Into Thanksgiving Week — Capricor’s FDA Fight And Back-To-Back Drug Decisions Top Watchlist. Capricor will face investors on Monday after the FDA rejected its Duchenne therapy, citing concerns about the reliability of its trial data.",
+    "expect": []
+  },
+  {
+    "source": "Yahoo Finance equities",
+    "publishedAt": "2026-11-23T09:44:38.000Z",
+    "text": "MSTR Stock Jumps In Premarket As Bitcoin Reclaims $61K After Brutal Nasdaq Sell-Off. The rebound comes as Asian regulators move to stabilize markets.",
+    "expect": [
+      "asset_sentiment:bullish:BTCUSD"
+    ]
+  },
+  {
+    "source": "Yahoo Finance equities",
+    "publishedAt": "2026-11-23T06:16:44.000Z",
+    "text": "Stock Market: Will S&P 500 Open Up or Down Today? U.S. stock futures are surging early Monday as Wall Street looks past a brutal week for the technology sector, seeking stability after South Korea announced emergency measures to rescue its slumping stock market. The Polymarket traders, a Polygon (CRYPTO: POL)...",
+    "expect": []
+  },
+  {
+    "source": "Yahoo Finance equities",
+    "publishedAt": "2026-11-22T23:03:16.000Z",
+    "text": "His 401(k) Hit $900,000 Before the Market Crash, Enough to Retire at 64. A 19.8% Slide in His Nasdaq 100 Fund Erased $178,200 Weeks Before His Last Day. A crash weeks before retirement wrecks the withdrawal math, but it also opens a narrow tax window most savers never see. The smartest moves happen before his last paycheck, and one of them turns the damage into a discount.",
+    "expect": []
+  },
+  {
+    "source": "Yahoo Finance equities",
+    "publishedAt": "2026-11-22T21:17:16.000Z",
+    "text": "Charlie Bilello Flags the Nasdaq 100’s First Bear Market Since April 2025. The Nasdaq 100 slipped past a line it hasn't touched in over a year, then barely escaped at the closing bell. If you hold no Nasdaq fund, your retirement account may still be more exposed than you think.",
+    "expect": [
+      "asset_sentiment:bearish:US100",
+      "risk_sentiment:risk_off:US100"
+    ]
+  },
+  {
+    "source": "Yahoo Finance equities",
+    "publishedAt": "2026-11-22T18:43:15.000Z",
+    "text": "Billionaire Ray Dalio’s Bridgewater Keeps 16% of Its $23 Billion Stock Portfolio in S&P 500 Index Funds, Even After Cutting Them. Ray Dalio's fund sold billions in the market's most popular index funds last quarter, yet one of them still sits at the top of its holdings. The filing hides more than it shows, and the real lesson has nothing to do with the sales.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T09:31:37.000Z",
+    "text": "Silver price today: Silver rises, according to FXStreet data. Silver prices (XAG/USD) rose on Monday, according to FXStreet data. Silver trades at $42.60 per troy ounce, up 3.96% from the $40.97 it cost on Friday.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T09:30:11.000Z",
+    "text": "Japanese Yen: Upside risk builds against US Dollar – UOB. UOB strategists Quek Ser Leang and Lee Sue Ann note that USD/JPY’s sharp drop to 158.40 was followed by a strong rebound, leaving the pair likely to consolidate between 158.40 and 159.20 intraday.",
+    "expect": [
+      "asset_sentiment:bearish:USDJPY"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T09:29:29.000Z",
+    "text": "Euro trims daily gains as preliminary Eurozone activity figures fail to impress. The Euro (EUR) ticks lower from session highs against the US Dollar (USD) on Monday’s European session, as preliminary business activity data from the Eurozone has failed to convince investors.",
+    "expect": [
+      "asset_sentiment:bearish:EURUSD",
+      "pmi:miss"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T09:16:04.000Z",
+    "text": "New Zealand Dollar fails to take off from lows despite strong consumption data. The New Zealand Dollar (NZD) posts modest gains against the US Dollar (USD) on Monday but maintains its bearish trend intact after plummeting more than 4% over the last few weeks.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T09:04:27.000Z",
+    "text": "Eurozone HCOB Manufacturing PMI arrives higher than expected at 52.9 in November. HCOB flash Composite Purchasing Managers' Index (PMI) in the Eurozone remained steady at 51.7 in November. The overall private sector output expanded at a steady pace as an unexpected slowdown in the service sector activity was offset by a faster-than-expected growth in the manufacturing sector.",
+    "expect": [
+      "pmi:beat"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T09:01:32.000Z",
+    "text": "S&P 500: Volatility shock points to further downside – Deutsche Bank. Deutsche Bank strategists describe a sharp correction in US equities, with the S&P 500 now in technical correction territory and having fallen seven consecutive sessions.",
+    "expect": [
+      "asset_sentiment:bearish:US500",
+      "risk_sentiment:risk_off:US500"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T09:00:54.000Z",
+    "text": "Silver Price Forecast: XAG/USD recovers strongly as traders price out big December Fed hike. The price of Silver (XAG/USD) starts the week on a strong note, ahead ofthe United States (US) Personal Consumption Expenditure (PCE) Price Index data for October. The white metal snaps a three-day losing spree and is significantly higher almost 3.85% at around $42.55 in the European trade.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T05:59:33.000Z",
+    "text": "Indian Rupee fails to extend five-day winning streak against US Dollar. The Indian Rupee (INR) struggles to extend the previous week’s gains against the US Dollar (USD) on Monday. The USD/INR pair regains ground after revisiting the seven-month low at 92.44 and rebounds to near 92.95.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T08:57:57.000Z",
+    "text": "British Pound extends rally beyond 209.00 as BoJ uncertainty weighs on Yen. The GBP/JPY cross gains positive traction at the start of a new week, snapping a three-day losing streak to its lowest level since late September, around the 207.25 region, touched on Friday.",
+    "expect": [
+      "yen_strength:weak:USDJPY"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T08:41:22.000Z",
+    "text": "Euro: Seen drifting lower against US Dollar on 6–12M view – Danske Bank. Danske Research Team notes that EUR/USD held relatively steady below 1.10 during Friday’s risk-off session. They expect the pair to trade lower towards 1.07 over a 6–12 month horizon, with upcoming November PMIs and US PCE data seen as key inputs for the Federal Reserve and ECB outlooks.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T08:31:56.000Z",
+    "text": "Germany’s flash Manufacturing PMI unexpectedly expands at a faster pace to 55.0 in November. German flash HCOB Manufacturing PMI has come in at 55.0 in November, higher than the final reading of in 54.2 October. The data was expected to come in slightly lower at 54.1.",
+    "expect": [
+      "pmi:beat"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T04:22:29.000Z",
+    "text": "Gold struggles to build on fragile recovery from YTD low as Fed bets cap upside. Gold (XAU/USD) maintains its bid tone around the $3,600 round figure through the first half of the European session, though the lack of follow-through buying warrants caution for aggressive bulls.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T08:24:47.000Z",
+    "text": "CEE FX: Bearish pressures linger on regional currencies – ING. ING’s Frantisek Taborsky expects Central and Eastern European currencies to stay under pressure despite a quieter data calendar dominated by Polish releases. He notes that regional FX has been hit by global risk sentiment and dovish central bank signals. While some short-term relief is possible after sharp moves, he argues bearish CEE currency factors remain intact.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T08:07:31.000Z",
+    "text": "Euro holds gains against British Pound with business activity data in focus. The Euro (EUR) holds moderate gains against the British Pound (GBP) after a quiet week, holding at three-week highs after a solid rebound from 19-month lows late last week.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T07:59:42.000Z",
+    "text": "British Pound: Downside risk to 1.3010 against US Dollar - UOB. UOB strategists Quek Ser Leang and Lee Sue Ann highlight that GBP/USD failed to extend last week’s downside and instead held a 1.3077–1.3128 range, with intraday momentum now flat and a 1.3070–1.3125 band expected.",
+    "expect": [
+      "asset_sentiment:bearish:GBPUSD"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T07:46:16.000Z",
+    "text": "WTI Price Forecast: Seems vulnerable below $83.00 despite Mideast jitters. West Texas Intermediate (WTI) – the benchmark US Crude Oil price – edges lower at the start of a new week, stalling Friday's goodish recovery from the $80.70-$80.65 region, or the lowest level since late August.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T07:35:12.000Z",
+    "text": "Forex Today: Gold rebounds above $3,600, US Dollar retreats ahead of PMI data. Here is what you need to know on Monday, November 23:",
+    "expect": [
+      "asset_sentiment:bullish:XAUUSD",
+      "dollar_strength:weak"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T07:31:00.000Z",
+    "text": "US Dollar: AI, Oil and terms of trade – Commerzbank. Commerzbank’s Thu Lan Nguyen argues that Oil is no longer a dominant driver for the US Dollar because the terms-of-trade boost from higher energy prices has been modest compared with 2022.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T07:28:35.000Z",
+    "text": "Dow Jones futures bounce up as investors pare back aggressive Fed tightening expectations. Wall Street Indexes are likely to open the week in a stronger tone, with fears about AI overfinancing easing, and with market expectations of a large Federal Reserve (Fed) rate hike in December ebbing.",
+    "expect": [
+      "asset_sentiment:bullish:DJ30",
+      "risk_sentiment:risk_on:DJ30",
+      "fed_tone:dovish"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T07:11:11.000Z",
+    "text": "USD/JPY Price Forecast: Starts the week positively despite USD Index retreats. The Japanese Yen (JPY) underperforms its major currency peers at the start of the week, with the USD/JPY pair trading 0.3% higher to near 159.00.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T07:03:10.000Z",
+    "text": "Equities: Rotation and AI fears drive volatility – Danske Bank. Danske Research Team describes a sharp equity selloff led by US technology, with the Nasdaq down 10% on the week and semiconductors off 17%, even as some indices remain near record highs. The bank characterizes recent moves as a historic rotation centered on equities, driven by AI-related concerns rather than a clear deterioration in macroeconomic data.",
+    "expect": [
+      "asset_sentiment:bearish:US100",
+      "risk_sentiment:risk_off:US100"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T07:00:27.000Z",
+    "text": "USD/CAD Price Forecast: Softens to near 1.4300, yet preserves bullish structure above 100-day SMA. The USD/CAD pair trades in negative territory around 1.4315 during the early European trading hours on Monday. Lower bets of the US Federal Reserve (Fed) rate hike in December drag the US Dollar (USD) lower against the Canadian Dollar (CAD).",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T06:44:03.000Z",
+    "text": "Australian Dollar: RBA tightening raises recession risks – Rabobank. Rabobank strategist Benjamin Picton highlights Australia as an advanced case of aggressive tightening, with the policy rate at 4.85%, above its Covid-era peak. Picton points to rising unemployment, weak PMIs and an expected acceleration in October CPI, arguing the RBA faces a difficult trade-off.",
+    "expect": [
+      "rba_tone:hawkish",
+      "gdp:miss"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T06:28:53.000Z",
+    "text": "British Pound edges higher above 1.3100 as traders pare Fed rate hike bets. The GBP/USD pair edges higher to around 1.3125 during the early European trading hours on Monday. The US Dollar (USD) softens against the British Pound (GBP) as bets on a hawkish Federal Reserve (Fed) lose momentum.",
+    "expect": [
+      "asset_sentiment:bullish:GBPUSD",
+      "dollar_strength:weak",
+      "fed_tone:dovish"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T06:23:28.000Z",
+    "text": "EUR/USD Price Forecast: Bulls continue to defend 1.0950. The Euro (EUR) is up 0.3% to near 1.0996 against the US Dollar (USD) during the European trading session on Monday, but is still close to its 18-month low of 1.0953 posted last week.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T06:21:14.000Z",
+    "text": "Euro: Downside risk hinges on 1.0950 break against US Dollar – UOB. UOB strategists Quek Ser Leang and Lee Sue Ann keep a cautious stance on EUR/USD, describing current price action as range-bound between 1.0955 and 1.0995 in the near term. Their 1–3 week view remains negative, but they stress that a daily close below 1.0950 is needed to open the way to 1.0925.",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T05:30:37.000Z",
+    "text": "Indonesian Rupiah strengthens as MSCI talks, BI rate hike weigh on USD/IDR. The USD/IDR pair loses momentum to near 18,215 during the early European trading hours on Monday. The Indonesian Rupiah (IDR) strengthens against the US Dollar (USD) on the reports of MSCI talks and the potential market intervention from Bank Indonesia (BI).",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T05:23:28.000Z",
+    "text": "New Zealand Dollar hangs near multi-year low as bulls shrug off upbeat data, softer USD. The NZD/USD pair struggles to capitalize on its modest Asian session uptick, currently trading around the 0.5470-0.5465 region, near its lowest level since 2009, touched earlier this Monday.",
+    "expect": [
+      "dollar_strength:weak"
+    ]
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T04:39:43.000Z",
+    "text": "EUR/JPY Price Forecast: Gains ground above 174.50, while staying bearish below 100-day SMA. The EUR/JPY cross gains momentum to near 174.60 during the early European session on Monday. However, the potential upside for the cross might be limited amid the potential currency intervention from Japanese authorities to prop up the Japanese Yen (JPY).",
+    "expect": []
+  },
+  {
+    "source": "fxstreet",
+    "publishedAt": "2026-11-23T04:37:15.000Z",
+    "text": "AUD/USD Price Forecast: 0.6650 caps recovery from YTD low as bearish bias persists. The AUD/USD pair gains some positive traction at the start of a new week, reversing a major part of Friday's slide to the 0.6600 neighborhood, or its lowest level since December 2025 amid a softer US Dollar (USD).",
+    "expect": []
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-23T09:30:16.000Z",
+    "text": "UK November flash services PMI 52.0 vs 53.0 expected. Prior 52.8\nManufacturing PMI 52.7 vs 53.0 expected\nPrior 52.8\nComposite PMI 52.3 vs 53.1 expected\nPrior 52.9\n\nKey Findings:\n\nUK private sector output growth slows in November, despite fastest upturn in manufacturing output for over two years\n\nComment:\nChris Williamson, Chief Business Economist at S&P Global Market Intelligence said\n“November sees sustained business growth, according to the prelimi",
+    "expect": [
+      "pmi:miss"
+    ]
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-23T09:00:21.000Z",
+    "text": "Eurozone November flash services PMI 51.2 vs 51.8 expected. Prior 51.4\nManufacturing PMI 52.9 vs 52.8 expected\nPrior 52.7\nComposite PMI 51.7 vs 51.9 expected\nPrior 51.7\n\nKey findings:\n\nEurozone growth sustained despite deepening downturn in France\n\nComment:\nChris Williamson, Chief Business Economist at S&P Global Market Intelligence said\n“At the headline level, the flash PMI data signal sustained steady growth for the eurozone in November, consistent with ",
+    "expect": [
+      "pmi:miss"
+    ]
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-23T08:30:21.000Z",
+    "text": "Germany November flash manufacturing PMI 55.0 vs 54.0 expected. Prior 54.2\nServices PMI 54.0 vs 52.3 expected\nPrior 52.5\nComposite PMI 55.0 vs 53.3 expected\nPrior 53.4\n\nKey findings:\n\nGerman Composite PMI climbs to highest since March 2022\n\nComment:\nPhil Smith, Economics Associate Director at S&P Global Market Intelligence said\n\"The slowdown in growth at the start of the fourth quarter proved short-lived, with November's provisional PMI results showing the Com",
+    "expect": [
+      "pmi:beat"
+    ]
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-23T08:15:30.000Z",
+    "text": "France November flash services PMI 46.6 vs 47.5 expected. Prior 46.2\nManufacturing PMI 47.9 vs 49.9 expected\nPrior 49.5\nComposite PMI 46.2 vs 48.1 expected\nPrior 46.6\n\nKey findings:\n\nSharper manufacturing decline weighs on French economy in November\n\nComment:\nJoe Hayes, Senior Principal Economist at S&P Global Market Intelligence said\n\"The November 'flash' PMI data have raised the odds of France entering a technical recession in the fourth quarter. The e",
+    "expect": [
+      "pmi:miss",
+      "gdp:miss"
+    ]
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-23T07:19:14.000Z",
+    "text": "What are the main events for today? EUROPEAN SESSION\nIn the European session, get the Flash PMIs for the major Eurozone economies and the UK. Basically all of them are expected to show an improvement versus the prior month. Given the underlying growth concerns exacerbated by the global stock market rout, weaker than expected data could lead to a dovish repricing further out the curve. \nAs a reminder, the market is pricing  58 bps of",
+    "expect": []
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-23T04:31:16.000Z",
+    "text": "investingLive Asia-Pacific market news: US futures hold 2% bounce. Waking up to green\nCrypto crime: Fusionist's ACE bridge emptied of $3.7 million as traders follow a $2 million exploit\nCalifornia widens Nvidia probe to criminal law, a bigger deal than Huang return talk\nOCBC: AI rout becomes a growth shock as EM currencies take the dollar's strength\nJPMorgan's Kelly: tech correction overdue, stocks to bounce, Fed to hike once then pause\nAckman urges Fed to drop 2",
+    "expect": []
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-22T22:09:56.000Z",
+    "text": "Australia flash PMI sinks to 46.1 as private sector shrinks at fastest pace in 5 years. A drop this deep, alongside the first easing in input cost inflation for months, weakens the case for further Australian monetary tightening. That leaves the Australian dollar exposed if rate markets start pricing a gentler path. The sharp fall in new export orders also points to softening external demand, at a time when global equities are already under heavy pressure. Prices are still running ab",
+    "expect": [
+      "pmi:miss"
+    ]
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-22T21:54:37.000Z",
+    "text": "New Zealand retail volumes jump 2.2% in Q3, more than four times the expected pace. A beat of this size is supportive for the New Zealand dollar and should firm rate expectations at the margin, since it weakens the case that NZ consumers need more help. Any boost may be short-lived, though, with global risk appetite under heavy pressure after last week's Wall Street rout. A high-beta currency like the kiwi tends to follow broader sentiment in that kind of market. Liquidity is als",
+    "expect": [
+      "retail_sales:beat"
+    ]
+  },
+  {
+    "source": "InvestingLive",
+    "publishedAt": "2026-11-22T21:03:37.000Z",
+    "text": "Economic and event calendar in Asia 23 November 2026. Japanese markets are closed today. Japan holiday thins out Asia\nJapanese markets are closed on Monday for Labor Thanksgiving Day. Tokyo equities and Japanese government bonds are not trading, and physical US Treasuries will not change hands in the Asian session. Cash Treasury trading normally runs through Tokyo hours, so it will be quiet until London opens. Treasury futures are still trading on Globex. With Japanese participants aw",
+    "expect": []
+  },
+  {
+    "source": "Yahoo Finance FX",
+    "publishedAt": "2026-11-22T21:00:16.000Z",
+    "text": "BC-Nikkei 225 Futures. NEW YORK (AP) — Prices as of 4:00:00 PM Sunday, November 22.Nikkei 225 (Yen) (CME)500 yen x Nikkei 225 YEN futures price.",
+    "expect": []
+  },
+  {
+    "source": "Yahoo Finance FX",
+    "publishedAt": "2026-11-23T09:58:09.000Z",
+    "text": "Sterling today: Pound firms as equity rebound trims dollar bid. Investing.com -- Sterling traded higher on Monday while the euro also edged up, as a rebound in equity futures after last week’s tech-led selloff took some of the shine off the dollar.",
+    "expect": [
+      "asset_sentiment:bullish:GBPUSD",
+      "dollar_strength:weak"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Market rout kills 50 basis points December Fed rate hike bets. Traders have removed the possibility of a 50-basis-point December Fed rate hike after last week’s market rout.",
+    "expect": [
+      "fed_tone:dovish"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "investingLive Asia-Pacific market news: US futures hold 2% bounce. Waking up to green\nOCBC: AI rout becomes a growth shock as EM currencies take the dollar's strength\nJPMorgan's Kelly: tech correction overdue, stocks to bounce, Fed to hike once then pause",
+    "expect": []
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "This Swedish bitcoin treasury firm lost 30 BTC trading part of its own stack. Stockholm-listed H100 moved a slice of its bitcoin into a derivatives book.",
+    "expect": []
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "France's 2027 economic growth forecast of 1% at risk of being downgraded, minister says - Reuters",
+    "expect": []
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Traders price out Fed rate cuts after hot jobs data",
+    "expect": [
+      "fed_tone:hawkish",
+      "employment:strong"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "This Stock Market Selloff Could Block the Fed’s Rate Hikes",
+    "expect": [
+      "risk_sentiment:risk_off"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Fed rate hike bets climb after hot CPI",
+    "expect": [
+      "fed_tone:hawkish",
+      "inflation:high"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Stocks slash losses as Fed cuts rates",
+    "expect": [
+      "fed_tone:dovish",
+      "risk_sentiment:risk_on"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Fed hikes rates by 25 basis points",
+    "expect": [
+      "fed_tone:hawkish"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Ackman urges Fed to cut rates",
+    "expect": []
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Fed’s Waller says a December hike is likely",
+    "expect": [
+      "fed_tone:hawkish"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "Gold firmed after soft CPI",
+    "expect": [
+      "asset_sentiment:bullish:XAUUSD",
+      "inflation:low"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "UK GDP growth slows to 0.1% in third quarter",
+    "expect": [
+      "gdp:miss"
+    ]
+  },
+  {
+    "source": "hand-picked 2026-11-23",
+    "publishedAt": null,
+    "text": "US economic growth accelerates to 3.1% in third quarter",
+    "expect": [
+      "gdp:beat"
+    ]
+  }
+]
