@@ -43,3 +43,13 @@ describe('word sense and growth direction', () => {
   it('does not read "GDP growth slows" as a beat', () => expect(gdp('UK GDP growth slows to 0.1% in third quarter')).not.toContain('beat'));
   it('reads accelerating economic growth as a beat', () => expect(gdp('US economic growth accelerates to 3.1% in third quarter')).toContain('beat'));
 });
+
+const keys = (t: string) => classifyHeadline(t).map(e => `${e.category}:${e.value}:${e.country ?? ''}`);
+describe('release headlines', () => {
+  it.each([
+    ['Germany November flash manufacturing PMI 55.0 vs 54.0 expected', 'pmi:beat:EU'],
+    ['France November flash services PMI 46.6 vs 47.5 expected. Prior 46.2', 'pmi:miss:EU'],
+    ['Eurozone HCOB Manufacturing PMI arrives higher than expected at 52.9 in November', 'pmi:beat:EU'],
+    ['US initial jobless claims 230K vs 220K expected', 'employment:weak:US'],
+  ])('%s', (text, expected) => expect(keys(text)).toContain(expected));
+});

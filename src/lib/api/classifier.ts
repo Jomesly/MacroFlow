@@ -418,6 +418,24 @@ export function articleText(headline: string | undefined, body: string | undefin
   return `${title}${/[.!?]$/.test(title) ? '' : '.'} ${lead}`;
 }
 
+const RELEASE_VERSUS = /^(?<name>.*?)\s(?<actual>-?\d+(?:\.\d+)?)[%kmb]?\s*(?:vs\.?|versus)\s*(?<estimate>-?\d+(?:\.\d+)?)[%kmb]?\s*(?:expected|exp\.?|est\.?|forecast|consensus)/i;
+// "Better" or "stronger" are left out: for unemployment a better print is a lower number.
+const RELEASE_DIRECTION = /^(?<name>.*?)\s(?:arrives?|comes? in|prints?)?\s*(?<dir>higher|above|lower|below) than (?:expected|forecast|estimates?)/i;
+
+/**
+ * "Germany manufacturing PMI 55.0 vs 54.0 expected" or "… arrives higher than expected":
+ * a data release read against consensus, scored like a calendar surprise.
+ */
+export function releaseHeadlineSignal(text: string): { category: EventCategory; value: string } | null {
+  const first = text.split(/[.!?](?:\s+|$)|\n/)[0];
+  const versus = RELEASE_VERSUS.exec(first)?.groups;
+  if (versus) return classifyEconomicEvent(versus.name, Number(versus.actual), Number(versus.estimate));
+  const direction = RELEASE_DIRECTION.exec(first)?.groups;
+  if (!direction) return null;
+  const higher = /^(higher|above)$/i.test(direction.dir);
+  return classifyEconomicEvent(direction.name, higher ? 1 : 0, higher ? 0 : 1);
+}
+
 /** A roundup lists unrelated stories; one quoted line is not the article's signal. */
 const ROUNDUP_TITLE = /\b(market news|news wrap|morning (?:wrap|briefing|call)|what are the main events|week ahead|live(?: blog| updates)?:|daily recap|top stories)\b/i;
 
@@ -427,6 +445,12 @@ export function classifyHeadline(text: string): SentimentResult[] {
   const foreignEquityOnly = FOREIGN_EQUITY.test(text) && !GLOBAL_EQUITY.test(text);
   const seen = new Set<string>();
   const results: SentimentResult[] = [...cryptoPolicySignals(text), ...classifyNarratives(text).filter(row => row.category !== 'risk_sentiment' || !foreignEquityOnly || !!row.symbol)];
+  const release = releaseHeadlineSignal(text);
+  if (release) {
+    seen.add(`${release.category}:${release.value}`);
+    results.push({ ...release, impact: ['inflation', 'employment'].includes(release.category) ? 'high' : 'medium',
+      title: text.length > 80 ? text.slice(0, 77) + '...' : text, description: text, country: inferCountry(text) });
+  }
   for (const rule of RULES) {
     if (rule.category === 'dollar_strength' || rule.category === 'risk_sentiment') continue;
     if (POLICY_CATEGORIES.has(rule.category) && /\b(fed|federal reserve|fomc|boe|bank of england|boj|bank of japan|ecb|european central bank|snb|swiss national bank|rba|reserve bank of australia|boc|bank of canada|rbnz|reserve bank of new zealand)\b/i.test(text)) continue;
