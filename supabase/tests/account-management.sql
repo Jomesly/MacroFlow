@@ -27,7 +27,7 @@ begin
   perform pg_temp.manage(u, a, 'edit', 'My account', 'Private notes');
   update public.trades set notes = 'Reviewed trade', setup_tags = array['breakout'] where user_id = u and broker_account_id = a;
   result := public.ingest_managed_journal(u, identity, rows);
-  assert (result->>'updated')::int = 1, 'repeated sync deduplicates';
+  assert (result->>'inserted')::int = 0 and (result->>'unchanged')::int = 1, 'repeated sync deduplicates without rewriting';
   assert (select display_name = 'My account' and notes = 'Private notes' from public.broker_accounts where id = a), 'sync overwrites preferences';
   assert (select notes = 'Reviewed trade' and setup_tags = array['breakout'] from public.trades where user_id = u and broker_account_id = a), 'sync overwrites trade annotations';
   begin

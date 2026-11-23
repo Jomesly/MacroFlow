@@ -166,6 +166,7 @@ Prepare the database using the [authentication setup guide](docs/auth-setup.md),
 
 - [Trading accounts](docs/trading-accounts.md), [account funds](docs/account-funds.md), and [CSV imports](docs/journal-imports.md).
 - [Journal symbols](supabase/journal-trade-symbols.sql) after CSV imports, so manual entry and imports accept every dashboard market.
+- [EA sync without rewrites](supabase/journal-ingest-skip-unchanged.sql) after the account-management migrations, so unchanged MT5 trades are not rewritten every minute.
 - [Forecast archive schema](supabase/calendar-forecasts.sql) for verified consensus evidence.
 - [Private screenshot storage](supabase/journal-screenshots.sql) before enabling journal screenshots.
 

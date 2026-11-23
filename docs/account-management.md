@@ -28,7 +28,8 @@ Run `supabase/account-management-preflight.sql` in the target project's SQL Edit
 2. Apply `supabase/account-management.sql` once if the account lifecycle feature has not been installed.
 3. Apply `supabase/account-management-hardening.sql`. This forward migration is rerunnable and preserves account state, versions, and operation receipts.
 4. Apply `supabase/account-management-journal-compat.sql`. This forward migration preserves the current production manual accounts, revision-aware trades, funds, and CSV imports while enforcing deletion locks. It also permits complete Auth cascades through journal audit records. It is required even when the original account migrations were already applied.
-5. Verify `management_version` and the service-only RPCs, including `run_managed_journal_rpc`, exist before cutting over. Run `supabase/tests/account-management.sql` and `supabase/tests/account-management-journal-compat.sql` only on disposable staging data. Confirm browser roles lack execution privileges.
+5. Apply `supabase/journal-ingest-skip-unchanged.sql`. This rerunnable forward migration stops EA re-syncs from rewriting unchanged trades, so revisions and `journal_trade_revisions` change only when broker data changes. It aborts without changes if the installed `ingest_managed_journal` is not the expected version.
+6. Verify `management_version` and the service-only RPCs, including `run_managed_journal_rpc`, exist before cutting over. Run `supabase/tests/account-management.sql` and `supabase/tests/account-management-journal-compat.sql` only on disposable staging data. Confirm browser roles lack execution privileges.
 
 Use `supabase/account-management-verify.sql` for the read-only post-installation checks. Every row must pass. This checks columns, RPC grants, triggers (including newer journal tables), and Auth cascade relationships; it does not replace staging behavior tests.
 

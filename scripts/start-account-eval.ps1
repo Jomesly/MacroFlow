@@ -51,6 +51,8 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Local journal compatibility migration failed.' }
   docker exec $taskContainer psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/journal-trade-symbols.sql
   if ($LASTEXITCODE -ne 0) { throw 'Local journal symbol migration failed.' }
+  docker exec $taskContainer psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/macroflow-sql/journal-ingest-skip-unchanged.sql
+  if ($LASTEXITCODE -ne 0) { throw 'Local EA sync migration failed.' }
   $env:SUPABASE_URL = $taskStatus.API_URL
   $env:SUPABASE_SERVICE_ROLE_KEY = $taskStatus.SERVICE_ROLE_KEY
   $env:NEXT_PUBLIC_SUPABASE_URL = $taskStatus.API_URL
