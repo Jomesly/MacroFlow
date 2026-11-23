@@ -35,7 +35,7 @@ Cash entries require an opening snapshot, a known currency and a later effective
 
 Recorded balance = opening + deposits − withdrawals + signed adjustments − standalone fees + net realized trade P&L.
 
-Deposits, withdrawals and adjustments do not affect trading profit, win rate or trade count. Cash results missing an amount or a trustworthy closing date produce an incomplete-coverage indication, not a zero result. No opening snapshot means no computed balance. Open-trade floating P&L is excluded. MT5 money P&L already includes commission and swap; broker cash movements are not automatically synced, so synced-account funds history is explicitly manual and coverage is not claimed complete.
+Deposits, withdrawals and adjustments do not affect trading profit, win rate or trade count. Cash results missing an amount or a trustworthy closing date produce an incomplete-coverage indication, not a zero result. No opening snapshot means no computed balance. Open-trade floating P&L is excluded. MT5 net P&L includes the realized swap and every commission and fee on the position's deals, including commission charged when the position opened (MacroFlowSync v1.3 and later; earlier versions sent only the closing deal's commission, so re-install the EA to correct older trades); broker cash movements are not automatically synced, so synced-account funds history is explicitly manual and coverage is not claimed complete.
 
 ## Storage and API
 
