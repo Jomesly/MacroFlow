@@ -9,6 +9,7 @@ import { journalFeatures } from '@/lib/journal-features';
 import { Trade, TradeApiResponse, TradeResult, TradesApiResponse } from '@/lib/types';
 import { type TradingAccount, tradingAccountLabel } from '@/lib/trading-account-types';
 import { formatMoney, isoDateTime, localDateTime, moneyUnits } from '@/lib/account-money';
+import { PNL_TONE_CLASS, tradePnlLabel } from '@/lib/trade-pnl';
 
 const RESULT_BADGES: Record<string, { label: string; classes: string }> = {
   win: { label: 'WIN', classes: 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40' },
@@ -38,18 +39,9 @@ function resultBadge(trade: Trade) {
   return RESULT_BADGES.open;
 }
 
-function formatPnl(trade: Trade): { text: string; color: string } {
-  if (trade.pnlPercent === null) return { text: '—', color: 'text-zinc-600' };
-  const sign = trade.pnlPercent > 0 ? '+' : '';
-  return {
-    text: `${sign}${trade.pnlPercent.toFixed(2)}%`,
-    color:
-      trade.pnlPercent > 0
-        ? 'text-emerald-400'
-        : trade.pnlPercent < 0
-          ? 'text-red-400'
-          : 'text-zinc-500',
-  };
+function formatPnl(trade: Trade): { text: string; color: string; title?: string } {
+  const pnl = tradePnlLabel(trade);
+  return { text: pnl.text, color: PNL_TONE_CLASS[pnl.tone], title: pnl.kind === 'cash' ? 'Net cash P&L' : pnl.kind === 'percent' ? 'Price change' : undefined };
 }
 
 export default function TradeHistory({ journalAccountId, accounts = [] }: { journalAccountId?: string; accounts?: TradingAccount[] }) {
@@ -305,7 +297,7 @@ export default function TradeHistory({ journalAccountId, accounts = [] }: { jour
               >
                 {badge.label}
               </span>
-              <span className={`text-xs font-mono tabular-nums w-16 text-right ${pnl.color}`}>
+              <span className={`text-xs font-mono tabular-nums min-w-16 text-right ${pnl.color}`} title={pnl.title}>
                 {pnl.text}
               </span>
               <span className="text-[10px] text-zinc-600 ml-auto shrink-0">
@@ -361,7 +353,7 @@ export default function TradeHistory({ journalAccountId, accounts = [] }: { jour
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">
                           Price return
                         </p>
-                        <p className={`text-xs font-mono tabular-nums ${pnl.color}`}>
+                        <p className={`text-xs font-mono tabular-nums ${pnl.color}`} title={pnl.title}>
                           {pnl.text}
                         </p>
                       </div>

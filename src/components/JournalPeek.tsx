@@ -1,6 +1,7 @@
 'use client';
 
 import { Trade } from '@/lib/types';
+import { PNL_TONE_CLASS, tradePnlLabel } from '@/lib/trade-pnl';
 
 const RESULT_BADGES: Record<string, { label: string; classes: string }> = {
   win: { label: 'WIN', classes: 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40' },
@@ -14,13 +15,9 @@ function resultBadge(trade: Trade) {
   return RESULT_BADGES.open;
 }
 
-function formatPnl(trade: Trade): { text: string; color: string } {
-  if (trade.pnlPercent === null) return { text: '—', color: 'text-zinc-600' };
-  const sign = trade.pnlPercent > 0 ? '+' : '';
-  return {
-    text: `${sign}${trade.pnlPercent.toFixed(2)}%`,
-    color: trade.pnlPercent > 0 ? 'text-emerald-400' : trade.pnlPercent < 0 ? 'text-red-400' : 'text-zinc-500',
-  };
+function formatPnl(trade: Trade): { text: string; color: string; title?: string } {
+  const pnl = tradePnlLabel(trade);
+  return { text: pnl.text, color: PNL_TONE_CLASS[pnl.tone], title: pnl.kind === 'cash' ? 'Net cash P&L' : pnl.kind === 'percent' ? 'Price change' : undefined };
 }
 
 interface JournalPeekProps {
@@ -84,7 +81,7 @@ export default function JournalPeek({ trades, loading, error, visible }: Journal
                     >
                       {badge.label}
                     </span>
-                    <span className={`text-[10px] font-mono tabular-nums ${pnl.color}`}>
+                    <span className={`text-[10px] font-mono tabular-nums ${pnl.color}`} title={pnl.title}>
                       {pnl.text}
                     </span>
                   </div>
