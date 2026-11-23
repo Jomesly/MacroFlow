@@ -88,4 +88,16 @@ describe('dated narrative ingestion', () => {
     expect(events.filter(event => event.category === 'asset_sentiment')).toHaveLength(2);
     expect(events.every(event => event.timestamp === asOf && event.sourceName === 'Publisher')).toBe(true);
   });
+
+  it('reads Finnhub general, forex and crypto news once each and merges a story listed twice', async () => {
+    const article = (id: number, headline: string, url: string) => ({ id, headline, summary: '', datetime: Date.parse(asOf) / 1000, url, source: 'Publisher' });
+    const fetchMock = vi.fn(async (url: string) => ({ ok: true, json: async () =>
+      url.includes('category=crypto') ? [article(3, 'Bitcoin rallies', 'https://example.com/btc')]
+        : [article(url.includes('category=forex') ? 2 : 1, 'USD/JPY rallies', 'https://example.com/shared')] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const events = await fetchNews();
+    expect(fetchMock.mock.calls.map(([url]) => new URL(String(url)).searchParams.get('category')).sort()).toEqual(['crypto', 'forex', 'general']);
+    expect(events.filter(event => event.url === 'https://example.com/shared')).toHaveLength(1);
+    expect(events.some(event => event.symbol === 'BTCUSD')).toBe(true);
+  });
 });

@@ -3,7 +3,8 @@ import { articleText, classifyHeadline, createEventFromClassification } from './
 import { getCached, setCache } from './cache';
 
 const BASE_URL = 'https://finnhub.io/api/v1';
-const CACHE_KEY = 'finnhub_news_v9';
+const CACHE_KEY = 'finnhub_news_v10';
+export const FINNHUB_CATEGORIES = ['general', 'forex', 'crypto'] as const;
 const CACHE_TTL = 300_000;
 const MAX_ARTICLE_AGE_MS = 48 * 60 * 60 * 1000;
 
@@ -27,18 +28,27 @@ export async function fetchNews(): Promise<MacroEvent[]> {
   if (!apiKey) return [];
 
   try {
-    const url = `${BASE_URL}/news?category=general&token=${apiKey}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-
-    if (!res.ok) return [];
-
-    const data: FinnhubArticle[] = await res.json();
-    if (!Array.isArray(data)) return [];
+    // General news alone misses most FX and crypto stories; read each desk and merge.
+    const lists = await Promise.allSettled(FINNHUB_CATEGORIES.map(async category => {
+      const res = await fetch(`${BASE_URL}/news?category=${category}&token=${apiKey}`, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) throw new Error(`Finnhub ${category} HTTP ${res.status}`);
+      const data: unknown = await res.json();
+      return Array.isArray(data) ? (data as FinnhubArticle[]).slice(0, 30) : [];
+    }));
+    if (lists.every(list => list.status === 'rejected')) return [];
+    const articles = new Map<string, FinnhubArticle>();
+    for (const list of lists) {
+      if (list.status !== 'fulfilled') continue;
+      for (const article of list.value) {
+        const id = String(article.url || article.id);
+        if (!articles.has(id)) articles.set(id, article);
+      }
+    }
 
     const events: MacroEvent[] = [];
     const seen = new Set<string>();
 
-    for (const article of data.slice(0, 30)) {
+    for (const article of articles.values()) {
       const publishedMs = article.datetime * 1000;
       if (!article.datetime || !Number.isFinite(publishedMs) || publishedMs > Date.now() || Date.now() - publishedMs > MAX_ARTICLE_AGE_MS) continue;
       const publishedAt = new Date(publishedMs).toISOString();
