@@ -635,6 +635,14 @@ button:active:not(:disabled),
 .source-details summary::-webkit-details-marker {
   display: none;
 }
+/* A dropped news feed thins every reading; keep it visible without opening the list. */
+.source-alert {
+  color: var(--caution);
+  font-weight: 600;
+}
+p.source-alert {
+  margin: 0 0 10px;
+}
 .source-popover {
   position: absolute;
   right: 0;

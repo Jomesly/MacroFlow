@@ -33,6 +33,7 @@ import MacroContext from '@/components/market/MacroContext';
 import PanelErrorBoundary from '@/components/market/PanelErrorBoundary';
 import { marketFeatures } from '@/lib/market/features';
 import { useMarketClock } from '@/components/market/useMarketClock';
+import { failedFeeds } from '@/lib/feed-health';
 
 type Filter = 'all' | 'bullish' | 'bearish' | 'neutral';
 const SOURCE_LABELS: Record<DataSource, string> = {
@@ -69,14 +70,18 @@ function RefreshTime({ timestamp }: { timestamp: string | null }) {
 }
 
 function SourceStatus({ health }: { health: SourceHealth | null }) {
+  // A dropped feed thins the news behind every reading, so say so outside the collapsed list.
+  const failed = failedFeeds(health);
   return (
     <details className="source-details">
       <summary>
         <Info size={16} aria-hidden="true" />
         Data sources
+        {failed.length > 0 && <span className="source-alert">News feed down: {failed.join(', ')}</span>}
         <CaretDown size={12} aria-hidden="true" />
       </summary>
       <div className="source-popover">
+        {failed.length > 0 && <p className="source-alert">News feed down: {failed.join(', ')}. Fewer fresh headlines are scored.</p>}
         {health && Object.keys(health).length ? (
           Object.entries(health).map(([name, status]) => (
             <div key={name}>

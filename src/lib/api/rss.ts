@@ -91,7 +91,9 @@ export async function fetchRssFeeds(): Promise<MacroEvent[]> {
         await setCache(feedKey, items, CACHE_TTL, FEED_RETENTION_MS);
         health[healthKey(feed.sourceName)] = 'ok';
         return items;
-      } catch {
+      } catch (error) {
+        // Name the cause in the server log, so a blocked or misconfigured feed can be diagnosed.
+        console.warn('[rss] feed failed', feed.sourceName, error instanceof Error ? error.message : String(error));
         // A feed that drops out must not swing every market's reading: keep its
         // last successful stories, which still age out through the news half-life.
         degraded = true;
