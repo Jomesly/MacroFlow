@@ -1,6 +1,6 @@
 import { FRESH_NEWS_HOURS } from './freshness';
 import { assessMacroCoverage, COUNTRY_NAMES } from './macro-coverage';
-import type { BiasResult, CalendarEvent, ScoredEvent, TradeSignal } from './types';
+import type { BiasResult, CalendarEvent, Conviction, ScoredEvent, TradeSignal } from './types';
 
 export type GradeCheckId = 'fresh_news' | 'macro_match' | 'two_sources' | 'agreement' | 'market_confirms' | 'no_event_risk' | 'healthy_inputs';
 export interface GradeCheck { id: GradeCheckId; passed: boolean; label: string; detail?: string }
@@ -87,10 +87,19 @@ export function gradeSignal(result: BiasResult, ctx: { asOf: string; calendar: C
   return { grade, side: grade === 'none' ? null : sign > 0 ? 'long' : 'short', checks };
 }
 
-/** "A signal · Long", "B signal · Short" or "Lean only": the words on cards and market pages. */
+/**
+ * One scale for traders: all seven checks are high conviction (strong call), missing one
+ * confirming check is medium (call), anything else is low (no call).
+ */
+export function convictionFromGrade(graded: SignalGradeResult | undefined): Conviction {
+  return graded?.grade === 'A' ? 'high' : graded?.grade === 'B' ? 'medium' : 'low';
+}
+
+/** "High conviction · Long", "Medium conviction · Short" or "Low conviction": the words on cards and market pages. */
 export function gradeBadge(graded: SignalGradeResult | undefined): string {
-  if (!graded || graded.grade === 'none' || !graded.side) return 'Lean only';
-  return `${graded.grade} signal · ${graded.side === 'long' ? 'Long' : 'Short'}`;
+  const level = convictionFromGrade(graded);
+  const label = `${level.charAt(0).toUpperCase()}${level.slice(1)} conviction`;
+  return level === 'low' || !graded?.side ? label : `${label} · ${graded.side === 'long' ? 'Long' : 'Short'}`;
 }
 
 /** The buy/sell call shown to traders: A is strong, B is plain, anything else is no call. */

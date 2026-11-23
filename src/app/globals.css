@@ -852,18 +852,6 @@ p.source-alert {
   font-weight: 600;
   color: var(--caution);
 }
-/* A and B signals read as calls; a lean stays quiet. Colour keeps meaning direction only. */
-.market-grade {
-  font-weight: 700;
-  color: inherit;
-}
-.market-grade[data-grade='B'] {
-  font-weight: 600;
-}
-.market-grade[data-grade='none'] {
-  font-weight: 400;
-  color: var(--card-soft);
-}
 /* One small supporting line on a card: signal record and newest-news age. */
 .market-meta {
   font-size: 12px;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gradeBadge, gradeSignal, signalFromGrade } from '../signal-grade';
+import { convictionFromGrade, gradeBadge, gradeSignal, signalFromGrade } from '../signal-grade';
 import { unknownContext } from '../macro-context';
 import type { AlignmentAssessment, BiasResult, CalendarEvent, ScoredEvent } from '../types';
 
@@ -110,11 +110,16 @@ describe('macro-matched signal grade', () => {
 
 describe('grade badge', () => {
   it.each([
-    [{ grade: 'A' as const, side: 'long' as const, checks: [] }, 'A signal · Long'],
-    [{ grade: 'B' as const, side: 'short' as const, checks: [] }, 'B signal · Short'],
-    [{ grade: 'none' as const, side: null, checks: [] }, 'Lean only'],
-    [undefined, 'Lean only'],
+    [{ grade: 'A' as const, side: 'long' as const, checks: [] }, 'High conviction · Long'],
+    [{ grade: 'B' as const, side: 'short' as const, checks: [] }, 'Medium conviction · Short'],
+    [{ grade: 'none' as const, side: null, checks: [] }, 'Low conviction'],
+    [undefined, 'Low conviction'],
   ])('%j -> %s', (graded, badge) => expect(gradeBadge(graded)).toBe(badge));
+  it.each([
+    [{ grade: 'A' as const, side: 'long' as const, checks: [] }, 'high'],
+    [{ grade: 'B' as const, side: 'short' as const, checks: [] }, 'medium'],
+    [{ grade: 'none' as const, side: null, checks: [] }, 'low'],
+  ])('conviction for %j is %s', (graded, conviction) => expect(convictionFromGrade(graded)).toBe(conviction));
 });
 
 describe('trade signal from grade', () => {

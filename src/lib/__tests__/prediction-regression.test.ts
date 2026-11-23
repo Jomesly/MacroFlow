@@ -47,6 +47,12 @@ describe('production prediction regression', () => {
     expect(legacy.conviction).toBe('high'); // Retained state is not mutated.
     expect(consistentBiasReading(guarded)).toBe(guarded);
   });
+  it('keeps a graded high-conviction read: the grade, not the 50% guard, decides it', () => {
+    const result = scoreMacroAlignment(gold(1, 130), context, asOf, 'XAUUSD')[0];
+    const graded = { ...result, biasPercent: 35, conviction: 'high' as const, signal: 'strong_sell' as const,
+      grade: { grade: 'A' as const, side: 'short' as const, checks: [] } };
+    expect(consistentBiasReading(graded)).toBe(graded);
+  });
   it.each([50, 51, -50, -51])('preserves a consistent API payload at %s percent', percent => {
     const result = { ...scoreMacroAlignment(gold(1, 130), context, asOf, 'XAUUSD')[0], biasPercent: percent };
     expect(consistentBiasReading(result)).toBe(result);

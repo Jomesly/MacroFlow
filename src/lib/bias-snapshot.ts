@@ -1,7 +1,7 @@
 import { getEvents } from './events';
 import { scoreMarketForecast } from './forecast';
 import { selectEventsAsOf } from './macro-context';
-import { gradeSignal, signalFromGrade, type SignalGradeResult } from './signal-grade';
+import { convictionFromGrade, gradeSignal, signalFromGrade, type SignalGradeResult } from './signal-grade';
 import { assessSignalInputs } from './signal-inputs';
 import type { AssetSymbol, BiasResult, DataSource, DxyContext, MacroEvent, SourceHealth, UpcomingEvent } from './types';
 
@@ -38,7 +38,8 @@ export async function buildBiasSnapshot(symbol?: AssetSymbol): Promise<BiasSnaps
   const calendar = calendarEvidence?.events ?? [];
   const results = scoreMarketForecast(events, context, asOf, symbol).map(result => {
     const grade = gradeSignal(result, { asOf, calendar, ...quality });
-    return { ...result, grade, signal: signalFromGrade(grade) };
+    // Conviction is the grade on one Low / Medium / High scale, so cards never show two scales.
+    return { ...result, grade, signal: signalFromGrade(grade), conviction: convictionFromGrade(grade) };
   });
   return { asOf, results, meta: { source, cachedAt, sourceHealth, stale, inputsHealthy, nextEvent, dxy: getDxyContext(selectEventsAsOf(events, asOf)) } };
 }

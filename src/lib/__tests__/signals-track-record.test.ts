@@ -41,12 +41,12 @@ describe('grade label', () => {
   const a = { grade: 'A' as const, side: 'long' as const, checks: [] };
   it('says High probability only for a proven grade', () => {
     const stats = { n: 180, wins: 115, hitRate: 115 / 180, interval95: [0.57, 0.71] as [number, number], days: 40, avgReturnBps: 3, proven: true };
-    expect(gradeLabel(a, stats)).toEqual({ badge: 'A signal · Long', detail: 'High probability · right 64% of the time over 4 h (all markets, n=180)' });
+    expect(gradeLabel(a, stats)).toEqual({ badge: 'High conviction · Long', detail: 'High probability · right 64% of the time over 4 h (all markets, n=180)' });
   });
   it('shows progress toward proof otherwise', () => {
     const stats = { n: 23, wins: 15, hitRate: 15 / 23, interval95: [0.45, 0.81] as [number, number], days: 9, avgReturnBps: 2, proven: false };
     expect(gradeLabel(a, stats).detail).toBe('Unproven · 23/100 results');
     expect(gradeLabel(a, undefined).detail).toBe('Unproven · 0/100 results');
   });
-  it('gives a lean no detail', () => expect(gradeLabel({ grade: 'none', side: null, checks: [] }, undefined)).toEqual({ badge: 'Lean only', detail: '' }));
+  it('gives a lean no detail', () => expect(gradeLabel({ grade: 'none', side: null, checks: [] }, undefined)).toEqual({ badge: 'Low conviction', detail: '' }));
 });

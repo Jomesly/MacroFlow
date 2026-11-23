@@ -6,7 +6,7 @@ import { FORECAST_VERSION, scoreMarketForecast } from '../forecast';
 import { classifyHeadline, createEventFromClassification } from '../api/classifier';
 import { getHistory, recordDailySnapshot } from '../redis';
 import { getEvents } from '../events';
-import { signalFromGrade } from '../signal-grade';
+import { convictionFromGrade, signalFromGrade } from '../signal-grade';
 import { GET } from '../../app/api/bias/route';
 
 vi.mock('../events', () => ({ getEvents: vi.fn() }));
@@ -101,6 +101,7 @@ describe('live bias route', () => {
     for (const result of body.data) {
       expect(result.grade.checks).toHaveLength(7);
       expect(result.signal).toBe(signalFromGrade(result.grade));
+      expect(result.conviction).toBe(convictionFromGrade(result.grade));
     }
   });
   it('fails the event-risk check before a high-impact release for that market', async () => {

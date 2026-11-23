@@ -28,7 +28,7 @@ The news component is 1.5 × its category total, capped at ±100. The macro comp
 | Medium | Score magnitude at least 30, backed by two news sources or by macro data that points the same way |
 | Low | Any weaker nonzero lean |
 
-Conviction describes the lean. It no longer issues buy or sell calls on its own; signals do.
+On the dashboard and market pages, conviction is the signal grade below, on one Low / Medium / High scale. The table above describes the forecast's internal lean strength, which no longer appears on its own.
 
 ## Signals: news and macro must match
 
@@ -44,19 +44,19 @@ A buy or sell call needs a score of at least 30 and these checks ([plan](plans/2
 | Verified calendar: no high-impact release in the next 4 h | A usable calendar was fetched within one hour, its archive is healthy, its schedule extends through the forecast window, and no high-impact event for the market occurs from issue time through expiry |
 | Required data is fresh and healthy | Inputs are live and at most 5 minutes old, the US context is complete and current, required provider health is known, and no configured provider has failed. Explicitly disabled feeds are allowed; unknown calendar coverage is not |
 
-All seven make an **A signal** (strong buy or strong sell). Missing only one of "two sources" or "dollar and yield moves" makes a **B signal** (buy or sell). Anything else is **Lean only**: the bias is shown, with no call. The market page lists every check and whether it passed.
+All seven give **high conviction** (strong buy or strong sell; stored as grade A). Missing only one of "two sources" or "dollar and yield moves" gives **medium conviction** (buy or sell; grade B). Anything else is **low conviction**: the bias is shown, with no call. The market page lists every check and whether it passed.
 
 ### Country coverage
 
 Each FX pair requires structured evidence for the United States and its counterpart economy: the United Kingdom, euro area, Japan, Switzerland, Australia, Canada or New Zealand. Each economy's net contribution must support the pair's direction. Dollar/yield observations and policy headlines cannot stand in for missing domestic economic data. Gold, bitcoin and US indices require US structured evidence; this is a minimum macro coverage check, not a complete model of every factor that moves those assets.
 
-The current structured adapters provide US FRED trends and verified US release surprises. They do not yet supply equivalent domestic trends for the other economies. Those FX pairs therefore remain **Lean only**, with missing country coverage shown in the forecast limitations and signal checks. Adding vetted domestic adapters, with release-time provenance and expiry rules, is separate work; the app does not fabricate that coverage from US data.
+The current structured adapters provide US FRED trends and verified US release surprises. They do not yet supply equivalent domestic trends for the other economies. Those FX pairs therefore remain **low conviction**, with missing country coverage shown in the forecast limitations and signal checks. Adding vetted domestic adapters, with release-time provenance and expiry rules, is separate work; the app does not fabricate that coverage from US data.
 
 Version 5 changes signal eligibility and policy interpretation, so it starts a separate track record. Version 4 outcomes remain stored but cannot prove this revision. Classified event caches are versioned as well, preventing retained old classifications from resurfacing after rollout.
 
 ## Track record and "High probability"
 
-An hourly job (`POST /api/signals/run`, scheduled by `supabase/signal-schedule.sql`) records every A and B signal in `signal_outcomes`, at most one per market every 5 hours, and checks it four hours later:
+An hourly job (`POST /api/signals/run`, scheduled by `supabase/signal-schedule.sql`) records every medium- and high-conviction call (grades B and A) in `signal_outcomes`, at most one per market every 5 hours, and checks it four hours later:
 
 - Entry is the open of the first hourly bar after the signal, within one hour. Exit is the close of the fourth hourly bar. The four trading hours may span one short pause, such as the daily futures break (22:00–23:00 UTC), but must finish within five hours.
 - Prices come from near-24-hour series: stock indices use futures (ES=F, NQ=F, YM=F) because the cash indices only trade 14:30–21:00 UTC; gold uses GC=F, Bitcoin BTC-USD and currencies their Yahoo FX pairs.
@@ -71,7 +71,7 @@ Conviction is a heuristic about the evidence, not a measured win rate. No histor
 
 Each news feed is retried once. If it still fails, its last successful stories (kept for up to six hours) stand in, and the combined set is refreshed after one minute instead of five. A feed outage therefore cannot silently drop a market's main news source and swing its reading. Stories still fade through the six-hour half-life. Cards are marked "outdated" when the dashboard cannot refresh its data. A failed news feed is named next to "Data sources" on the dashboard, and the server log records why it failed (`[rss] feed failed <name> <reason>`).
 
-Retained stories can still explain a lean during an outage, but any failed configured provider pauses new A/B signals. Finnhub's general, forex and crypto desks report health separately, so one successful desk cannot hide another desk's failure. Existing recorded signals continue to be resolved during outages.
+Retained stories can still explain a lean during an outage, but any failed configured provider pauses new medium- and high-conviction calls. Finnhub's general, forex and crypto desks report health separately, so one successful desk cannot hide another desk's failure. Existing recorded signals continue to be resolved during outages.
 
 On 2026-11-23, FXStreet returned HTTP 403 from the production runtime while its RSS feed still loaded locally. Following the rollout plan, Production's `RSS_FXSTREET` setting is empty, which disables this blocked feed and reports it as `empty`. Forex coverage continues through Finnhub forex news, InvestingLive and Yahoo Finance FX. The Preview setting is unchanged.
 

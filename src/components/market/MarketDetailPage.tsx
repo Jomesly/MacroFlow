@@ -60,8 +60,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
               <p className="research-note">{data.forecast ? 'These are the news and macro factors that may move this chart. Price action is not scored: use the bias to filter your technical setups, and trade it when your chart agrees.' : 'The percentage measures directional macro strength, not a win probability. High conviction requires at least 50% magnitude plus supporting evidence and market confirmation.'}</p>
               <dl>
                 <div><dt>Strength</dt><dd>{data.direction === 'neutral' ? '—' : `${Math.abs(Math.round(data.biasPercent))}%`}</dd></div>
-                <div><dt>Conviction</dt><dd>{data.conviction}</dd></div>
-                {data.grade && <div><dt>Signal</dt><dd>{gradeBadge(data.grade)}</dd></div>}
+                <div><dt>Conviction</dt><dd>{data.grade ? gradeBadge(data.grade) : data.conviction}</dd></div>
                 <div><dt>Drivers</dt><dd>{counts.bullish} bullish / {counts.bearish} bearish</dd></div>
                 <div><dt>News sources</dt><dd>{data.forecast?.sourceCount ?? '—'}</dd></div>
                 <div><dt>Session</dt><dd>{marketIsOpen(symbol, new Date(now)) ? 'Market open' : 'Market closed'}</dd></div>
@@ -92,7 +91,7 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
           {data.grade && <section className="research-fact" aria-labelledby="signal-checks-title">
             <h2 id="signal-checks-title">Signal checks</h2>
             <p><strong>{gradeBadge(data.grade)}</strong></p>
-            <p className="research-note">A signal needs fresh news and the macro backdrop pointing the same way. All seven checks make an A signal; missing only one of &ldquo;two sources&rdquo; or &ldquo;dollar and yield moves&rdquo; makes a B signal. Anything else is a lean, with no buy or sell call.</p>
+            <p className="research-note">Conviction comes from these checks. All seven give high conviction (strong buy or sell); missing only one of &ldquo;two sources&rdquo; or &ldquo;dollar and yield moves&rdquo; gives medium conviction (buy or sell). Anything else is low conviction: the lean is shown, with no buy or sell call.</p>
             <ul className="signal-checks">{data.grade.checks.map(check => (
               <li key={check.id} className={check.passed ? 'is-passed' : 'is-failed'}>
                 {check.passed ? <Check size={14} weight="bold" aria-hidden="true" /> : <X size={14} weight="bold" aria-hidden="true" />}
@@ -104,13 +103,13 @@ export default function MarketDetailPage({ symbol }: { symbol: AssetSymbol }) {
           </section>}
           {trackRecord && <section className="research-fact" aria-labelledby="track-record-title">
             <h2 id="track-record-title">Track record</h2>
-            <p className="research-note">Every A and B signal is recorded hourly and checked four hours later against the price. &ldquo;High probability&rdquo; appears only after {PROVEN_MIN_SIGNALS} results on {PROVEN_MIN_DAYS} different days, with the 95% range still at least {Math.round(PROVEN_MIN_LOWER_BOUND * 100)}% right.{!trackRecord.available && ' Results are not available yet.'}</p>
+            <p className="research-note">Every medium- and high-conviction call is recorded hourly and checked four hours later against the price. &ldquo;High probability&rdquo; appears only after {PROVEN_MIN_SIGNALS} results on {PROVEN_MIN_DAYS} different days, with the 95% range still at least {Math.round(PROVEN_MIN_LOWER_BOUND * 100)}% right.{!trackRecord.available && ' Results are not available yet.'}</p>
             <div className="research-history-table" tabIndex={0} role="region" aria-label="Signal results"><table>
               <caption>Signal results for this model version</caption>
               <thead><tr><th scope="col">Signals</th><th scope="col">Results</th><th scope="col">Right</th><th scope="col">95% range</th><th scope="col">Average move</th></tr></thead>
               <tbody>{([['All markets', trackRecord.overall], [symbol, trackRecord.bySymbol[symbol]]] as const).flatMap(([scope, grades]) => (['A', 'B'] as const).map(grade => {
                 const stats = grades?.[grade];
-                return <tr key={`${scope}-${grade}`}><th scope="row">{scope} / {grade}</th><td>{stats?.n ?? 0}</td>
+                return <tr key={`${scope}-${grade}`}><th scope="row">{scope} / {grade === 'A' ? 'High' : 'Medium'} conviction</th><td>{stats?.n ?? 0}</td>
                   <td>{stats?.hitRate == null ? '—' : `${Math.round(stats.hitRate * 100)}%`}</td>
                   <td>{stats?.interval95 ? `${Math.round(stats.interval95[0] * 100)}–${Math.round(stats.interval95[1] * 100)}%` : '—'}</td>
                   <td>{stats?.avgReturnBps == null ? '—' : `${signed(stats.avgReturnBps)} bps`}</td></tr>;

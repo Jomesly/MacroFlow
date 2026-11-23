@@ -16,7 +16,6 @@ import type { BoardTile } from "@/lib/market-board";
 import { marketIsOpen } from "@/lib/marketIsOpen";
 import { biasWord, convictionLabel } from "@/lib/market-factors";
 import { ageHours, ageLabel, FRESH_NEWS_HOURS } from "@/lib/freshness";
-import { gradeBadge } from "@/lib/signal-grade";
 import { gradeLabel, type TrackRecord } from "@/lib/signals/track-record";
 
 /** Measured at the read's issue time, which refreshes every five minutes, so cards need no ticking clock. */
@@ -139,7 +138,7 @@ export default function MarketCard({
         href={`/markets/${data.symbol}`}
         onClick={onNavigate}
         className="market-card-main"
-        aria-label={`${data.symbol}: ${bias}${strength === null ? "" : `, ${strength}% strength`}, ${convictionLabel(data).toLowerCase()}${data.forecast ? `, ${gradeBadge(data.grade).replace(" · ", " ").toLowerCase()}` : ""}${outdated ? ", outdated read" : ""}. View full analysis.`}
+        aria-label={`${data.symbol}: ${bias}${strength === null ? "" : `, ${strength}% strength`}, ${convictionLabel(data).toLowerCase()}${data.signal === "neutral" ? ", no buy or sell call" : ""}${outdated ? ", outdated read" : ""}. View full analysis.`}
       >
         <span className="market-id">
           <h3>{data.symbol}</h3>
@@ -174,7 +173,6 @@ export default function MarketCard({
             ) : (
               data.forecast && <span className="market-window">4h</span>
             )}
-            {data.forecast && <span className="market-window market-grade" data-grade={data.grade?.grade ?? 'none'}>{gradeBadge(data.grade)}</span>}
           </span>
           {data.forecast && (
             <span className="market-meta" data-proven={gradeDetail.startsWith('High probability') || undefined}>
