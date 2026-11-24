@@ -7,7 +7,8 @@ import type { CalendarDay } from '@/lib/analytics';
 import type { DayScreenshot, DayTrade, DayTradesResponse } from '@/lib/day-trades';
 import type { MoneyUnit } from '@/lib/money-format';
 import { tradePnlLabel } from '@/lib/trade-pnl';
-import { fmtMoney, fmtPct, toneOf } from './AnalyticsCharts';
+import { formatTradeOutcomes } from '@/lib/trade-outcomes';
+import { fmtMoney, toneOf } from './AnalyticsCharts';
 
 type Props = {
   day: CalendarDay;
@@ -18,7 +19,7 @@ type Props = {
 };
 type Shot = DayScreenshot & { trade: DayTrade; index: number; of: number };
 
-const RESULT_LABEL = { win: 'Win', loss: 'Loss', breakeven: 'BE' } as const;
+const RESULT_LABEL = { win: 'Win', loss: 'Loss', breakeven: 'Break-even' } as const;
 
 /** Opens "Edit" for a trade in History, where screenshots are pasted and removed. */
 export function openTradeInHistory(tradeId: string) {
@@ -90,7 +91,7 @@ export default function DayTradesPanel({ day, filters, unit, onClose }: Props) {
   const edit = (tradeId: string) => { onClose(); openTradeInHistory(tradeId); };
 
   const counted = `${day.trades} ${day.trades === 1 ? 'trade' : 'trades'}`;
-  const record = `${day.wins}W · ${day.losses}L${day.breakeven ? ` · ${day.breakeven}BE` : ''}`;
+  const record = formatTradeOutcomes(day.wins, day.losses, day.breakeven);
   let shotNumber = 0;
 
   return (
@@ -109,7 +110,6 @@ export default function DayTradesPanel({ day, filters, unit, onClose }: Props) {
             {day.net !== null && <b className={`is-${toneOf(day.net)}`}>{fmtMoney(day.net, unit)}</b>}
             <span>{counted}</span>
             <span>{record}</span>
-            {day.winRate !== null && <span>{fmtPct(day.winRate)} win rate</span>}
           </p>
         </div>
         <button type="button" className="jd-day-close" aria-label="Close day" onClick={onClose}>

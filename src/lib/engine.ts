@@ -343,6 +343,8 @@ export function calculateBias(
           evidenceType: event.evidenceType ?? 'headline',
           timestamp: event.timestamp,
           observationDate: event.observationDate,
+          seriesId: event.seriesId,
+          trendEvidence: event.trendEvidence,
         });
       }
     }

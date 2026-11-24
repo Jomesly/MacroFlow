@@ -21,6 +21,11 @@ const REQUIRED_COUNTRIES: Record<AssetSymbol, readonly Country[]> = {
   USDCHF: ['US', 'CH'], AUDUSD: ['US', 'AU'], USDCAD: ['US', 'CA'], NZDUSD: ['US', 'NZ'],
 };
 
+/** Shared country dependencies for data health and structured coverage. */
+export function requiredMacroCountries(symbol: AssetSymbol): readonly string[] {
+  return REQUIRED_COUNTRIES[symbol];
+}
+
 const COUNTRY_ALIASES: Readonly<Record<string, Country>> = {
   US: 'US', USA: 'US', 'UNITED STATES': 'US', 'UNITED STATES OF AMERICA': 'US',
   GB: 'GB', UK: 'GB', 'UNITED KINGDOM': 'GB', 'GREAT BRITAIN': 'GB',

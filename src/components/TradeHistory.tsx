@@ -14,7 +14,7 @@ import { PNL_TONE_CLASS, tradePnlLabel } from '@/lib/trade-pnl';
 const RESULT_BADGES: Record<string, { label: string; classes: string }> = {
   win: { label: 'WIN', classes: 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40' },
   loss: { label: 'LOSS', classes: 'bg-red-900/40 text-red-400 border-red-700/40' },
-  breakeven: { label: 'BE', classes: 'bg-zinc-800 text-zinc-400 border-zinc-700/40' },
+  breakeven: { label: 'Break-even', classes: 'bg-zinc-800 text-zinc-400 border-zinc-700/40' },
   open: { label: 'OPEN', classes: 'bg-amber-900/40 text-amber-400 border-amber-700/40' },
 };
 
@@ -511,7 +511,7 @@ export default function TradeHistory({ journalAccountId, accounts = [], ref, foc
                             onClick={() => setEditResult('breakeven')}
                             className={RESULT_CLS(editResult === 'breakeven', 'zinc')}
                           >
-                            BE
+                            Break-even
                           </button>
                         </div>
                         </> : <p className="capture-help">The result follows the sign of net cash P&amp;L. Mark cash P&amp;L unknown to choose an outcome manually.</p>}

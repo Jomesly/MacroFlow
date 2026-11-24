@@ -7,10 +7,15 @@ import AxeBuilder from '@axe-core/playwright';
 const statusPath = process.env.MACROFLOW_AUTH_TEST_STATUS;
 if (!statusPath) throw new Error('Set MACROFLOW_AUTH_TEST_STATUS to the disposable local Supabase status file.');
 const local = JSON.parse(readFileSync(statusPath, 'utf8').replace(/^﻿/, ''));
-if (!/^http:\/\/(127\.0\.0\.1|localhost):55321$/.test(local.API_URL)) throw new Error('Dashboard tests only use isolated local Supabase.');
+if (!/^http:\/\/(127\.0\.0\.1|localhost):(55321|55721)$/.test(local.API_URL)) throw new Error('Dashboard tests only use isolated local Supabase.');
 const admin = createClient(local.API_URL, local.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 const password = 'MacroFlow-Dashboard-Test-2026!';
 const artifacts = path.resolve('.artifacts/dashboard-review');
+const users: string[] = [];
+
+test.afterEach(async () => {
+  for (const id of users.splice(0)) expect((await admin.auth.admin.deleteUser(id)).error).toBeNull();
+});
 
 async function setup(page: Page) {
   page.setDefaultTimeout(25000);
@@ -18,6 +23,7 @@ async function setup(page: Page) {
   const user = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   expect(user.error).toBeNull();
   const userId = user.data.user!.id;
+  users.push(userId);
   expect((await admin.from('profiles').update({ onboarding_completed_at: new Date().toISOString() }).eq('id', userId)).error).toBeNull();
   await page.goto('/login');
   await page.getByLabel('Email', { exact: true }).fill(email);
@@ -83,7 +89,12 @@ test('analytics dashboard charts match the API, respond to filters and stay acce
   await page.goto(`/journal?tradingAccount=${accountId}`);
   await page.getByRole('tab', { name: 'Analytics', exact: true }).click();
   const panel = page.getByRole('tabpanel');
-  await expect(panel.getByRole('paragraph').filter({ hasText: /^Net P&L · USD$/ })).toBeVisible();
+  await expect(panel.getByRole('paragraph').filter({ hasText: /^Profit or loss · USD$/ })).toBeVisible();
+  await expect(panel.locator('.jd > .jd-kpis > .jd-tile')).toHaveCount(3);
+  await expect(panel.locator('.jd-details')).not.toHaveAttribute('open');
+  await expect(panel.getByRole('table', { name: 'Daily results for October 2026' })).toBeVisible();
+  await expect(panel.locator('.jd-details .jd-label').filter({ hasText: /^Profit factor$/ })).toBeHidden();
+  await panel.getByText('More details', { exact: true }).click();
   await expect(panel.getByRole('img', { name: /^Cumulative net P&L across/ })).toBeVisible();
   await expect(panel.getByRole('img', { name: /^Net P&L for the last 30 trading days/ })).toBeVisible();
   await expect(panel.getByRole('table', { name: 'Daily results for October 2026' })).toBeVisible();
@@ -103,7 +114,7 @@ test('analytics dashboard charts match the API, respond to filters and stay acce
   const september = panel.getByRole('table', { name: 'Daily results for September 2026' });
   await expect(september).toBeVisible();
   const firstDay = api.calendar[0];
-  await expect(september.locator('td[title^="Sep 1, 2026"]')).toContainText(`${firstDay.trades} ${firstDay.trades === 1 ? 'trade' : 'trades'}`);
+  await expect(september.getByRole('button', { name: /^Sep 1, 2026:/ })).toContainText(`${firstDay.trades} ${firstDay.trades === 1 ? 'trade' : 'trades'}`);
 
   await page.waitForTimeout(1200); // let the entrance animations settle before measuring
   await audit(page);
@@ -114,18 +125,80 @@ test('analytics dashboard charts match the API, respond to filters and stay acce
   const gold = rows.filter(row => row.symbol === 'XAUUSD');
   await page.locator('#flt-symbol').selectOption('XAUUSD');
   await expect(panel.getByRole('table', { name: 'Breakdown by symbol' }).getByRole('row')).toHaveCount(2);
-  await expect(panel.locator('.jd-strip')).toContainText(`${gold.length} · ${gold.length} closed`);
+  await expect(panel.locator('.jd > .jd-kpis > .jd-tile').filter({ has: page.getByText('Closed trades', { exact: true }) }).locator('.jd-value')).toHaveText(String(gold.length));
   await page.locator('#flt-symbol').selectOption('');
 
   // An empty range clears the charts but keeps the headline tiles.
   await panel.getByRole('button', { name: 'Last 7 days', exact: true }).click();
   await expect(panel.getByText('No trades in this view yet.')).toBeVisible();
-  await expect(panel.getByRole('paragraph').filter({ hasText: /^Net P&L$/ })).toBeVisible();
+  await expect(panel.getByRole('paragraph').filter({ hasText: /^Profit or loss$/ })).toBeVisible();
   await panel.getByRole('button', { name: 'All time', exact: true }).click();
-  await expect(panel.getByRole('img', { name: /^Cumulative net P&L across/ })).toBeVisible();
+  await expect(panel.locator('.jd-details')).not.toHaveAttribute('open');
 
   await page.setViewportSize({ width: 375, height: 812 });
   await page.waitForTimeout(1200);
   await audit(page);
   await panel.screenshot({ path: path.join(artifacts, 'dashboard-mobile.png') });
+  await panel.getByText('More details', { exact: true }).click();
+  await expect(panel.getByRole('img', { name: /^Cumulative net P&L across/ })).toBeVisible();
+  await audit(page);
+});
+
+test('the simple summary uses plain outcomes, counts closed trades and keeps exact daily amounts', async ({ page }) => {
+  const { accountId, userId } = await setup(page);
+  const amounts = [5, 2.3, 0.05, -0.38, 4.6, -1.48, -3.29, 2.52, 3, 0.76, -15.32, -15.2, 0, null];
+  const rows = amounts.map((pnl, i) => {
+    const day = i < 7 ? '2026-11-23' : '2026-11-24';
+    return {
+      user_id: userId, journal_account_id: accountId, symbol: 'XAUUSD', direction: 'short', entry_price: 100,
+      exit_price: pnl === null ? null : 99,
+      result: pnl === null ? null : pnl > 0 ? 'win' : pnl < 0 ? 'loss' : 'breakeven',
+      pnl_amount: pnl, logged_at: `${day}T10:00:00Z`, closed_at: pnl === null ? null : `${day}T11:00:00Z`,
+    };
+  });
+  expect((await admin.from('trades').insert(rows)).error).toBeNull();
+  await page.goto(`/journal?tab=analytics&tradingAccount=${accountId}`);
+  const panel = page.getByRole('tabpanel');
+  const tiles = panel.locator('.jd > .jd-kpis > .jd-tile');
+  await expect(tiles).toHaveCount(3);
+  await expect(tiles.filter({ hasText: 'Profit or loss' }).locator('.jd-value')).toHaveText('−$17.44');
+  await expect(tiles.filter({ has: page.getByText('Closed trades', { exact: true }) }).locator('.jd-value')).toHaveText('13');
+  await expect(tiles.filter({ has: page.getByText('Closed trades', { exact: true }) })).toContainText('1 trade is still open');
+  await expect(tiles.filter({ hasText: 'Win rate' })).toContainText('7 wins · 5 losses · 1 break-even');
+  await expect(tiles.filter({ hasText: 'Win rate' }).locator('.jd-value')).toHaveText('58.3%');
+  await expect(panel.locator('.jd-details')).not.toHaveAttribute('open');
+  const day = panel.getByRole('button', { name: /^Nov 24, 2026:/ });
+  await expect(day.locator('.net')).toHaveText('−$24.24');
+  await expect(day).not.toHaveAccessibleName(/\d(?:W|L|BE)\b/);
+  await day.click();
+  const drawer = page.getByRole('dialog', { name: /November 24, 2026/ });
+  await expect(drawer).toBeVisible();
+  await expect(drawer.locator('.jd-day-summary')).toContainText('3 wins · 2 losses · 1 break-even');
+  await expect(drawer.locator('.jd-day-trade')).toHaveCount(6);
+  await expect(drawer.getByText('Break-even', { exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeHidden();
+  await expect(day).toBeFocused();
+  mkdirSync(artifacts, { recursive: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await audit(page);
+  await panel.screenshot({ path: path.join(artifacts, 'simple-desktop.png') });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await audit(page);
+  await expect(panel.locator('.jd-calendar-list')).toBeVisible();
+  await expect(panel.getByRole('button', { name: /^Nov 24, 2026:/ })).toContainText('−$24.24');
+  expect(await panel.locator('.jd-calendar-panel').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await panel.screenshot({ path: path.join(artifacts, 'simple-mobile.png') });
+  const summary = panel.getByText('More details', { exact: true });
+  await summary.focus();
+  await page.keyboard.press('Enter');
+  await expect(panel.locator('.jd-details')).toHaveAttribute('open');
+  await expect(panel.getByRole('heading', { name: 'By symbol', exact: true })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(panel.locator('.jd-details')).not.toHaveAttribute('open');
+  // Unknown cash must stay unavailable rather than looking like a zero result.
+  expect((await admin.from('trades').update({ pnl_amount: null }).eq('user_id', userId)).error).toBeNull();
+  await page.reload();
+  await expect(tiles.filter({ hasText: 'Profit or loss' }).locator('.jd-value')).toHaveText('—');
+  await expect(tiles.filter({ hasText: 'Profit or loss' })).toContainText('No cash results yet');
 });

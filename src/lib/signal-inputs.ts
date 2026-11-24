@@ -1,4 +1,10 @@
-import type { CalendarEvent, DataSource, MacroContext, SourceHealth } from './types';
+import { COUNTRY_NAMES, requiredMacroCountries } from './macro-coverage';
+import type { AssetSymbol, CalendarEvent, DataSource, MacroContext, SourceHealth } from './types';
+
+// Only these explicitly scoped providers may be excluded from the shared gate.
+// An unknown name (including a misspelled domestic key) retains fail-closed behavior.
+const DOMESTIC_PROVIDERS = new Set(Object.keys(COUNTRY_NAMES)
+  .filter(country => country !== 'US').map(country => `domestic_${country}`));
 
 interface CalendarEvidence {
   fetchedAt: string;
@@ -14,6 +20,8 @@ interface SignalInputs {
   sourceHealth: SourceHealth;
   context: MacroContext;
   calendarEvidence?: CalendarEvidence;
+  /** Omit for shared-provider health; FX grading additionally checks its own economy. */
+  symbol?: AssetSymbol;
 }
 
 /** Unknown calendar coverage is never evidence that the forecast window is safe. */
@@ -35,12 +43,15 @@ export function assessSignalInputs(inputs: SignalInputs) {
     calendarIssue = 'The economic calendar does not cover the full four-hour forecast window.';
   }
   const calendarVerified = !calendarIssue;
+  const unavailableDomesticCountry = inputs.symbol
+    ? requiredMacroCountries(inputs.symbol).find(country => country !== 'US' && inputs.sourceHealth[`domestic_${country}`] !== 'ok')
+    : undefined;
   let inputIssue: string | undefined;
   if (inputs.source !== 'live' || inputs.stale || !fresh(inputs.cachedAt, 5 * 60_000)) {
     inputIssue = 'Live inputs are outdated or unavailable.';
   } else if (!inputs.context.complete || !fresh(inputs.context.asOf, 2 * 86_400_000 - 1)) {
     inputIssue = 'The structured US macro context is incomplete or outdated.';
-  } else if (Object.values(inputs.sourceHealth).some(status => status === 'failed')) {
+  } else if (Object.entries(inputs.sourceHealth).some(([name, status]) => status === 'failed' && !DOMESTIC_PROVIDERS.has(name))) {
     inputIssue = 'A configured data provider failed; new signals are paused.';
   } else if (['finnhub', 'rss', 'market_data', 'fred', 'calendar_archive', 'economic_calendar']
     .some(name => !['ok', 'empty'].includes(inputs.sourceHealth[name]))) {
@@ -49,6 +60,8 @@ export function assessSignalInputs(inputs: SignalInputs) {
     || inputs.sourceHealth.calendar_archive !== 'ok'
     || !['finnhub', 'rss'].some(name => inputs.sourceHealth[name] === 'ok')) {
     inputIssue = 'Required macro, market or news data is unavailable.';
+  } else if (unavailableDomesticCountry) {
+    inputIssue = `Waiting for ${COUNTRY_NAMES[unavailableDomesticCountry] ?? unavailableDomesticCountry} economic data.`;
   } else if (!calendarVerified) inputIssue = calendarIssue;
   return { inputsHealthy: !inputIssue, calendarVerified, inputIssue, calendarIssue };
 }

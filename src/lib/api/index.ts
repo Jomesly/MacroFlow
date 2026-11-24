@@ -5,10 +5,12 @@ import { fetchNews, getFinnhubNewsHealth } from './finnhub';
 import { fetchMarketData } from './twelvedata';
 import { fetchRssFeeds, getRssFeedHealth } from './rss';
 import { fetchFredInputs } from './fred';
+import { fetchDomesticInputs } from './international-fred';
+import { unavailableDomesticHealth } from '../international-macro';
 import { getCalendar, nextHighEvent } from '../calendar';
 import { coalesce, getCacheEntry, setCache } from './cache';
 
-const CACHE_KEY = 'merged_events_v14_macro_factors';
+const CACHE_KEY = 'merged_events_v15_international_macro';
 const eventSchema = z.object({
   id: z.string().min(1), category: z.enum(['fed_tone', 'boe_tone', 'ecb_tone', 'boj_tone', 'snb_tone', 'rba_tone', 'boc_tone', 'rbnz_tone', 'inflation', 'employment', 'gdp', 'pmi', 'retail_sales', 'geopolitical', 'risk_sentiment', 'dollar_strength', 'yields', 'crypto_regulation', 'earnings', 'yen_strength', 'asset_sentiment', 'price_momentum', 'other']),
   title: z.string(), description: z.string(), timestamp: z.iso.datetime(),
@@ -18,6 +20,11 @@ const eventSchema = z.object({
   country: z.string().optional(), url: z.string().optional(), sourceName: z.string().optional(),
   evidenceType: z.enum(['headline', 'surprise', 'trend', 'market']).optional(),
   seriesId: z.string().optional(), observationDate: z.string().optional(), expiresAt: z.iso.datetime().optional(),
+  trendEvidence: z.object({ provider: z.literal('FRED/ALFRED'), seriesId: z.string(), units: z.string(),
+    frequency: z.enum(['monthly', 'quarterly']), vintageDate: z.string(), availableAt: z.iso.datetime(), fetchedAt: z.iso.datetime(),
+    observationEnd: z.iso.datetime(), currentValue: z.number().finite(), comparisonValue: z.number().finite(),
+    derivedValue: z.number().finite(), derivedUnits: z.enum(['percent change from previous quarter', 'percentage point change over one quarter', 'annual percent change']),
+    transform: z.enum(['gdp_growth', 'gdp_level', 'unemployment', 'hicp']) }).optional(),
   releaseEvidence: z.object({ actual: z.number(), estimate: z.number(), consensusFirstSeenAt: z.iso.datetime(), releasedAt: z.iso.datetime() }).optional(),
 });
 const contextSchema = z.object({
@@ -56,10 +63,11 @@ export async function fetchAllEvents(): Promise<CachedEvents & { stale?: boolean
   if (cached && entry && Date.now() < entry.freshUntil) return cached;
   const asOf = new Date().toISOString();
   const names = ['finnhub', 'market_data', 'rss'] as const;
-  const [rawResults, fred, calendar] = await Promise.all([
+  const [rawResults, fred, calendar, domestic] = await Promise.all([
     Promise.allSettled([fetchNews(), fetchMarketData(), fetchRssFeeds()]),
     fetchFredInputs(asOf).catch(() => ({ context: unknownContext(asOf), events: [] as MacroEvent[], failed: true })),
     getCalendar(asOf).catch(() => null),
+    fetchDomesticInputs(asOf).catch(() => ({ events: [] as MacroEvent[], sourceHealth: unavailableDomesticHealth() })),
   ]);
   const results = rawResults.map(result => {
     if (result.status === 'rejected') return result;
@@ -67,8 +75,9 @@ export async function fetchAllEvents(): Promise<CachedEvents & { stale?: boolean
     return valid.success ? { status: 'fulfilled' as const, value: valid.data }
       : { status: 'rejected' as const, reason: new Error('Invalid provider events') };
   });
-  const events: MacroEvent[] = [...fred.events];
-  const sourceHealth: SourceHealth = {};
+  const domesticEvents = z.array(eventSchema).safeParse(domestic.events);
+  const events: MacroEvent[] = [...fred.events, ...(domesticEvents.success ? domesticEvents.data : [])];
+  const sourceHealth: SourceHealth = domesticEvents.success ? { ...domestic.sourceHealth } : unavailableDomesticHealth();
   results.forEach((result, index) => {
     sourceHealth[names[index]] = result.status === 'rejected' ? 'failed' : result.value.length ? 'ok' : 'empty';
     if (result.status === 'fulfilled') events.push(...result.value);

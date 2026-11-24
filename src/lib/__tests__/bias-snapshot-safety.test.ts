@@ -51,6 +51,34 @@ describe('snapshot signal safety', () => {
     expect((await buildBiasSnapshot('US100')).meta.inputsHealthy).toBe(true);
   });
 
+  it('grades domestic provider health per market while the shared recorder gate stays open', async () => {
+    const inputs = readyInputs();
+    vi.mocked(getEvents).mockResolvedValue({ ...inputs, sourceHealth: { ...inputs.sourceHealth,
+      domestic_GB: 'failed', domestic_EU: 'ok', domestic_JP: 'ok', domestic_CH: 'ok',
+      domestic_AU: 'ok', domestic_CA: 'ok', domestic_NZ: 'ok' } });
+    const snapshot = await buildBiasSnapshot();
+    expect(snapshot.meta.inputsHealthy).toBe(true);
+    for (const result of snapshot.results) {
+      const health = result.grade.checks.find(row => row.id === 'healthy_inputs');
+      expect(health?.passed, result.symbol).toBe(result.symbol !== 'GBPUSD');
+      if (result.symbol === 'GBPUSD') {
+        expect(result.signal).toBe('neutral');
+        expect(health?.detail).toContain('economic data');
+      }
+    }
+    expect((await buildBiasSnapshot('GBPUSD')).meta.inputsHealthy).toBe(false);
+    expect((await buildBiasSnapshot('EURUSD')).meta.inputsHealthy).toBe(true);
+    expect((await buildBiasSnapshot('US100')).meta.inputsHealthy).toBe(true);
+  });
+
+  it('fails the required domestic health check even when a cached FX forecast has events', async () => {
+    const snapshot = await buildBiasSnapshot('GBPUSD');
+    expect(snapshot.results[0].events.length).toBeGreaterThan(0);
+    expect(snapshot.meta.inputsHealthy).toBe(false);
+    expect(check(snapshot, 'healthy_inputs')).toMatchObject({ passed: false });
+    expect(snapshot.results[0].signal).toBe('neutral');
+  });
+
   it('requires health metadata for the macro and calendar providers', async () => {
     vi.mocked(getEvents).mockResolvedValue({ ...readyInputs(), sourceHealth: { rss: 'ok' } });
     expect((await buildBiasSnapshot('US100')).meta.inputsHealthy).toBe(false);

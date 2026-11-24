@@ -5,6 +5,7 @@ import { animate, motion, useReducedMotion } from 'motion/react';
 import { Camera, CaretLeft, CaretRight } from '@phosphor-icons/react';
 import type { BucketStats, CalendarDay, EquityPoint, TimeCell } from '@/lib/analytics';
 import { compactMoney, signedMoney, type MoneyUnit } from '@/lib/money-format';
+import { formatTradeOutcomes } from '@/lib/trade-outcomes';
 
 type Tone = 'positive' | 'negative' | 'flat';
 
@@ -251,11 +252,15 @@ export function MonthCalendar({ days, unit, onSelectDay, selectedDate }: {
   const money = traded.filter((d) => d.net !== null);
   const monthNet = money.length ? money.reduce((sum, d) => sum + (d.net as number), 0) : null;
   const title = new Date(Date.UTC(year, index - 1, 1)).toLocaleDateString(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const summaryFor = (day: CalendarDay) => {
+    const shots = day.screenshots ?? 0;
+    return `${fmtDay(day.date)}: ${formatTradeOutcomes(day.wins, day.losses, day.breakeven)}, profit or loss ${fmtMoney(day.net, unit)}${shots ? `, ${shots} ${shots === 1 ? 'screenshot' : 'screenshots'}` : ''}`;
+  };
 
   return (
     <>
       <div className="jd-panel-head">
-        <h3>P&amp;L calendar</h3>
+        <h3>Daily results</h3>
         <div className="jd-cal-nav">
           <button type="button" aria-label="Previous month" onClick={() => setChosen(shiftMonth(month, -1))}>
             <CaretLeft size={14} aria-hidden="true" />
@@ -291,13 +296,13 @@ export function MonthCalendar({ days, unit, onSelectDay, selectedDate }: {
                   if (typeof cell === 'number') return <td key={i}><span className="day">{cell}</span></td>;
                   const tone = toneOf(cell.net);
                   const shots = cell.screenshots ?? 0;
-                  const summary = `${fmtDay(cell.date)}: ${cell.wins}W / ${cell.losses}L / ${cell.breakeven}BE, net ${fmtMoney(cell.net, unit)}${shots ? `, ${shots} ${shots === 1 ? 'screenshot' : 'screenshots'}` : ''}`;
+                  const summary = summaryFor(cell);
                   const content = (
                     <>
                       <span className="day">{Number(cell.date.slice(8))}</span>
                       {shots > 0 && <span className="shots" aria-hidden="true"><Camera size={11} weight="fill" />{shots}</span>}
-                      <span className="net">{cell.net === null ? `${cell.wins}W ${cell.losses}L` : fmtCompact(cell.net, unit)}</span>
-                      <span className="meta">{cell.trades} {cell.trades === 1 ? 'trade' : 'trades'}{cell.winRate !== null && ` · ${fmtPct(cell.winRate)}`}</span>
+                      <span className="net">{cell.net === null ? '—' : fmtMoney(cell.net, unit)}</span>
+                      <span className="meta">{cell.trades} {cell.trades === 1 ? 'trade' : 'trades'}</span>
                     </>
                   );
                   return (
@@ -320,7 +325,7 @@ export function MonthCalendar({ days, unit, onSelectDay, selectedDate }: {
                 <td className="week-col">
                   {weekDays.length > 0 && (
                     <>
-                      <span className={`net is-${toneOf(weekNet)}`}>{weekNet === null ? '—' : fmtCompact(weekNet, unit)}</span>
+                      <span className={`net is-${toneOf(weekNet)}`}>{fmtMoney(weekNet, unit)}</span>
                       <span className="meta">{weekDays.length} {weekDays.length === 1 ? 'day' : 'days'}</span>
                     </>
                   )}
@@ -330,6 +335,19 @@ export function MonthCalendar({ days, unit, onSelectDay, selectedDate }: {
           })}
         </tbody>
       </table>
+      <div className="jd-calendar-list">
+        {traded.map((day) => {
+          const content = <>
+            <span>{fmtDay(day.date, false)}<small>{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</small></span>
+            <strong className={`is-${toneOf(day.net)}`}>{fmtMoney(day.net, unit)}</strong>
+          </>;
+          return onSelectDay ? (
+            <button key={day.date} type="button" className="jd-calendar-day" aria-haspopup="dialog" aria-label={`${summaryFor(day)}. Show trades${day.screenshots ? ' and screenshots' : ''}.`} onClick={() => onSelectDay(day)}>
+              {content}
+            </button>
+          ) : <div key={day.date} className="jd-calendar-day">{content}</div>;
+        })}
+      </div>
     </>
   );
 }
@@ -364,7 +382,7 @@ export function TimeHeatmap({ cells, unit }: { cells: TimeCell[]; unit?: MoneyUn
                     key={block}
                     data-tone={toneOf(edge)}
                     style={{ '--jd-heat': heat(Math.abs(edge)) } as React.CSSProperties}
-                    title={`${weekday} ${range} ET: ${cell.trades} ${cell.trades === 1 ? 'trade' : 'trades'}, ${cell.wins}W / ${cell.losses}L, net ${fmtMoney(cell.net, unit)}`}
+                    title={`${weekday} ${range} ET: ${cell.trades} ${cell.trades === 1 ? 'trade' : 'trades'}, ${formatTradeOutcomes(cell.wins, cell.losses)}, profit or loss ${fmtMoney(cell.net, unit)}`}
                   >
                     {fmtPct(cell.winRate)}
                     <small>{cell.trades} {cell.trades === 1 ? 'trade' : 'trades'}</small>

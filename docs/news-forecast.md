@@ -1,6 +1,6 @@
 # Four-hour news and macro bias
 
-The dashboard and `/api/bias` use `macro-factors-v6-4h-2026-11-24` across all 12 markets. Each market card is a quick read of three things, and the full analysis page behind it holds the reasons:
+The dashboard and `/api/bias` use `macro-factors-v7-4h-2026-11-24` across all 12 markets. Each market card is a quick read of three things, and the full analysis page behind it holds the reasons:
 
 1. **Bias**: bullish, bearish or neutral for the next four hours, with a **strength percentage** (the size of the lean on a 0–100 scale, not a win rate).
 2. **Conviction**: high, medium or low, showing how firmly the factors point one way.
@@ -22,13 +22,15 @@ The news component is 1.5 × its category total, capped at ±100. The macro comp
 
 ## Conviction
 
-| Conviction | Requirements |
-| --- | --- |
-| High | Score magnitude at least 60, at least two independent news sources, and a macro backdrop that does not contradict the news |
-| Medium | Score magnitude at least 30, backed by two news sources or by macro data that points the same way |
-| Low | Any weaker nonzero lean |
+The dashboard, market pages and recorded calls share the same public conviction grade. A directional score needs magnitude at least 30 to qualify; the seven checks below then decide its grade.
 
-On the dashboard and market pages, conviction is the signal grade below, on one Low / Medium / High scale. The table above describes the forecast's internal lean strength, which no longer appears on its own.
+| Conviction | Requirements | Call |
+| --- | --- | --- |
+| High | All seven checks pass | Strong buy or strong sell (grade A) |
+| Medium | The five mandatory checks pass, with exactly one of “two sources” or “dollar and yield moves” missing | Buy or sell (grade B) |
+| Low | Score below the floor, neutral direction, a failed mandatory check, or both confirming checks missing | No call |
+
+The forecast's internal lean-strength thresholds do not set the conviction shown to traders. Public conviction comes from `gradeSignal()` in the shared bias-snapshot path, so there is one displayed scale.
 
 ## Signals: news and macro must match
 
@@ -50,9 +52,11 @@ All seven give **high conviction** (strong buy or strong sell; stored as grade A
 
 Each FX pair requires structured evidence for the United States and its counterpart economy: the United Kingdom, euro area, Japan, Switzerland, Australia, Canada or New Zealand. Each economy's net contribution must support the pair's direction. Dollar/yield observations and policy headlines cannot stand in for missing domestic economic data. Gold, bitcoin and US indices require US structured evidence; this is a minimum macro coverage check, not a complete model of every factor that moves those assets.
 
-The current structured adapters provide US FRED trends and verified US release surprises. They do not yet supply equivalent domestic trends for the other economies. Those FX pairs therefore remain **low conviction**, with missing country coverage shown in the forecast limitations and signal checks. Adding vetted domestic adapters, with release-time provenance and expiry rules, is separate work; the app does not fabricate that coverage from US data.
+International structured trends use FRED/ALFRED completed-vintage snapshots for the seven counterpart economies. The registry selects country-specific real GDP, unemployment or inflation series with explicit units and transformations. A snapshot expires after 48 hours, and each series also has a bound on its underlying observation age. Observation periods, vintage availability and fetch times remain distinct: fetching an old release again does not make it a new release. See [international macro sources](international-macro.md) for the exact series and provenance rules.
 
-Version 5 changes signal eligibility and policy interpretation, so it starts a separate track record. Version 4 outcomes remain stored but cannot prove this revision. Classified event caches are versioned as well, preventing retained old classifications from resurfacing after rollout.
+These domestic observations are **trend evidence**, not release surprises. The international adapter does not infer a surprise from a trend or pretend a calendar forecast is an actual. The existing verified US actual/pre-release-consensus path remains separate. Missing, outdated, flat or opposing domestic evidence can still leave any FX pair at low conviction, and adding coverage does not promise a call. Coverage in a deployed environment depends on rollout and successful source fetches.
+
+Version 7 adds international trend coverage and country-specific required-provider health, so it starts a separate track record. Earlier outcomes remain stored and existing signals can resolve, but they cannot prove this revision. Input caches are versioned as well, preventing retained older input bundles from masquerading as the new coverage.
 
 ## Track record and "High probability"
 
@@ -71,7 +75,7 @@ Conviction is a heuristic about the evidence, not a measured win rate. No histor
 
 Each news feed is retried once. If it still fails, its last successful stories (kept for up to six hours) stand in, and the combined set is refreshed after one minute instead of five. A feed outage therefore cannot silently drop a market's main news source and swing its reading. Stories still fade through the six-hour half-life. Cards are marked "outdated" when the dashboard cannot refresh its data. A failed news feed is named next to "Data sources" on the dashboard, and the server log records why it failed (`[rss] feed failed <name> <reason>`).
 
-Retained stories can still explain a lean during an outage, but any failed configured provider pauses new medium- and high-conviction calls. Finnhub's general, forex and crypto desks report health separately, so one successful desk cannot hide another desk's failure. Existing recorded signals continue to be resolved during outages.
+Retained stories can still explain a lean during an outage. A failed shared news, US macro, market or calendar provider pauses new medium- and high-conviction calls across its existing shared scope. A domestic economic source is required only by its dependent FX pair, so its failure does not pause unrelated markets. Unknown or missing required source health also blocks the affected pair. Finnhub's general, forex and crypto desks report health separately, so one successful desk cannot hide another desk's failure. Existing recorded signals continue to be resolved during outages.
 
 On 2026-11-23, FXStreet returned HTTP 403 from the production runtime while its RSS feed still loaded locally. Following the rollout plan, Production's `RSS_FXSTREET` setting is empty, which disables this blocked feed and reports it as `empty`. Forex coverage continues through Finnhub forex news, InvestingLive and Yahoo Finance FX. The Preview setting is unchanged.
 

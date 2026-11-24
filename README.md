@@ -2,7 +2,7 @@
 
 **Macro context for your technical analysis. A journal for your trading decisions.**
 
-MacroFlow combines economic trends, verified release surprises, policy news, and market observations into an explainable directional bias. Inspect the contributing points, compare the macro view with your technical setup, and use the trading journal to review decisions over time.
+MacroFlow combines recent news and economic data into an explainable market bias for the next four hours. Inspect the factors, compare the bias with your technical setup, and use the trading journal to review decisions over time.
 
 [Live application](https://macro-flow-ecru.vercel.app) · [Scoring](#how-scoring-works) · [Getting started](#getting-started) · [Documentation](#documentation)
 
@@ -12,7 +12,7 @@ MacroFlow combines economic trends, verified release surprises, policy news, and
 
 ## Workspace
 
-- **Market overview:** Compare signed bias, conviction, evidence agreement, and recent history across 12 markets. Bullish and bearish readings are ranked by absolute bias strength.
+- **Market overview:** Compare signed bias, conviction, evidence agreement, and recent history across 12 markets. Readings are ranked by conviction, then absolute bias strength in either direction.
 - **Market analysis:** Inspect rule contributions, opposing evidence, category totals, market confirmation, source health, and timestamps.
 - **Economic context:** Review upcoming releases, archived consensus, and available actuals alongside official release schedules and Treasury yield context.
 - **Trading journal:** Record technical setups, entries, exits, results, tags, notes, and available macro context. Review history, performance by setup and session, and weekly summaries.
@@ -25,58 +25,55 @@ Review the macro evidence, compare it with your technical setup, record the trad
 
 ## How scoring works
 
-### Inputs to points
+### Four-hour news and macro blend
 
-The server combines timestamped policy and market news, transformed FRED/ALFRED economic trends, measured dollar/yield observations, and eligible economic release surprises. A surprise requires an actual value and consensus archived before the release; an upcoming event alone does not earn surprise points.
+News includes asset reporting, central-bank actions and tone, risk sentiment, earnings, regulation and geopolitics. The macro backdrop includes structured economic trends, verified release surprises, and measured dollar/yield observations. Asset price action is not scored; traders use their own charts to confirm the bias.
 
-Asset-specific rules assign signed points. Economic trends receive half weight; the current equity model also applies a growth/rate regime adjustment. Exact duplicates are removed, opposing contributions remain visible, and each category is capped **after** its signed contributions are summed. Future, expired, unsupported, or incorrectly attributed evidence is excluded from the relevant scoring path.
+Each story contributes one net vote. Duplicate stories merge, and only the strongest positive and negative contributions in each category count. Headlines have a six-hour half-life and expire after 12 hours. Economic trends receive reduced weight. A release surprise needs a verified actual and comparable consensus archived before release; a calendar schedule alone contributes no surprise evidence.
 
-Headline safeguards distinguish economic indices from equity indices, actual crypto regulation from unrelated or negated statements, and central-bank forecast revisions from interest-rate actions.
-
-### Reading the percentage
-
-The production display uses:
+The news component is 1.5 × its category total, capped at ±100. The macro component is its category total, capped at ±100. When both are available:
 
 ```text
-displayed bias = round(100 × net category-capped points / asset category capacity)
+four-hour bias = round(70% × news component + 30% × macro component)
 ```
 
-The result is bounded from −100% to +100%. Positive readings indicate bullish macro pressure; negative readings indicate bearish pressure. The API retains net points, category contributions, and the denominator for inspection. Direction zones and strength use the capped raw point score, so the display and raw score are different units.
+A sole available component gets full weight. The signed result runs from −100 to +100 and is displayed directly as directional strength. Positive is bullish, negative is bearish, and zero is neutral; magnitude below 50 is described as a lean. The percentage is **not a win probability** or a price target.
 
-For example, Gold's category capacity is 260 points. A net score of +70 displays as **+27%**. Missing categories remain in the denominator: the display measures a share of rule capacity, not the percentage of available evidence that agrees.
+### Conviction: seven evidence checks
 
-**Bias is not a calibrated prediction probability.** An 80% bias reading does not establish an 80% likelihood of a correct forecast. The optional outcome-calibration pipeline is separate and may report probability as unavailable.
+A call needs a directional score with magnitude at least 30. The public conviction comes from these seven checks:
 
-### Conviction and market alignment
+1. Fresh supporting news from the last six hours.
+2. Matching structured economic evidence, including both relevant economies for an FX pair.
+3. At least two supporting news sources.
+4. At least 70% agreement, weighted by the evidence's score contributions.
+5. Confirming dollar and yield observations.
+6. A verified calendar with no relevant high-impact release through the next four hours.
+7. Fresh, healthy required inputs.
 
-**High Conviction requires an absolute displayed bias of at least 50%**, equally for bullish and bearish readings. Reaching that threshold is necessary but not sufficient. The engine also requires:
+**High conviction** means all seven pass (grade A, strong buy/sell). **Medium conviction** allows exactly one missing confirmation: either news-source breadth or dollar/yield confirmation (grade B, buy/sell). The other five checks must pass. Anything else is **Low conviction**, with no call, even when a directional lean remains visible.
 
-- At least three supporting categories, supporting high-impact evidence, and at least 60% event agreement with the net direction.
-- Fresh, complete macro context and supporting structured economic evidence.
-- Recent market observations that confirm the macro direction.
-- A resolved equity regime where applicable.
-
-Readings between −49% and +49% cannot receive High Conviction. Larger readings can still have low conviction when evidence or alignment checks fail. The API computes percentage and conviction together; the dashboard guards against inconsistent older responses. Bias responses use `Cache-Control: no-store`, while input caches retain bounded freshness and expiry.
-
-Macro direction and a qualified signal remain distinct. The engine can show a directional macro view while withholding a buy/sell signal because confirmation or input health is insufficient.
+Country coverage, source health and timestamps are part of the evidence, not optional display details. An FX pair cannot replace missing domestic economic data with US data, headlines or price moves. See [the current methodology](docs/news-forecast.md) for the detailed rules and coverage limitations.
 
 ## Validation and research status
 
-The scoring investigation used portfolio reference commit `e52443b` and compared individual changes before combining them into an isolated restoration candidate. Production contains verified correctness fixes. **The experimental fixed-scale and regime-restoration policy is not the live default.**
+Conviction grades describe evidence quality; they do not establish predictive accuracy. The signal recorder and four-hour outcome resolver already exist. Results are summarized for the current forecast version only, so a model change starts a separate track record.
+
+The label **High probability** requires at least 100 resolved current-version signals, entries on at least 30 different days, and a 95% Wilson lower bound of at least 55%. Until those requirements are met, no probability claim is made. Scheduling and collection status must be checked in the relevant environment; having the code does not prove a result has been collected.
 
 Three conclusions are kept separate:
 
-1. **Correctness:** Tests verify calculations, category caps, evidence attribution, timestamp handling, and the ±50% conviction boundary.
+1. **Correctness:** Tests verify component calculations, evidence attribution, timestamps, country coverage and the seven-check grading rules.
 2. **Behavior:** Controlled replays show which inputs and policies change points, direction, and qualification.
 3. **Predictive performance:** Better subsequent market-direction accuracy has **not** been established by the available comparisons.
 
 Historical evaluation uses inputs available at each prediction timestamp, the next hourly open, and four contiguous hours of subsequent prices. Reports include sample sizes, abstentions, signal frequency, price coverage, uncertainty, and matched simple baselines. Where returns are shown, costs are explicit and illustrative.
 
-Known limits include incomplete historical news/consensus archives, unavailable quality-checked Gold outcome prices in the evaluated sample, and no UK actual-release adapter in the current structured surprise pipeline. Inspected historical data are development evidence, not an untouched holdout. Legacy synthetic and revised-data artifacts must not be used as proof of predictive accuracy.
+Known limits include incomplete historical news/consensus archives and gaps in verified economic actuals. Missing, outdated or conflicting required evidence withholds a call. Inspected historical data are development evidence, not an untouched holdout. Legacy synthetic and revised-data artifacts must not be used as proof of predictive accuracy.
 
 Prospective tooling records immutable input bundles, model/source hashes, timestamps, release provenance, and variant outputs. Failed or stale captures remain visible but are excluded from eligible comparisons. **Collection is not enabled automatically by deployment:** an operator must run the collector against a frozen protocol on a durable host. The final evaluator refuses to open the registered evaluation period early.
 
-Read the [restoration evaluation](docs/restoration-final-report-2026-11-10.md) and [GBPUSD/Bitcoin corrections](docs/gbpusd-bitcoin-followup-2026-11-10.md) for results and limitations. These reports describe their execution dates; later deployment does not turn experimental results into validated forecasts.
+The [restoration evaluation](docs/restoration-final-report-2026-11-10.md) and [GBPUSD/Bitcoin corrections](docs/gbpusd-bitcoin-followup-2026-11-10.md) document earlier scoring investigations. They describe their execution dates and models, rather than the current news/macro blend; later deployment does not turn experimental results into validated forecasts.
 
 ## Product tour
 

@@ -41,8 +41,8 @@ const headings = {
       'Every decision, recorded. Revisit the setups and outcomes behind your results.',
   },
   analytics: {
-    title: 'See the patterns in your performance',
-    description: 'Review results across markets, setups, and sessions.',
+    title: 'Your trading results',
+    description: 'See how your completed trades add up.',
   },
   accounts: {
     title: 'Bring your trades together',

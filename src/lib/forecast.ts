@@ -5,7 +5,7 @@ import { FRESH_NEWS_HOURS, headlineWeight } from './freshness';
 import { assessMacroCoverage, COUNTRY_NAMES } from './macro-coverage';
 import type { AssetSymbol, BiasResult, Direction, MacroContext, MacroEvent, ScoredEvent } from './types';
 
-export const FORECAST_VERSION = 'macro-factors-v6-4h-2026-11-24';
+export const FORECAST_VERSION = 'macro-factors-v7-4h-2026-11-24';
 
 function articleKey(event: MacroEvent): string {
   if (event.url) {

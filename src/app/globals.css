@@ -2828,6 +2828,25 @@ p.source-alert {
 .jd-panel-head > span { font: 11px var(--font-geist-mono), monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
 .jd-empty { padding: 28px 0; font-size: 12px; line-height: 1.7; color: var(--muted); }
 .jd-note { font-size: 11px; line-height: 1.7; color: var(--muted); }
+.jd-details > summary { display: flex; align-items: center; gap: 10px; min-height: 44px; padding-block: 10px; color: var(--frost); font-size: 13px; cursor: pointer; list-style: none; }
+.jd-details > summary::-webkit-details-marker { display: none; }
+.jd-details > summary::before { content: '+'; font-size: 18px; }
+.jd-details[open] > summary::before { content: '−'; }
+.jd-details > summary:focus-visible { outline: 2px solid var(--frost); outline-offset: 4px; border-radius: var(--radius-panel); }
+.jd-details-body { display: grid; gap: 20px; padding-top: 12px; }
+.jd-calendar-panel { overflow-x: auto; }
+.jd-calendar-panel .jd-cal { min-width: 620px; }
+.jd-calendar-list { display: none; }
+.jd-calendar-day { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; padding-block: 12px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; }
+button.jd-calendar-day { cursor: pointer; }
+.jd-calendar-day:last-child { border-bottom: 0; }
+.jd-calendar-day small { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+.jd-calendar-day strong { font: 500 14px var(--font-geist-mono), monospace; overflow-wrap: anywhere; }
+.jd-calendar-day:focus-visible { outline: 2px solid var(--frost); outline-offset: 3px; }
+@media (max-width: 700px) {
+  .jd-calendar-panel .jd-cal { display: none; }
+  .jd-calendar-list { display: grid; }
+}
 
 .jd-equity { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; }
 .jd-axis { position: relative; height: 220px; min-width: 40px; font: 10px var(--font-geist-mono), monospace; color: var(--muted); }

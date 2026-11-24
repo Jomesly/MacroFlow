@@ -11,7 +11,6 @@ import {
   CountUp,
   DailyBars,
   EquityCurve,
-  Gauge,
   MonthCalendar,
   Sparkline,
   TimeHeatmap,
@@ -20,6 +19,7 @@ import {
   toneOf,
 } from '@/components/journal/AnalyticsCharts';
 import { moneyUnit } from '@/lib/money-format';
+import { formatTradeOutcomes } from '@/lib/trade-outcomes';
 
 const LABEL = 'block text-xs font-medium text-zinc-400 mb-2';
 const FIELD =
@@ -27,11 +27,11 @@ const FIELD =
 
 type Range = 'all' | '7d' | '30d' | '90d' | 'ytd' | 'custom';
 const RANGES: { value: Exclude<Range, 'custom'>; label: string; title: string }[] = [
-  { value: '7d', label: '7D', title: 'Last 7 days' },
-  { value: '30d', label: '30D', title: 'Last 30 days' },
-  { value: '90d', label: '90D', title: 'Last 90 days' },
-  { value: 'ytd', label: 'YTD', title: 'Year to date' },
-  { value: 'all', label: 'All', title: 'All time' },
+  { value: '7d', label: '7 days', title: 'Last 7 days' },
+  { value: '30d', label: '30 days', title: 'Last 30 days' },
+  { value: '90d', label: '90 days', title: 'Last 90 days' },
+  { value: 'ytd', label: 'This year', title: 'Year to date' },
+  { value: 'all', label: 'All time', title: 'All time' },
 ];
 
 /** First day of a preset range, in UTC to match the reporting dates. */
@@ -106,6 +106,7 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
   const unknownEntries = data.byWeekday['Unknown entry time']?.trades ?? 0;
   const streak = t.currentStreak;
   const widest = Math.max(t.avgWin ?? 0, Math.abs(t.avgLoss ?? 0)) || 1;
+  const outcomes = formatTradeOutcomes(t.wins, t.losses, t.breakeven);
 
   return (
     <div className="jd max-w-6xl" aria-busy={loading}>
@@ -149,153 +150,109 @@ export default function Analytics({ journalAccountId }: { journalAccountId?: str
       </div>
 
       <div className="jd-kpis">
-            <div className="jd-tile">
-              <p className="jd-label">Net P&amp;L{currency ? ` · ${currency}` : ''}</p>
-              <div className="jd-tile-body">
-                <span className={`jd-value is-${toneOf(t.net)}`}>
-                  {t.net === null ? '—' : <CountUp value={t.net} format={money} />}
-                </span>
-                <Sparkline points={data.equity} />
-              </div>
-              <p className="jd-sub">{t.moneyCoverage !== null ? `Cash result on ${t.moneyCoverage}% of closed trades` : 'No cash results yet'}</p>
-            </div>
-
-            <div className="jd-tile">
-              <p className="jd-label">Win rate</p>
-              <div className="jd-tile-body">
-                <span className="jd-value">{t.winRate === null ? '—' : <CountUp value={t.winRate} format={fmtRate} />}</span>
-                <Gauge
-                  label={`${t.wins} wins, ${t.breakeven} breakeven, ${t.losses} losses`}
-                  segments={[
-                    { value: t.wins, tone: 'positive' },
-                    { value: t.breakeven, tone: 'flat' },
-                    { value: t.losses, tone: 'negative' },
-                  ]}
-                />
-              </div>
-              <p className="jd-sub">{t.wins}W · {t.breakeven}BE · {t.losses}L</p>
-            </div>
-
-            <div className="jd-tile">
-              <p className="jd-label">Profit factor</p>
-              <div className="jd-tile-body">
-                <span className="jd-value">{t.profitFactor === null ? '—' : <CountUp value={t.profitFactor} format={fmtRatio} />}</span>
-                <Gauge
-                  label={`Gross profit ${money(t.grossProfit)}, gross loss ${money(t.grossLoss)}`}
-                  segments={[
-                    { value: t.grossProfit ?? 0, tone: 'positive' },
-                    { value: Math.abs(t.grossLoss ?? 0), tone: 'negative' },
-                  ]}
-                />
-              </div>
-              <p className="jd-sub">
-                {t.grossProfit === null ? 'Needs cash results' : `${money(t.grossProfit)} won · ${money(t.grossLoss)} lost`}
-              </p>
-            </div>
-
-            <div className="jd-tile">
-              <p className="jd-label">Winning days</p>
-              <div className="jd-tile-body">
-                <span className="jd-value">{t.dayWinRate === null ? '—' : <CountUp value={t.dayWinRate} format={fmtRate} />}</span>
-                <Gauge
-                  label={`${t.winningDays ?? 0} winning days, ${flatDays} flat, ${t.losingDays ?? 0} losing days`}
-                  segments={[
-                    { value: t.winningDays ?? 0, tone: 'positive' },
-                    { value: flatDays, tone: 'flat' },
-                    { value: t.losingDays ?? 0, tone: 'negative' },
-                  ]}
-                />
-              </div>
-              <p className="jd-sub">
-                {t.winningDays === null ? 'Needs cash results' : `${t.winningDays} up · ${t.losingDays} down${flatDays ? ` · ${flatDays} flat` : ''}`}
-              </p>
-            </div>
-
-            <div className="jd-tile">
-              <p className="jd-label">Avg win / avg loss</p>
-              <span className="jd-value">{t.winLossRatio === null ? '—' : <CountUp value={t.winLossRatio} format={fmtRatio} />}</span>
-              <div className="jd-ratio">
-                <div className="is-positive">
-                  <i style={{ width: `${((t.avgWin ?? 0) / widest) * 100}%` }} />
-                  <span>{money(t.avgWin)}</span>
-                </div>
-                <div className="is-negative">
-                  <i style={{ width: `${(Math.abs(t.avgLoss ?? 0) / widest) * 100}%` }} />
-                  <span>{money(t.avgLoss)}</span>
-                </div>
-              </div>
-            </div>
+        <div className="jd-tile">
+          <p className="jd-label">Profit or loss{currency ? ` · ${currency}` : ''}</p>
+          <div className="jd-tile-body">
+            <span className={`jd-value is-${toneOf(t.net)}`}>
+              {t.net === null ? '—' : <CountUp value={t.net} format={money} />}
+            </span>
+            <Sparkline points={data.equity} />
           </div>
-
-          <dl className="jd-strip">
-            <div><dt>Expectancy / trade</dt><dd className={`is-${toneOf(t.expectancy)}`}>{money(t.expectancy)}</dd></div>
-            <div><dt>Avg R{t.rCoverage !== null && t.rCoverage < 100 ? ` (${t.rCoverage}% of closed)` : ''}</dt><dd>{t.avgR !== null ? `${t.avgR > 0 ? '+' : ''}${t.avgR.toFixed(2)}R` : '—'}</dd></div>
-            <div><dt>Daily close drawdown</dt><dd className={`is-${toneOf(t.maxDrawdown)}`}>{money(t.maxDrawdown)}</dd></div>
-            <div><dt>Best day</dt><dd className={`is-${toneOf(t.bestDay?.net ?? null)}`}>{money(t.bestDay?.net ?? null)}</dd></div>
-            <div><dt>Worst day</dt><dd className={`is-${toneOf(t.worstDay?.net ?? null)}`}>{money(t.worstDay?.net ?? null)}</dd></div>
-            <div>
-              <dt>Current streak</dt>
-              <dd className={streak ? (streak.result === 'win' ? 'is-positive' : 'is-negative') : ''}>
-                {streak ? `${streak.count} ${streak.result === 'win' ? (streak.count === 1 ? 'win' : 'wins') : streak.count === 1 ? 'loss' : 'losses'}` : '—'}
-              </dd>
-            </div>
-            <div><dt>Longest streaks</dt><dd>{t.longestWinStreak}W / {t.longestLossStreak}L</dd></div>
-            <div><dt>Trades</dt><dd>{t.trades}<small> · {t.closed} closed · {t.open} open</small></dd></div>
-          </dl>
+          <p className="jd-sub">
+            {!moneyComparable ? 'Select one account to see your total' : t.moneyCoverage === null || t.moneyCoverage === 0 ? 'No cash results yet' : t.moneyCoverage < 100 ? `Cash result recorded for ${t.moneyCoverage}% of closed trades` : 'From closed trades'}
+          </p>
+        </div>
+        <div className="jd-tile">
+          <p className="jd-label">Closed trades</p>
+          <div className="jd-tile-body"><span className="jd-value">{t.closed}</span></div>
+          <p className="jd-sub">{t.open > 0 ? `${t.open} ${t.open === 1 ? 'trade is' : 'trades are'} still open` : 'Completed trades in this period'}</p>
+        </div>
+        <div className="jd-tile">
+          <p className="jd-label">Win rate</p>
+          <div className="jd-tile-body">
+            <span className="jd-value">{t.winRate === null ? '—' : <CountUp value={t.winRate} format={fmtRate} />}</span>
+          </div>
+          <p className="jd-sub">{outcomes}</p>
+          {t.breakeven > 0 && <p className="jd-sub">Break-even trades are left out of the win rate.</p>}
+        </div>
+      </div>
 
       {t.trades === 0 ? (
         <div className="jd-panel">
-          <p className="jd-empty">
-            No trades in this view yet. Log a trade, or widen the date range and symbol to see your results here.
-          </p>
+          <p className="jd-empty">No trades in this view yet. Log a trade, or widen the date range and symbol to see your results here.</p>
         </div>
       ) : (
         <>
-          <div className="jd-row">
-            <section className="jd-panel">
-              <div className="jd-panel-head">
-                <h3>Cumulative net P&amp;L</h3>
-                <span>By close date</span>
-              </div>
-              {data.equity.length ? <EquityCurve points={data.equity} unit={unit} /> : <p className="jd-empty">The curve appears once closed trades have a cash result{moneyComparable ? '' : ' in a single account'}.</p>}
-            </section>
-            <section className="jd-panel">
-              <div className="jd-panel-head">
-                <h3>Daily net P&amp;L</h3>
-                <span>Last {Math.min(30, data.equity.length)} trading {data.equity.length === 1 ? 'day' : 'days'}</span>
-              </div>
-              {data.equity.length ? <DailyBars points={data.equity} unit={unit} /> : <p className="jd-empty">Daily results appear with your first closed cash trade.</p>}
-            </section>
-          </div>
+          <section className="jd-panel jd-calendar-panel">
+            <MonthCalendar days={data.calendar} unit={unit} onSelectDay={setSelectedDay} selectedDate={selectedDay?.date} />
+            <p className="jd-sub mt-3">Select a day to see its trades{journalFeatures.screenshots ? ' and screenshots' : ''}. Dates use UTC.</p>
+          </section>
+          {selectedDay && <DayTradesPanel key={`${selectedDay.date}:${filters}`} day={selectedDay} filters={filters} unit={unit} onClose={() => setSelectedDay(null)} />}
 
-          <div className="jd-row">
-            <section className="jd-panel">
-              <MonthCalendar days={data.calendar} unit={unit} onSelectDay={setSelectedDay} selectedDate={selectedDay?.date} />
-              <p className="jd-sub mt-3">Select a day to see its trades{journalFeatures.screenshots ? ' and screenshots' : ''}.</p>
-            </section>
-            {selectedDay && <DayTradesPanel key={`${selectedDay.date}:${filters}`} day={selectedDay} filters={filters} unit={unit} onClose={() => setSelectedDay(null)} />}
-            <section className="jd-panel">
-              <div className="jd-panel-head">
-                <h3>Win rate by entry time</h3>
-                <span>New York time</span>
+          <details className="jd-details">
+            <summary>More details</summary>
+            <div className="jd-details-body">
+              <div className="jd-kpis">
+                <div className="jd-tile">
+                  <p className="jd-label">Profit factor</p>
+                  <span className="jd-value">{t.profitFactor === null ? '—' : <CountUp value={t.profitFactor} format={fmtRatio} />}</span>
+                  <p className="jd-sub">{t.grossProfit === null ? 'Needs cash results' : `${money(t.grossProfit)} won · ${money(t.grossLoss)} lost`}</p>
+                </div>
+                <div className="jd-tile">
+                  <p className="jd-label">Winning days</p>
+                  <span className="jd-value">{t.dayWinRate === null ? '—' : <CountUp value={t.dayWinRate} format={fmtRate} />}</span>
+                  <p className="jd-sub">{t.winningDays === null ? 'Needs cash results' : `${t.winningDays} winning · ${t.losingDays} losing${flatDays ? ` · ${flatDays} break-even` : ''}`}</p>
+                </div>
+                <div className="jd-tile">
+                  <p className="jd-label">Average win / average loss</p>
+                  <span className="jd-value">{t.winLossRatio === null ? '—' : <CountUp value={t.winLossRatio} format={fmtRatio} />}</span>
+                  <div className="jd-ratio">
+                    <div className="is-positive"><i style={{ width: `${((t.avgWin ?? 0) / widest) * 100}%` }} /><span>{money(t.avgWin)}</span></div>
+                    <div className="is-negative"><i style={{ width: `${(Math.abs(t.avgLoss ?? 0) / widest) * 100}%` }} /><span>{money(t.avgLoss)}</span></div>
+                  </div>
+                </div>
               </div>
-              {data.timeHeatmap.length ? <TimeHeatmap cells={data.timeHeatmap} unit={unit} /> : <p className="jd-empty">Appears once closed trades have an entry time.</p>}
-              {unknownEntries > 0 && <p className="jd-sub mt-3">{unknownEntries} {unknownEntries === 1 ? 'trade has' : 'trades have'} no entry time and {unknownEntries === 1 ? 'is' : 'are'} left out.</p>}
-            </section>
-          </div>
-
-          <div className="jd-row jd-row-even">
-            <Breakdown title="By symbol" data={data.bySymbol} unit={unit} />
-            <Breakdown title="By setup tag" data={data.byTag} unit={unit} />
-            <Breakdown title="By session" data={data.bySession} unit={unit} />
-            <Breakdown title="By weekday" data={data.byWeekday} unit={unit} />
-          </div>
+              <dl className="jd-strip">
+                <div><dt>Average result per trade</dt><dd className={`is-${toneOf(t.expectancy)}`}>{money(t.expectancy)}</dd></div>
+                <div><dt>Average return on risk{t.rCoverage !== null && t.rCoverage < 100 ? ` (${t.rCoverage}% of closed)` : ''}</dt><dd>{t.avgR !== null ? `${t.avgR > 0 ? '+' : ''}${t.avgR.toFixed(2)}R` : '—'}</dd></div>
+                <div><dt>Largest drop at daily close</dt><dd className={`is-${toneOf(t.maxDrawdown)}`}>{money(t.maxDrawdown)}</dd></div>
+                <div><dt>Best day</dt><dd className={`is-${toneOf(t.bestDay?.net ?? null)}`}>{money(t.bestDay?.net ?? null)}</dd></div>
+                <div><dt>Worst day</dt><dd className={`is-${toneOf(t.worstDay?.net ?? null)}`}>{money(t.worstDay?.net ?? null)}</dd></div>
+                <div>
+                  <dt>Current run</dt>
+                  <dd className={streak ? (streak.result === 'win' ? 'is-positive' : 'is-negative') : ''}>
+                    {streak ? `${streak.count} ${streak.result === 'win' ? (streak.count === 1 ? 'win' : 'wins') : streak.count === 1 ? 'loss' : 'losses'}` : '—'}
+                  </dd>
+                </div>
+                <div><dt>Longest winning run</dt><dd>{t.longestWinStreak} {t.longestWinStreak === 1 ? 'win' : 'wins'}</dd></div>
+                <div><dt>Longest losing run</dt><dd>{t.longestLossStreak} {t.longestLossStreak === 1 ? 'loss' : 'losses'}</dd></div>
+              </dl>
+              <div className="jd-row">
+                <section className="jd-panel">
+                  <div className="jd-panel-head"><h3>Profit over time</h3><span>By close date</span></div>
+                  {data.equity.length ? <EquityCurve points={data.equity} unit={unit} /> : <p className="jd-empty">The curve appears once closed trades have a cash result{moneyComparable ? '' : ' in a single account'}.</p>}
+                </section>
+                <section className="jd-panel">
+                  <div className="jd-panel-head"><h3>Daily profit or loss</h3><span>Last {Math.min(30, data.equity.length)} trading {data.equity.length === 1 ? 'day' : 'days'}</span></div>
+                  {data.equity.length ? <DailyBars points={data.equity} unit={unit} /> : <p className="jd-empty">Daily results appear with your first closed cash trade.</p>}
+                </section>
+              </div>
+              <section className="jd-panel">
+                <div className="jd-panel-head"><h3>Win rate by entry time</h3><span>New York time</span></div>
+                {data.timeHeatmap.length ? <TimeHeatmap cells={data.timeHeatmap} unit={unit} /> : <p className="jd-empty">Appears once closed trades have an entry time.</p>}
+                {unknownEntries > 0 && <p className="jd-sub mt-3">{unknownEntries} {unknownEntries === 1 ? 'trade has' : 'trades have'} no entry time and {unknownEntries === 1 ? 'is' : 'are'} left out.</p>}
+              </section>
+              <div className="jd-row jd-row-even">
+                <Breakdown title="By symbol" data={data.bySymbol} unit={unit} />
+                <Breakdown title="By setup tag" data={data.byTag} unit={unit} />
+                <Breakdown title="By session" data={data.bySession} unit={unit} />
+                <Breakdown title="By weekday" data={data.byWeekday} unit={unit} />
+              </div>
+              <p className="jd-note">Metrics count account trade records; a shared entry contributes once for each account. Deposits and withdrawals are excluded from trading profit or loss. Reporting dates use UTC; entry times use New York time. When the close date is unknown, daily results use the recorded trade date. The largest drop uses daily closing totals and excludes changes within the day.</p>
+            </div>
+          </details>
         </>
       )}
-
-      <p className="jd-note">
-        Metrics count account trade records; a shared entry contributes once for each account. Deposits and withdrawals are excluded from trading P&amp;L. Reporting dates use UTC; entry times use New York time. When the close date is unknown, daily results use the recorded trade date. Drawdown uses daily closing totals and excludes intraday swings.
-      </p>
     </div>
   );
 }

@@ -9,6 +9,8 @@ export type GradedResult = BiasResult & { grade: SignalGradeResult };
 export interface BiasSnapshot {
   asOf: string;
   results: GradedResult[];
+  // For an all-market snapshot inputsHealthy covers shared providers. Each result's
+  // healthy_inputs check additionally enforces its domestic dependency.
   meta: { source: DataSource; cachedAt: string; sourceHealth: SourceHealth; stale?: boolean; inputsHealthy: boolean; nextEvent: UpcomingEvent | null; dxy?: DxyContext };
 }
 
@@ -33,11 +35,13 @@ function getDxyContext(events: MacroEvent[]): DxyContext | undefined {
 export async function buildBiasSnapshot(symbol?: AssetSymbol): Promise<BiasSnapshot> {
   const { events, source, cachedAt, sourceHealth, stale, context, nextEvent, calendarEvidence } = await getEvents();
   const asOf = new Date().toISOString();
-  const quality = assessSignalInputs({ asOf, cachedAt, source, stale, sourceHealth, context, calendarEvidence });
+  const inputs = { asOf, cachedAt, source, stale, sourceHealth, context, calendarEvidence };
+  const quality = assessSignalInputs({ ...inputs, symbol });
   const { inputsHealthy } = quality;
   const calendar = calendarEvidence?.events ?? [];
   const results = scoreMarketForecast(events, context, asOf, symbol).map(result => {
-    const grade = gradeSignal(result, { asOf, calendar, ...quality });
+    const marketQuality = assessSignalInputs({ ...inputs, symbol: result.symbol });
+    const grade = gradeSignal(result, { asOf, calendar, ...marketQuality });
     // Conviction is the grade on one Low / Medium / High scale, so cards never show two scales.
     return { ...result, grade, signal: signalFromGrade(grade), conviction: convictionFromGrade(grade) };
   });

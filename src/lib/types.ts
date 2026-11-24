@@ -84,6 +84,8 @@ export interface MacroEvent {
   seriesId?: string;
   observationDate?: string;
   expiresAt?: string;
+  /** Vintage and measurement provenance for country-specific historical trends. */
+  trendEvidence?: import('./international-macro').TrendEvidence;
   /** Exact release evidence retained for prospective audits; never infer consensus retrospectively. */
   releaseEvidence?: { actual: number; estimate: number; consensusFirstSeenAt: string; releasedAt: string };
 }
@@ -116,6 +118,8 @@ export interface ScoredEvent {
   evidenceType?: EvidenceType;
   timestamp?: string;
   observationDate?: string;
+  seriesId?: string;
+  trendEvidence?: import('./international-macro').TrendEvidence;
 }
 
 export interface BiasResult {

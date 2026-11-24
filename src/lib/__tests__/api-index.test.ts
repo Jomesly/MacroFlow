@@ -34,12 +34,34 @@ vi.mock('../api/fred', async () => ({
   fetchFredInputs: vi.fn(async () => ({ events: [], context: (await import('../macro-context')).unknownContext(new Date().toISOString()), failed: false })),
 }));
 
+vi.mock('../api/international-fred', () => ({
+  fetchDomesticInputs: vi.fn(async () => ({ events: [], sourceHealth: { domestic_GB: 'empty' as const } })),
+}));
+
 vi.mock('../calendar', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../calendar')>()),
   getCalendar: vi.fn(async () => ({ events: [], surprises: [], fetchedAt: new Date().toISOString(), archiveStatus: 'ok' as const })),
 }));
 
 describe('fetchAllEvents source health', () => {
+  it('preserves domestic provenance and country health through the provider merge and cached schema', async () => {
+    const { fetchDomesticInputs } = await import('../api/international-fred');
+    const { fetchAllEvents } = await import('../api');
+    vi.mocked(fetchDomesticInputs).mockResolvedValueOnce({ events: [{ id: 'uk-gdp', category: 'gdp', value: 'expanding',
+      country: 'GB', seriesId: 'NAEXKP01GBQ657S', title: 'UK GDP', description: 'Historical trend',
+      timestamp: new Date().toISOString(), impact: 'high', evidenceType: 'trend',
+      trendEvidence: { provider: 'FRED/ALFRED', seriesId: 'NAEXKP01GBQ657S', units: 'percent', frequency: 'quarterly',
+        vintageDate: '2026-11-23', availableAt: '2026-11-24T00:00:00.000Z', fetchedAt: '2026-11-24T10:00:00.000Z',
+        observationEnd: '2026-09-30T23:59:59.999Z', currentValue: 0.4, comparisonValue: 0.2,
+        derivedValue: 0.4, derivedUnits: 'percent change from previous quarter', transform: 'gdp_growth' } }],
+      sourceHealth: { domestic_GB: 'ok' } });
+    const result = await fetchAllEvents();
+    expect(result.sourceHealth.domestic_GB).toBe('ok');
+    expect(result.events.find(event => event.id === 'uk-gdp')?.trendEvidence?.vintageDate).toBe('2026-11-23');
+    const { getCacheEntry } = await import('../api/cache');
+    vi.mocked(getCacheEntry).mockResolvedValueOnce({ data: result, fetchedAt: Date.now(), freshUntil: Date.now() + 1000, staleUntil: Date.now() + 2000 });
+    expect((await fetchAllEvents()).events.find(event => event.id === 'uk-gdp')?.trendEvidence).toEqual(result.events[0].trendEvidence);
+  });
   it('preserves a failed Finnhub desk even when another desk returned stories', async () => {
     const { fetchNews, getFinnhubNewsHealth } = await import('../api/finnhub');
     vi.mocked(fetchNews).mockResolvedValueOnce([{ id: 'desk-story', category: 'fed_tone', title: 'Fed hikes rates',
